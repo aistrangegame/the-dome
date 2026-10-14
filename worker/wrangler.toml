@@ -1,0 +1,20 @@
+name = "the-dome"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+# Static site served alongside the API
+[assets]
+directory = "../site"
+
+[[durable_objects.bindings]]
+name = "PROPERTY"
+class_name = "Property"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Property"]
+
+[vars]
+AIRTABLE_BASE_ID = "appQRdLbtZBzRsb7i"
+
+# Secrets (never in this file): AIRTABLE_TOKEN, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
