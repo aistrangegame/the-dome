@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en" data-season="summer">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Find the Point · Catskill Mountain Domes</title>
+<meta name="description" content="A game behind the point: find the white dome from the sky, from high above the valley down to its own clearing.">
+<link rel="stylesheet" href="../assets/css/dome.css">
+<link rel="stylesheet" href="play.css">
+<style>
+  .cam { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
+  .cam img { display: block; width: 100%; height: 100%; }
+  .layer { position: absolute; inset: 0; transition: opacity 1.4s ease; }
+  .ring { position: absolute; width: 44px; height: 44px; margin: -22px; border-radius: 50%; border: 1px solid rgba(255,255,255,.9); pointer-events: none; animation: ringOut 1.3s ease-out forwards; }
+  @keyframes ringOut { from { transform: scale(.4); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
+  .found { position: absolute; width: 14px; height: 14px; margin: -7px; border-radius: 50%; background: #fff; box-shadow: 0 0 30px 10px rgba(255,255,255,.55); pointer-events: none; animation: foundIn 1.6s cubic-bezier(.2,.7,.2,1) both; }
+  @keyframes foundIn { from { transform: scale(0); opacity: 0; } 40% { opacity: 1; } to { transform: scale(1); opacity: 1; } }
+  .nudge { position: absolute; width: 60px; height: 60px; margin: -30px; border-radius: 50%; border: 1px solid rgba(226,196,138,.75); pointer-events: none; animation: nudge 3.4s ease-in-out infinite; }
+  @keyframes nudge { 0%,100% { transform: scale(.7); opacity: 0; } 50% { transform: scale(1.4); opacity: .8; } }
+  .lens { position: absolute; width: 10px; height: 10px; margin: -5px; border-radius: 50%; border: 1px solid #fff; pointer-events: none; opacity: 0; transition: opacity .3s; }
+  .heights { position: fixed; right: 14px; top: 50%; transform: translateY(-50%); display: grid; gap: 10px; z-index: 20; }
+  .heights i { width: 6px; height: 6px; border-radius: 50%; background: rgba(245,240,232,.25); display: block; }
+  .heights i.done { background: #E2C48A; } .heights i.now { background: #fff; box-shadow: 0 0 10px rgba(255,255,255,.8); }
+  .intro { position: fixed; inset: 0; z-index: 25; display: grid; place-items: center; text-align: center; padding: 24px; background: radial-gradient(circle at 50% 45%, rgba(7,11,9,.55), rgba(7,11,9,.9)); transition: opacity 1s ease; }
+  .intro h1 { font: italic 400 clamp(1.8rem, 6vw, 2.8rem)/1.2 Lora, serif; margin: 0 0 .8rem; }
+  .intro p { max-width: 420px; margin: 0 auto 1.4rem; color: rgba(245,240,232,.8); }
+</style>
+</head>
+<body class="play" data-root="../" data-page="play/find.html" data-bare="1" data-noclose="1">
+<div class="stage" id="stage" aria-label="An aerial photograph. Tap where you see the white dome."></div>
+<div class="heights" id="heights" aria-hidden="true"></div>
+<div class="say" aria-live="polite"><p class="dome" id="line"></p><p class="hint" id="hint"></p><div class="actions" id="actions"></div></div>
+<div class="intro" id="intro"><div>
+  <h1>Find the point.</h1>
+  <p>From high over the valley I’m a speck. Tap where you see me. Press and hold to look closer. Each time you find me, we come down a little.</p>
+  <button class="pbtn act" type="button" id="begin">Look</button>
+</div></div>
+
+<script src="../assets/js/reviews.js"></script>
+<script src="../assets/js/dome-data.js"></script>
+<script src="play.js"></script>
+<script>
+window.page = function (Dome) {
+  const P = window.Play;
+  P.bar({ sound: true });
+  const R = [ // where the dome sits in each photograph, as a fraction of its width and height
+    { k: "aerial_valley", x: .512, y: .742, r: .03, hint: "Look low, in the one green clearing under the power line.",
+      line: "There. From that high I’m smaller than a fingernail, and you still found me." },
+    { k: "valley_high", x: .49, y: .75, r: .032, hint: "Find the road first. I’m just to the left of it.",
+      line: "That’s me, just off the road, where everyone turns in." },
+    { k: "aerial_valley_v", x: .51, y: .645, r: .04, hint: "Halfway down, where the trees open around a meadow.",
+      line: "The valley on every side. I was set here for that." },
+    { k: "dot_forest_v", x: .50, y: .505, r: .045, hint: "Straight down now. A white dot beside the curl of the drive.",
+      line: "From straight above I’m a single point. That’s all a dome is, from the sky." },
+    { k: "hill_aerial", x: .495, y: .52, r: .06, hint: "I’m the white one.",
+      line: "Closer. Those paths in the meadow are for walking, not for getting anywhere." },
+    { k: "aerial_edge", x: .495, y: .50, r: .06, hint: "Where the evening light lands first.",
+      line: "The evening light finds me before it finds the meadow." }
+  ];
+  const LAND = { k: "disc", x: .505, y: .54 };
+  const MISS = ["Only trees there.", "Not there. Look for something round and white.", "Closer to the open ground.", "Not yet. Take your time; I’m not going anywhere."];
+
+  const stage = document.getElementById("stage"), lineEl = document.getElementById("line"), hintEl = document.getElementById("hint"), actions = document.getElementById("actions");
+  const heights = document.getElementById("heights");
+  heights.innerHTML = R.map(() => "<i></i>").join("");
+  let round = 0, misses = 0, busy = true, layer = null, cam = null, view = { x: .5, y: .5, z: 1 }, base = 1, iw = 1600, ih = 900;
+  const lens = document.createElement("div"); lens.className = "lens"; stage.append(lens);
+
+  function say(t, h) { lineEl.style.opacity = 0; setTimeout(() => { lineEl.textContent = t || ""; lineEl.style.opacity = 1; }, 300); hintEl.textContent = h || ""; }
+  function setHeights() { [...heights.children].forEach((d, i) => d.className = i < round ? "done" : i === round ? "now" : ""); }
+
+  function fit() { base = Math.max(innerWidth / iw, innerHeight / ih); }
+  function clampView(v) {
+    const s = base * v.z, vw = innerWidth / (iw * s) / 2, vh = innerHeight / (ih * s) / 2;
+    v.x = Math.min(1 - vw, Math.max(vw, v.x)); v.y = Math.min(1 - vh, Math.max(vh, v.y)); return v;
+  }
+  function apply() {
+    if (!cam) return;
+    const s = base * view.z;
+    cam.style.width = iw + "px"; cam.style.height = ih + "px";
+    cam.style.transform = `translate(${innerWidth / 2 - view.x * iw * s}px, ${innerHeight / 2 - view.y * ih * s}px) scale(${s})`;
+    layer.querySelectorAll("[data-ix]").forEach((m) => { const p = toScreen(+m.dataset.ix, +m.dataset.iy); m.style.left = p.x + "px"; m.style.top = p.y + "px"; });
+  }
+  function toScreen(fx, fy) { const s = base * view.z; return { x: innerWidth / 2 + (fx - view.x) * iw * s, y: innerHeight / 2 + (fy - view.y) * ih * s }; }
+  function toImage(sx, sy) { const s = base * view.z; return { x: view.x + (sx - innerWidth / 2) / (iw * s), y: view.y + (sy - innerHeight / 2) / (ih * s) }; }
+  let anim = null;
+  function fly(to, ms, done) { // one camera, no cuts
+    cancelAnimationFrame(anim); const from = { ...view }, t0 = performance.now();
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const step = (t) => {
+      const k = reduce ? 1 : Math.min(1, (t - t0) / ms), e = k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+      view.z = from.z * Math.pow(to.z / from.z, e); view.x = from.x + (to.x - from.x) * e; view.y = from.y + (to.y - from.y) * e;
+      clampView(view); apply();
+      if (k < 1) anim = requestAnimationFrame(step); else if (done) done();
+    };
+    anim = requestAnimationFrame(step);
+  }
+  function mark(cls, fx, fy) { const m = document.createElement("div"); m.className = cls; m.dataset.ix = fx; m.dataset.iy = fy; layer.append(m); apply(); return m; }
+
+  function show(k, startAt, then) {
+    const src = Dome.M(k, 1600), im = new Image();
+    im.onload = () => {
+      iw = im.naturalWidth; ih = im.naturalHeight; fit();
+      const old = layer;
+      layer = document.createElement("div"); layer.className = "layer"; layer.style.opacity = 0;
+      cam = document.createElement("div"); cam.className = "cam"; im.alt = ""; cam.append(im); layer.append(cam);
+      stage.insertBefore(layer, lens);
+      view = clampView({ ...startAt }); apply();
+      requestAnimationFrame(() => (layer.style.opacity = 1));
+      if (old) setTimeout(() => old.remove(), 1500);
+      then && then();
+    };
+    im.src = src;
+  }
+
+  function startRound() {
+    misses = 0; setHeights(); const r = R[round];
+    stage.setAttribute("aria-label", "An aerial photograph, height " + (round + 1) + " of " + R.length + ". Tap where you see the white dome.");
+    // arrive through the point: the new picture starts close on the dome and pulls back
+    show(r.k, { x: r.x, y: r.y, z: round === 0 ? 1.15 : 3.2 }, () => {
+      fly({ x: .5, y: .5, z: 1 }, round === 0 ? 2200 : 2600, () => { busy = false; });
+      say(round === 0 ? "Somewhere down there." : "Again. A little lower now.", "Tap where you see me · press and hold to look closer");
+    });
+  }
+
+  function guess(sx, sy) {
+    if (busy) return;
+    const r = R[round], p = toImage(sx, sy);
+    const d = Math.hypot((p.x - r.x) * iw, (p.y - r.y) * ih), tol = Math.max(r.r * Math.min(iw, ih), 30 / (base * view.z));
+    const ring = document.createElement("div"); ring.className = "ring"; ring.style.left = sx + "px"; ring.style.top = sy + "px"; stage.append(ring); setTimeout(() => ring.remove(), 1400);
+    if (d <= tol) return found();
+    misses++;
+    P.tone(220 - misses * 10, .5, .05, "triangle");
+    say(MISS[(misses - 1) % MISS.length], misses >= 2 ? r.hint : "");
+    if (misses === 4) mark("nudge", r.x, r.y);
+  }
+
+  function found() {
+    busy = true; const r = R[round];
+    layer.querySelectorAll(".nudge").forEach((n) => n.remove());
+    P.tone(136.1 * 2, 3.2, .14); setTimeout(() => P.tone(136.1 * 3, 3, .08), 260);
+    fly({ x: r.x, y: r.y, z: 3.2 }, 1800, () => {
+      mark("found", r.x, r.y);
+      say(r.line, "");
+      actions.innerHTML = round < R.length - 1 ? `<button class="pbtn act" type="button" id="next">Come down</button>` : `<button class="pbtn act" type="button" id="next">Land</button>`;
+      document.getElementById("next").focus({ preventScroll: true });
+      document.getElementById("next").addEventListener("click", () => { actions.innerHTML = ""; round++; round < R.length ? startRound() : land(); }, { once: true });
+    });
+  }
+
+  function land() {
+    setHeights(); [...heights.children].forEach((d) => (d.className = "done"));
+    show(LAND.k, { x: LAND.x, y: LAND.y, z: 4 }, () => {
+      fly({ x: .5, y: .5, z: 1 }, 3200, () => {
+        mark("found", LAND.x, LAND.y);
+        Dome.markWalked("find");
+        say("You came down out of the sky the way the evening does. Most people only ever see me from the drive.", "");
+        const root = document.body.dataset.root;
+        actions.innerHTML = `<a class="pbtn act" href="${root}stay.html">Come and stay</a><button class="pbtn" type="button" id="again">From the top</button><button class="pbtn" type="button" data-portal>Behind the point</button>`;
+        document.getElementById("again").addEventListener("click", () => { actions.innerHTML = ""; round = 0; startRound(); });
+      });
+    });
+  }
+
+  // Tap guesses; press and hold looks closer, and you can move while holding
+  let down = null, holdT = null, holding = false, zoomRaf = null;
+  stage.addEventListener("pointerdown", (e) => {
+    if (busy) return; stage.setPointerCapture(e.pointerId);
+    down = { x: e.clientX, y: e.clientY, t: performance.now() }; holding = false;
+    holdT = setTimeout(() => { holding = true; lens.style.opacity = 1; zoomLoop(); }, 260);
+  });
+  stage.addEventListener("pointermove", (e) => { if (!down) return; down.cx = e.clientX; down.cy = e.clientY; lens.style.left = e.clientX + "px"; lens.style.top = e.clientY + "px"; });
+  function zoomLoop() {
+    if (!holding || !down) return;
+    const sx = down.cx ?? down.x, sy = down.cy ?? down.y; lens.style.left = sx + "px"; lens.style.top = sy + "px";
+    const before = toImage(sx, sy); view.z = Math.min(6, view.z * 1.018);
+    const after = toImage(sx, sy); view.x += before.x - after.x; view.y += before.y - after.y; clampView(view); apply();
+    zoomRaf = requestAnimationFrame(zoomLoop);
+  }
+  const up = (e) => {
+    if (!down) return; clearTimeout(holdT); cancelAnimationFrame(zoomRaf); lens.style.opacity = 0;
+    if (!holding && e.type === "pointerup") guess(e.clientX, e.clientY);
+    down = null; holding = false;
+  };
+  stage.addEventListener("pointerup", up); stage.addEventListener("pointercancel", up);
+  stage.addEventListener("contextmenu", (e) => e.preventDefault());
+  stage.addEventListener("wheel", (e) => { if (busy) return; e.preventDefault(); const b = toImage(e.clientX, e.clientY); view.z = Math.min(6, Math.max(1, view.z * (e.deltaY < 0 ? 1.12 : 0.89))); const a = toImage(e.clientX, e.clientY); view.x += b.x - a.x; view.y += b.y - a.y; clampView(view); apply(); }, { passive: false });
+  // Pull back out: a double tap, or the minus key
+  stage.addEventListener("dblclick", () => { if (!busy) fly({ x: .5, y: .5, z: 1 }, 900); });
+  addEventListener("keydown", (e) => {
+    if (busy || document.querySelector(".portal")) return;
+    if (e.key === "+" || e.key === "=") { view.z = Math.min(6, view.z * 1.25); clampView(view); apply(); }
+    if (e.key === "-") fly({ x: view.x, y: view.y, z: Math.max(1, view.z / 1.6) }, 500);
+    const pan = 0.06 / view.z;
+    if (e.key === "ArrowLeft") view.x -= pan; if (e.key === "ArrowRight") view.x += pan; if (e.key === "ArrowUp") view.y -= pan; if (e.key === "ArrowDown") view.y += pan;
+    if (e.key.startsWith("Arrow")) { clampView(view); apply(); }
+    if (e.key === "Enter" && e.target === document.body) guess(innerWidth / 2, innerHeight / 2);
+  });
+  addEventListener("resize", () => { fit(); clampView(view); apply(); });
+
+  document.getElementById("begin").addEventListener("click", () => {
+    const i = document.getElementById("intro"); i.style.opacity = 0; setTimeout(() => i.remove(), 1000);
+    startRound();
+  });
+  window.__find = { where: () => { const r = round < R.length ? R[round] : LAND; return toScreen(r.x, r.y); }, get busy() { return busy; } };
+  show(R[0].k, { x: .5, y: .5, z: 1 });
+};
+</script>
+<script src="../assets/js/dome.js"></script>
+</body>
+</html>

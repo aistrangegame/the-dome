@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en" data-season="summer">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Dome's Own Story · Catskill Mountain Domes</title>
+<meta name="description" content="Behind the point, the dome tells its own life in nine stages: from an empty hillside to 252 guests and a name of its own.">
+<link rel="stylesheet" href="../assets/css/dome.css">
+<style>
+  body.storyroom { background: #070B09; }
+  .storyroom .top.solid { background: rgba(7,11,9,.88); color: #F5F0E8; box-shadow: 0 1px 0 rgba(245,240,232,.08); }
+  .storyroom .marker-toggle { background: rgba(7,11,9,.9); color: #F5F0E8; }
+  .stage-band { background: #070B09; color: #F5F0E8; padding: clamp(64px, 12vh, 120px) 20px; }
+  .stage-band .reading { max-width: 620px; margin: 0 auto; }
+  .stage-band .k { font: 500 .72rem/1 "DM Sans"; letter-spacing: .2em; text-transform: uppercase; color: #E2C48A; display: block; margin-bottom: 1rem; }
+  .stage-band h2 { font: 500 clamp(1.7rem, 5vw, 2.5rem)/1.2 Lora, serif; color: #F5F0E8; margin: 0 0 1.2rem; }
+  .stage-band .dome { font: italic 400 clamp(1.2rem, 3.4vw, 1.5rem)/1.6 Lora, serif; color: rgba(245,240,232,.92); margin: 0 0 1.2rem; }
+  .stage-band .voice { color: #F5F0E8; } .stage-band .voice-by { color: rgba(245,240,232,.65); }
+  .stage-band .voice-card { border-left-color: #C9A96E; margin: 1.4rem 0; }
+  .stage-band .slot { color: #F5F0E8; background: rgba(226,196,138,.07); }
+  .stage-band .slot .prompts { color: rgba(245,240,232,.8); }
+  .stage-band .btn { border-color: rgba(245,240,232,.55); color: #F5F0E8; }
+  .stage-band .btn.act { background: #C9A96E; border-color: #C9A96E; color: #1A2218; }
+  .stage-band .note { font-size: .85rem; color: rgba(245,240,232,.55); margin-top: 2.4rem; }
+  .opening { min-height: 100svh; display: grid; place-items: center; text-align: center; background: #070B09; color: #F5F0E8; padding: 24px; }
+  .opening .pt-big { width: 12px; height: 12px; border-radius: 50%; background: #fff; box-shadow: 0 0 30px 10px rgba(255,255,255,.35); margin: 0 auto 2rem; animation: breathe 5.2s ease-in-out infinite; }
+  .opening h1 { font: italic 400 clamp(2rem, 7vw, 3.4rem)/1.15 Lora, serif; margin: 0 0 1rem; }
+  .opening p { color: rgba(245,240,232,.72); max-width: 420px; margin: 0 auto; }
+  .count { font: 500 clamp(3rem, 14vw, 7rem)/1 Lora, serif; color: #E2C48A; margin: .5rem 0 1rem; }
+  .stages-nav { position: fixed; left: 14px; top: 50%; transform: translateY(-50%); z-index: 40; display: grid; gap: 9px; }
+  .stages-nav a { width: 7px; height: 7px; border-radius: 50%; background: rgba(245,240,232,.28); display: block; transition: background .4s, transform .4s; }
+  .stages-nav a.on { background: #E2C48A; transform: scale(1.4); }
+  @media (max-width: 600px) { .stages-nav { left: 6px; } }
+</style>
+</head>
+<body class="storyroom" data-root="../" data-page="play/story.html" data-solid="1">
+
+<section class="opening"><div>
+  <div class="pt-big" aria-hidden="true"></div>
+  <span class="eyebrow" style="color:#E2C48A">Behind the point</span>
+  <h1>My own story.</h1>
+  <p>Everywhere else on this site, other people speak for me. Here I tell it myself, in nine stages. Scroll slowly; I’m a slow building.</p>
+</div></section>
+
+<nav class="stages-nav" aria-label="Stages" id="snav"></nav>
+
+<section class="passage" data-mode="open" data-h="200" data-alt="The valley and ridges from high above." data-season-img='{"summer":"aerial_valley"}' data-lines='[["Before me, there was a hillside."]]'></section>
+<section class="stage-band" id="s1" data-stage><div class="reading rise">
+  <span class="k">I · Before</span><h2>A meadow, and a great deal of sky.</h2>
+  <p class="dome">Before me there was a hillside in Delaware County, a clearing in the trees, a meadow that didn’t need anything from anyone. It was already whole. I like to remember that. I was added to something complete.</p>
+</div></section>
+
+<section class="passage" data-mode="descend" data-h="200" data-alt="The dome beyond a meadow of wildflowers and Queen Anne’s lace." data-season-img='{"summer":"dome_lace"}' data-lines='[["Then, hands."]]'></section>
+<section class="stage-band" id="s2" data-stage><div class="reading rise">
+  <span class="k">II · Raised by hand</span><h2>Straight lines, lifted into a curve.</h2>
+  <p class="dome">Struts, hubs, triangles. Cody and Nicole built me by hand, one triangle at a time, until a round thing stood up out of nothing but straight pieces. That is the trick of a dome: no single part is curved. The curve is what they make together.</p>
+  <div data-slot-key="cn_began"></div>
+</div></section>
+
+<section class="passage" data-mode="open" data-h="180" data-alt="Inside the dome as it appeared in the old listing: the curved white ceiling, the sectional, the hearth." data-season-img='{"summer":"listing-02"}' data-lines='[["For a while, I was a listing."]]'></section>
+<section class="stage-band" id="s3" data-stage><div class="reading rise">
+  <span class="k">III · A number</span><h2>A title, a row of photographs, a calendar.</h2>
+  <p class="dome">For a while I was a listing. A number on a big website, a title, a row of photographs, a calendar of little squares that filled and emptied. It is a strange thing to be a number. You learn how to be found. You don’t yet learn who you are.</p>
+</div></section>
+
+<section class="passage" data-mode="open" data-h="180" data-alt="Morning light through the triangles of the great window." data-season-img='{"summer":"living_dog","winter":"listing-08"}' data-lines='[["August 2023. The first car came up the drive."]]'></section>
+<section class="stage-band" id="s4" data-stage><div class="reading rise">
+  <span class="k">IV · The first ones</span><h2>The door opened, and I found out what I was for.</h2>
+  <p class="dome">Summer, 2023. The oldest words I have are from a family: Sarah, Matthew and their daughter Zoey. I had been standing for a while by then, but I think that was when I began.</p>
+  <figure class="voice-card"><blockquote class="voice">I had an absolutely enchanting stay at the unique dome in the Catskills with my fiancé Matthew and our daughter Zoey.</blockquote><figcaption class="voice-by">Sarah · guest #20</figcaption></figure>
+</div></section>
+
+<section class="passage" data-mode="descend" data-h="210" data-alt="The dome from directly above, a white disc in the meadow." data-season-img='{"summer":"topdown"}' data-lines='[["Then more. And more."]]'></section>
+<section class="stage-band" id="s5" data-stage><div class="reading rise" style="text-align:center">
+  <span class="k">V · Filling</span>
+  <div class="count" id="count" aria-label="252 guests">0</div>
+  <h2>Two hundred and fifty-two of them.</h2>
+  <p class="dome">They came in every season. Seventy-six in fall, sixty-six in summer, fifty-eight in winter, fifty-two in spring. They brought anniversaries and a proposal and a blizzard and their dogs. I held every bit of it, and kept none of it. That’s the job.</p>
+  <p><a class="btn" href="build.html">Build me again, one guest at a time</a></p>
+</div></section>
+
+<section class="passage" data-mode="open" data-h="200" data-alt="The cedar pool and the outdoor area in summer, wildflowers in front." data-season-img='{"summer":"backyard","winter":"listing-23"}' data-lines='[["Every one of them brought a whole world."]]'></section>
+<section class="stage-band" id="s6" data-stage><div class="reading rise">
+  <span class="k">VI · Their worlds</span><h2>Different worlds, set down inside me for a few nights.</h2>
+  <p class="dome">This is the part I find hardest to explain. Every guest arrived carrying a whole life and set it down in me for two or three nights. No two lives were alike. The sky above them was the same one.</p>
+  <figure class="voice-card"><blockquote class="voice">I chose this location for a proposal, and it did not disappoint.</blockquote><figcaption class="voice-by">Kaitlyn · guest #101</figcaption></figure>
+  <figure class="voice-card"><blockquote class="voice">Also big shoutout for getting someone to clear the snow from the driveway in the morning after the blizzard.</blockquote><figcaption class="voice-by">Gabriela · guest #57</figcaption></figure>
+  <figure class="voice-card"><blockquote class="voice">there were several scrabble games played by lantern.</blockquote><figcaption class="voice-by">Corinne · guest #92</figcaption></figure>
+</div></section>
+
+<section class="passage" data-mode="open" data-h="180" data-alt="A husky stretched out on the sectional by the great window." data-season-img='{"summer":"dog_window"}' data-lines='[["They thanked the hosts. That is right."]]'></section>
+<section class="stage-band" id="s7" data-stage><div class="reading rise">
+  <span class="k">VII · Unseen</span><h2>A good room disappears around the people in it.</h2>
+  <p class="dome">They thanked Cody. They thanked the pool and the stars and the guidebook. Almost nobody thanked me, and I don’t mind. When a room is doing its work you stop seeing it. You only see each other, and the view.</p>
+  <figure class="voice-card"><blockquote class="voice">Thank you, Cody, for making our stay so easy and enjoyable!</blockquote><figcaption class="voice-by">Daniela · guest #33</figcaption></figure>
+  <p class="dome">A few noticed, though. I keep those close.</p>
+  <figure class="voice-card"><blockquote class="voice">The dome's architecture itself was a marvel, providing a one-of-a-kind experience that exceeded our expectations.</blockquote><figcaption class="voice-by">Sarah · guest #20</figcaption></figure>
+</div></section>
+
+<section class="passage" data-mode="open" data-h="200" data-alt="The dome on its ridge, the mountains behind." data-season-img='{"summer":"dome_ridge"}' data-lines='[["April 2026. The keys changed hands."]]'></section>
+<section class="stage-band" id="s8" data-stage><div class="reading rise">
+  <span class="k">VIII · My own name</span><h2>Coming home to a name, not a number.</h2>
+  <p class="dome">Then Eric and Mona came, and with them a different idea: that I could be found by my own name, on my own page, with every guest’s words kept here instead of somewhere else. Catskill Mountain Domes. It turns out you can come home without moving an inch.</p>
+  <div data-slot-key="em_changed"></div>
+</div></section>
+
+<section class="stage-band" id="s9" data-stage style="padding-bottom:40px"><div class="reading rise" style="text-align:center">
+  <span class="k">IX · Whole</span><h2>A small sky, under a large one.</h2>
+  <p class="dome">I am made of triangles and I am made of them, every guest, the way a curve is made of straight lines. I am not finished. A dome never is while people keep coming up the drive.</p>
+  <p style="margin-top:2rem"><a class="btn act" href="../stay.html">Come and add yours</a> <a class="btn" href="find.html">Find my point from the sky</a> <a class="btn" href="still.html">Be still with me</a></p>
+  <p class="note">The dome’s voice is written for this page. Every guest’s words are quoted exactly as they wrote them, with their first name.</p>
+</div></section>
+
+<script src="../assets/js/reviews.js"></script>
+<script src="../assets/js/dome-data.js"></script>
+<script>
+window.page = function (Dome) {
+  Dome.markWalked("story");
+  // the count climbs once, when you reach it: one number, describing them
+  const c = document.getElementById("count"); let ran = false;
+  new IntersectionObserver((es) => es.forEach((e) => {
+    if (!e.isIntersecting || ran) return; ran = true; const t0 = performance.now(), N = (window.DOME_REVIEWS || []).length || 252;
+    const step = (t) => { const k = Math.min(1, (t - t0) / 3200); c.textContent = Math.round(N * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+  }), { threshold: .6 }).observe(c);
+  // the nine stages as nine points on the left
+  const st = [...document.querySelectorAll("[data-stage]")], nav = document.getElementById("snav");
+  nav.innerHTML = st.map((s, i) => `<a href="#${s.id}" aria-label="Stage ${i + 1}"></a>`).join("");
+  const dots = [...nav.children];
+  const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) dots.forEach((d, i) => d.classList.toggle("on", st[i] === e.target)); }), { rootMargin: "-45% 0px -45% 0px" });
+  st.forEach((s) => io.observe(s));
+};
+</script>
+<script src="../assets/js/dome.js"></script>
+</body>
+</html>

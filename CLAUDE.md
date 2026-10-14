@@ -14,7 +14,7 @@ Load the `bindu-dome` skill first. Then read, in order:
 - **Guest words are verbatim.** Quote reviews exactly, with first name and review number, from the Airtable Reviews table. Never paraphrase or invent a guest voice.
 - **Never invent a real person's words.** Eric, Mona, Cody and Nicole speak only through `||PLACEHOLDERS IN CAPS||` until their own words arrive.
 - **Airtable:** never delete a record, field or table; mark it OLD.
-- **The dome speaks only on the mountain** (`house/`). Public pages (`site/`) speak in Eric and Mona's voice plus guests' words.
+- **The dome speaks only on the mountain** (`house/`) **and behind the point** (`site/play/` and the portal the header point opens; ruled Oct 14, 2026). Every other public page speaks in Eric and Mona's voice plus guests' words. On the mountain it stays unnamed until the last act.
 - **Private and shared never mix.** Awakening answers stay on the guest's device. Shared tallies are anonymous and opt-in.
 - **Words never used in guest copy:** feedback, survey, review, mindfulness, curated, intentional, journey (noun), experience (as a noun for the product).
 - **Secrets** (Airtable token, Stripe keys) live only in Worker secrets, never in this repo.

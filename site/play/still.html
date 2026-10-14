@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en" data-season="summer">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Be Still · Catskill Mountain Domes</title>
+<meta name="description" content="A game behind the point: stay still, and the stars come out over the dome, each one a guest who saw them.">
+<link rel="stylesheet" href="../assets/css/dome.css">
+<link rel="stylesheet" href="play.css">
+<style>
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .say { bottom: auto; top: 50%; transform: translate(-50%, -50%); }
+  .say .guest { background: transparent; backdrop-filter: none; border-left: 0; text-align: center; padding: 0; }
+  .say .guest q { font-size: clamp(1.1rem, 4vw, 1.45rem); line-height: 1.5; text-shadow: 0 2px 20px rgba(0,0,0,.9); }
+  .say .guest span { text-align: center; }
+  .quiet { transition: opacity 1.6s ease; }
+  body.deep .pbar { opacity: 0; transition: opacity 2s ease; }
+  body.deep .pbar:hover, body.deep .pbar:focus-within { opacity: 1; }
+  .surface { position: fixed; right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); z-index: 22; }
+</style>
+</head>
+<body class="play" data-root="../" data-page="play/still.html" data-bare="1" data-noclose="1">
+<div class="stage" id="stage"><canvas id="c" role="img" aria-label="A night sky over the dome. Stars appear while you stay still."></canvas></div>
+<div class="say" aria-live="polite"><div id="card"></div><p class="dome quiet" id="line"></p><p class="hint quiet" id="hint"></p><div class="actions" id="actions"></div></div>
+
+<script src="../assets/js/reviews.js"></script>
+<script src="../assets/js/dome-data.js"></script>
+<script src="play.js"></script>
+<script>
+window.page = function (Dome) {
+  const P = window.Play, esc = Dome.esc;
+  P.bar({ sound: true, onSound: (on) => P.drone(on ? calm : 0) });
+  // Guests who wrote about the night sky: one whole sentence each, exactly as written
+  const PICK = [[52, "On a clear night, the stars are incredible."], [65, "The lofted bed has a sky light that you can see the stars from at night!"],
+    [145, "The outdoor area is truly beautiful, turn the lights off and admire the moon & stars."], [38, "So relaxing and even better with the string lights off to enjoy all the stars."],
+    [49, "The plunge pool at night was magical, turn off the lights and marvel at the starry sky!"], [35, "The heated plunge pool was quite big and the perfect temperature as we floated for hours admiring the views during the day and the stars at night."],
+    [46, "Highlights were the kitchen, the living space, the lofted bed space and the plunge pool which literally was the perfect place to star gaze."],
+    [191, "The scenery was beautiful, the stars were amazing, it was away from noise and light pollution; it was everything we could have hoped for."],
+    [4, "Also saw some foliage and so many stars on a clear night with so many wild flowers everywhere surrounding the dome."],
+    [12, "The stars at night were gorgeous amd just made our stay evn more romantic in addition to the smokeless firepit."],
+    [119, "After a deep and restful sleep, I woke early and was captivated by the starlit sky visible from the living room before sunrise."],
+    [60, "We enjoyed watching the stars…never saw so many in our lives; even saw the Milky Way!"],
+    [82, "Because the location is remote, we could see lots of stars, the Milky Way and even a few shooting stars."],
+    [87, "If you love nature and want to enjoy a personal relationship with every star in the sky, stay here."]];
+  const byN = new Map((window.DOME_REVIEWS || []).map((r) => [r.n, r]));
+  const stars = PICK.map(([n, s], i) => { const r = byN.get(n); return { n, s, r, x: 0, y: 0, lit: 0, born: 0, seed: i }; }).filter((x) => x.r && x.r.text.includes(x.s));
+
+  const canvas = document.getElementById("c"), g = canvas.getContext("2d");
+  const card = document.getElementById("card"), lineEl = document.getElementById("line"), hintEl = document.getElementById("hint"), actions = document.getElementById("actions");
+  let W, H, dpr; const dust = [];
+  function size() {
+    dpr = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight; canvas.width = W * dpr; canvas.height = H * dpr;
+    let s = 11; const rnd = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+    stars.forEach((st) => { st.x = 0.08 + rnd() * 0.84; st.y = 0.08 + rnd() * 0.5; });
+    dust.length = 0; for (let i = 0; i < 420; i++) dust.push([rnd(), rnd() * 0.78, rnd()]);
+  }
+
+  /* ---- Stillness is the input (G2): busy = a touch, a move, a key in the last 340 ms ---- */
+  const STEP = 4600; let acc = 0, lastInput = -1e9, lastT = 0, given = 0, agit = 0, calm = 0, ended = false, said = false;
+  const stir = (k) => { lastInput = performance.now(); agit = Math.min(1, agit + k); };
+  addEventListener("pointermove", () => stir(0.06), { passive: true });
+  addEventListener("pointerdown", (e) => { if (!e.target.closest(".pbar,.actions,.portal")) stir(0.5); });
+  addEventListener("wheel", () => stir(0.3), { passive: true }); addEventListener("keydown", () => stir(0.3)); addEventListener("scroll", () => stir(0.3), { passive: true });
+  addEventListener("blur", () => (lastInput = -1e9)); // a hand that isn't there is a still hand
+  if (window.DeviceMotionEvent) addEventListener("devicemotion", (e) => { const a = e.acceleration; if (!a) return; const m = Math.abs(a.x || 0) + Math.abs(a.y || 0) + Math.abs(a.z || 0); if (m > 0.9) stir(Math.min(0.25, (m - 0.9) * 0.05)); });
+
+  function tick(now) {
+    const dt = Math.min(64, now - (lastT || now)); lastT = now;
+    agit *= Math.pow(0.35, dt / 1000);
+    const busy = now - lastInput < 340 || !!document.querySelector(".portal");
+    if (!busy && !ended) { acc += dt; if (acc >= STEP) { acc -= STEP; light(now); } } // a touch pauses; it never resets
+    calm += ((busy ? 0 : Math.min(1, acc / STEP * 0.4 + given / stars.length)) - calm) * 0.035;
+    if (P.sound.on) P.drone(0.25 + calm * 0.75);
+    if (!said && !busy && now > 700 && given === 0) { said = true; lineEl.textContent = "Don’t do anything. That’s the whole game."; hintEl.textContent = "Stay still · a touch only pauses it"; }
+    document.body.classList.toggle("deep", given >= 3 && !busy);
+    draw(now, busy);
+    requestAnimationFrame(tick);
+  }
+  function light(now) {
+    const st = stars[given++]; st.born = now;
+    lineEl.style.opacity = 0; hintEl.style.opacity = 0;
+    card.innerHTML = `<div class="guest fade-in"><q>${esc(st.s)}</q><span>${esc(st.r.name)} · ${P.month(st.r)} · guest #${st.n}</span></div>`;
+    P.tone(136.1 * [2, 3, 4, 2.5, 3.5][given % 5], 4, 0.05);
+    if (given === stars.length) setTimeout(end, 4200);
+  }
+  function end() {
+    ended = true; Dome.markWalked("still"); card.innerHTML = "";
+    lineEl.style.opacity = 1; lineEl.textContent = `These ${stars.length} guests saw this sky and wrote it down. You just sat under it with them.`;
+    const root = document.body.dataset.root;
+    actions.innerHTML = `<a class="pbtn act" href="${root}stay.html">See it yourself</a><button class="pbtn" type="button" data-portal>Behind the point</button>`;
+  }
+
+  function draw(now, busy) {
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const k = given / stars.length;
+    const sky = g.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, `rgb(${4 + k * 4},${7 + k * 6},${12 + k * 16})`); sky.addColorStop(0.75, `rgb(${8 + k * 6},${14 + k * 8},${14 + k * 12})`); sky.addColorStop(1, "#050806");
+    g.fillStyle = sky; g.fillRect(0, 0, W, H);
+    // the faint sky thickens as the stillness deepens
+    dust.forEach(([x, y, b]) => { const a = Math.min(1, calm * 1.4) * (0.15 + b * 0.5) * (0.7 + 0.3 * Math.sin(now / 900 + b * 40)); if (a < 0.02) return; g.fillStyle = `rgba(245,240,232,${a})`; g.fillRect(x * W, y * H, b > 0.85 ? 1.6 : 1, b > 0.85 ? 1.6 : 1); });
+    // the guests' stars
+    stars.forEach((st, i) => {
+      if (i >= given) return;
+      const age = Math.min(1, (now - st.born) / 2600), x = st.x * W, y = st.y * H, r = 1.6 + age * 1.8 + (i === given - 1 ? 1.2 * Math.sin(now / 700) ** 2 : 0);
+      const h = g.createRadialGradient(x, y, 0, x, y, r * 7); h.addColorStop(0, `rgba(255,248,230,${0.55 * age})`); h.addColorStop(1, "rgba(255,248,230,0)");
+      g.fillStyle = h; g.beginPath(); g.arc(x, y, r * 7, 0, Math.PI * 2); g.fill();
+      g.fillStyle = `rgba(255,255,255,${age})`; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+    });
+    // the dome on its hill, glowing a little more with every star
+    const cx = W / 2, base = H * 0.9, R = Math.min(W * 0.16, 120);
+    g.fillStyle = "#020403"; g.beginPath(); g.moveTo(0, H); g.lineTo(0, base + 10); g.quadraticCurveTo(W * 0.3, base - 26, cx, base - 4); g.quadraticCurveTo(W * 0.72, base + 14, W, base - 18); g.lineTo(W, H); g.fill();
+    const glow = 0.08 + k * 0.5 + calm * 0.12;
+    const hg = g.createRadialGradient(cx, base - R * 0.4, R * 0.2, cx, base - R * 0.4, R * 2.6); hg.addColorStop(0, `rgba(226,196,138,${glow * 0.5})`); hg.addColorStop(1, "rgba(226,196,138,0)");
+    g.fillStyle = hg; g.beginPath(); g.arc(cx, base - R * 0.4, R * 2.6, 0, Math.PI * 2); g.fill();
+    // a geodesic silhouette: rows of triangles stepping up a half circle
+    const rows = 5, pts = [];
+    for (let k = 0; k <= rows; k++) { const th = (k / rows) * Math.PI / 2, n = Math.max(1, Math.round((rows - k) * 2.2)) ; const hw = R * Math.cos(th), y = base - 4 - R * 0.92 * Math.sin(th);
+      pts.push(Array.from({ length: n + 1 }, (_, j) => [cx - hw + (2 * hw * j) / Math.max(1, n), y])); }
+    const fill = `rgba(${40 + k * 180},${34 + k * 150},${22 + k * 90},0.92)`;
+    g.fillStyle = fill; g.strokeStyle = "rgba(7,11,9,.55)"; g.lineWidth = 1;
+    for (let r = 0; r < rows; r++) { const A = pts[r], Bp = pts[r + 1]; let i = 0, j = 0;
+      while (i < A.length - 1 || j < Bp.length - 1) {
+        const useA = j >= Bp.length - 1 || (i < A.length - 1 && (i + 1) / (A.length - 1) <= (j + 1) / Math.max(1, Bp.length - 1));
+        g.beginPath(); g.moveTo(...A[i]); g.lineTo(...Bp[j]);
+        if (useA) { g.lineTo(...A[i + 1]); i++; } else { g.lineTo(...Bp[j + 1]); j++; }
+        g.closePath(); g.fill(); g.stroke(); } }
+    // the ring of staying (the only feedback): a thin arc filling with stillness
+    if (!ended && given < stars.length) {
+      const px = cx, py = base - R - 26, rr = 9 + Math.sin(now / 900) * 1.5;
+      g.strokeStyle = `rgba(226,196,138,${busy ? 0.25 : 0.75})`; g.lineWidth = 1.2; g.beginPath(); g.arc(px, py, rr, -Math.PI / 2, -Math.PI / 2 + (acc / STEP) * Math.PI * 2); g.stroke();
+      g.fillStyle = "#fff"; g.beginPath(); g.arc(px, py, 2.4, 0, Math.PI * 2); g.fill();
+    }
+  }
+  size(); addEventListener("resize", size); requestAnimationFrame(tick);
+  // A star you touch again reads again
+  canvas.addEventListener("click", (e) => {
+    const hitSt = stars.slice(0, given).find((st) => Math.hypot(st.x * W - e.clientX, st.y * H - e.clientY) < 22);
+    if (hitSt) card.innerHTML = `<div class="guest fade-in"><q>${esc(hitSt.s)}</q><span>${esc(hitSt.r.name)} · ${P.month(hitSt.r)} · guest #${hitSt.n}</span></div>`;
+  });
+};
+</script>
+<script src="../assets/js/dome.js"></script>
+</body>
+</html>

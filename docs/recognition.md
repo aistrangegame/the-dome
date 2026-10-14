@@ -35,7 +35,7 @@ The inversion: we are not building a website for a rental. 252 guests were alrea
 
 ## Rulings
 
-1. The dome speaks only on the mountain, unnamed until the last act. Its reveal: *"I was never the one waking. You were."*
+1. The dome speaks only on the mountain, unnamed until the last act. Its reveal: *"I was never the one waking. You were."* **Widened Oct 14, 2026 (Ashrey):** the dome also speaks behind the point, in its own room on the site (the portal the header point opens, and `site/play/`): its own story in nine stages and its three games. There it speaks about its own life, never for Eric and Mona. On the mountain it keeps its silence and its reveal.
 2. Booking before magic: the Door holds before the House sings.
 3. Private and shared never mix.
 4. A locked Awakening act points the way ("Come find me at the window"); it is never a wall.

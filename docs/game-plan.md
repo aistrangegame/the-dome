@@ -4,6 +4,8 @@
 
 **State, October 14, 2026:** the full showcase is built in `site/`: every public page, the 13 places on and off the mountain, the Awakening (acts 0 to 7), the story you choose, the booking flow and the dashboard, all working in the browser with no server. Next: Eric and Mona walk it; their words replace the markers; then the Worker, Airtable booking tables and real payments go live.
 
+**Behind the point, October 14, 2026:** the header point opens the dome's own room (`site/play/`): its story in nine stages and three games. *Find the Point* (find the dome from six heights of drone photos, high to close), *One Triangle at a Time* (rebuild the dome from the ground up, one guest per triangle in the order they came, coloured by season, with the leftover triangles kept for guests still to come) and *Be Still* (stillness lights a star for each of 14 guests who wrote about the night sky). The dome speaks there too; see recognition ruling 1.
+
 Each phase below starts when the gate before it passes. No dates are set.
 
 ## Phase 0 · Ground — now

@@ -58,7 +58,7 @@
     const here = document.body.dataset.page || "";
     const h = document.createElement("header");
     h.className = "top" + (document.body.dataset.solid ? " solid" : "");
-    h.innerHTML = `<a class="brand" href="${R("index.html")}"><span class="pt"></span>Catskill Mountain Domes</a>
+    h.innerHTML = `<span class="brand"><button class="pt" type="button" data-portal aria-label="The point: the dome's own story and games"></button><a href="${R("index.html")}">Catskill Mountain Domes</a></span>
       <div style="display:flex;gap:10px;align-items:center">${seasonSwitch()}
       <button class="menu-btn" type="button" aria-expanded="false">Menu</button>
       <nav>${NAV.map(([href, t]) => `<a href="${R(href)}"${here === href ? ' aria-current="page"' : ""}>${t}</a>`).join("")}<a class="stay-btn" href="${R("stay.html")}">Stay</a></nav></div>`;
@@ -80,6 +80,7 @@
         <div><b>The dome</b><br><a href="${R("places/index.html")}">The places</a><br><a href="${R("stories.html")}">Stories</a><br><a href="${R("timeline.html")}">Timeline</a><br><a href="${R("ideas.html")}">Ideas</a></div>
         <div><b>The people</b><br><a href="${R("how-it-began.html")}">How it began</a><br><a href="${R("the-new-chapter.html")}">The new chapter</a><br><a href="${R("your-stays.html")}">Your stays</a></div>
         <div><b>Stay</b><br><a href="${R("stay.html")}">Dates and booking</a><br><a href="${R("around.html")}">Around the mountain</a><br><a href="https://www.instagram.com/catskillmountaindomes/">@catskillmountaindomes</a></div>
+        <div><b>Behind the point</b><br><a href="${R("play/story.html")}">The dome’s own story</a><br><a href="${R("play/find.html")}">Find the point</a><br><a href="${R("play/build.html")}">One triangle at a time</a><br><a href="${R("play/still.html")}">Be still</a></div>
         <div><b>For Eric and Mona</b><br><a href="${R("dashboard/index.html")}">Dashboard</a><br><a href="${R("house/index.html")}">On the property</a><br><a href="${R("house/awakening/index.html")}">The Awakening</a></div>
       </div><p style="margin-top:2rem"><small>Catskill Mountain Domes · Delaware County, New York · Guest words are quoted as written, with first names.</small></p></div>`;
     document.body.append(f);
@@ -175,7 +176,54 @@
     scan(); return scan;
   }
 
-  const api = { D, R, M, esc, store, setSeason, seasonWipe, get season() { return season; }, seasonImage, slotHTML, voiceHTML, paintSeasonImages, rescan: null };
+
+  /* ---------- Behind the point: the dome's own room ---------- */
+  // The header point opens a dark room from exactly where it sits. The dome speaks here, about its own life.
+  const DOORS = [
+    ["story", "play/story.html", "My story", "Nine stages of a life, from an empty hillside to 252 guests.", "Read"],
+    ["find", "play/find.html", "Find the point", "Look for me from the sky, from high to close.", "Look"],
+    ["build", "play/build.html", "One triangle at a time", "Build me again, one guest in every triangle.", "Build"],
+    ["still", "play/still.html", "Be still", "Stay without moving, and the stars come out.", "Stay"]
+  ];
+  let portalEl = null, lastFocus = null;
+  function openPortal(from) {
+    if (portalEl) return;
+    lastFocus = document.activeElement;
+    const walked = store.get("dome-play-walked", {});
+    const here = (document.body.dataset.page || "");
+    const r = from && from.getBoundingClientRect ? from.getBoundingClientRect() : { left: 12, top: 12, width: 24, height: 24 };
+    const el = document.createElement("div");
+    el.className = "portal"; el.setAttribute("role", "dialog"); el.setAttribute("aria-modal", "true"); el.setAttribute("aria-label", "Behind the point");
+    el.style.setProperty("--px", (r.left + r.width / 2) + "px"); el.style.setProperty("--py", (r.top + r.height / 2) + "px");
+    el.innerHTML = `<div class="p-in"><div class="p-bar"><span>Behind the point</span><button class="p-close" type="button">Back to the site</button></div>
+      <div class="p-main"><div class="p-point" aria-hidden="true"></div>
+        <p class="p-line">You found my point.</p>
+        <p class="p-sub">Out there, Eric and Mona and the guests do the talking. In here it’s me, the dome. I keep my own story, and three games.</p>
+        <nav class="doors" aria-label="The dome's story and games">${DOORS.map(([k, href, t, line, verb], i) =>
+          `<a class="door${walked[k] ? " walked" : ""}" href="${R(href)}" data-k="${k}" style="transition-delay:${0.9 + i * 0.55}s"${here === href ? ' aria-current="page"' : ""}><span class="slit" aria-hidden="true"></span><span><b>${t}</b><small>${line}</small></span><span class="k">${walked[k] ? "Again" : verb}</span></a>`).join("")}</nav>
+      </div><p class="p-foot">Press Escape, or touch the point again, to come back out.</p></div>`;
+    document.body.append(el); portalEl = el;
+    document.documentElement.style.overflow = "hidden";
+    requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add("open")));
+    setTimeout(() => el.classList.add("ready"), matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 650);
+    el.querySelector(".p-close").addEventListener("click", closePortal);
+    el.querySelector(".p-point").addEventListener("click", closePortal);
+    el.querySelector(".p-close").focus({ preventScroll: true });
+    el.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closePortal();
+      if (e.key === "Tab") { const f = [...el.querySelectorAll("a,button")]; const i = f.indexOf(document.activeElement);
+        if (e.shiftKey && i <= 0) { e.preventDefault(); f[f.length - 1].focus(); } else if (!e.shiftKey && i === f.length - 1) { e.preventDefault(); f[0].focus(); } }
+    });
+  }
+  function closePortal() {
+    const el = portalEl; if (!el) return;
+    if (document.body.dataset.portalPage) { location.href = R("index.html"); return; }
+    el.classList.remove("ready"); el.classList.add("closing"); el.classList.remove("open");
+    setTimeout(() => { el.remove(); portalEl = null; document.documentElement.style.overflow = ""; if (lastFocus) lastFocus.focus({ preventScroll: true }); }, matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 720);
+  }
+  function markWalked(k) { const w = store.get("dome-play-walked", {}); w[k] = true; store.set("dome-play-walked", w); }
+  document.addEventListener("click", (e) => { const t = e.target.closest && e.target.closest("[data-portal]"); if (t) { e.preventDefault(); openPortal(t); } });
+  const api = { D, R, M, esc, store, openPortal, closePortal, markWalked, setSeason, seasonWipe, get season() { return season; }, seasonImage, slotHTML, voiceHTML, paintSeasonImages, rescan: null };
   window.Dome = api;
 
   document.addEventListener("DOMContentLoaded", () => {

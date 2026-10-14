@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en" data-season="summer">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>One Triangle at a Time · Catskill Mountain Domes</title>
+<meta name="description" content="A game behind the point: build the dome again from the ground up, one guest in every triangle.">
+<link rel="stylesheet" href="../assets/css/dome.css">
+<link rel="stylesheet" href="play.css">
+<style>
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair; }
+  .say { bottom: max(18px, env(safe-area-inset-bottom)); }
+  .say .guest { pointer-events: auto; margin-bottom: 12px; }
+  .holdbtn { position: relative; overflow: hidden; }
+  .holdbtn i { position: absolute; inset: 0; background: rgba(226,196,138,.28); transform-origin: left; transform: scaleX(0); }
+  .holdbtn span { position: relative; }
+  .legend { position: fixed; left: 16px; top: 64px; z-index: 20; display: grid; gap: 6px; font: 500 .66rem/1 "DM Sans"; letter-spacing: .14em; text-transform: uppercase; color: rgba(245,240,232,.66); }
+  .legend b { display: inline-block; width: 10px; height: 10px; margin-right: 8px; vertical-align: -1px; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+  .intro { position: fixed; inset: 0; z-index: 25; display: grid; place-items: center; text-align: center; padding: 24px; background: rgba(7,11,9,.86); transition: opacity 1s ease; }
+  .intro h1 { font: italic 400 clamp(1.8rem, 6vw, 2.8rem)/1.2 Lora, serif; margin: 0 0 .8rem; }
+  .intro p { max-width: 440px; margin: 0 auto 1.4rem; color: rgba(245,240,232,.8); }
+  @media (max-height: 640px) { .legend { display: none; } }
+</style>
+</head>
+<body class="play" data-root="../" data-page="play/build.html" data-bare="1" data-noclose="1">
+<div class="stage" id="stage"><canvas id="c" aria-label="A geodesic dome drawn in outline. Triangles that can be built next glow faintly." role="img"></canvas></div>
+<div class="legend" aria-hidden="true"><span><b style="background:#9CC48A"></b>Spring</span><span><b style="background:#E2C48A"></b>Summer</span><span><b style="background:#D9864E"></b>Fall</span><span><b style="background:#B9CFE4"></b>Winter</span></div>
+<div class="say"><div id="card" aria-live="polite"></div><p class="dome" id="line"></p><p class="hint" id="hint"></p><div class="actions" id="actions"></div></div>
+<div class="intro" id="intro"><div>
+  <h1>One triangle at a time.</h1>
+  <p>I was raised from the ground up, one triangle at a time. Build me again. Every triangle you set is a guest, in the order they came, coloured by the season they stayed. Drag to turn me.</p>
+  <button class="pbtn act" type="button" id="begin">Begin at the ground</button>
+</div></div>
+
+<script src="../assets/js/reviews.js"></script>
+<script src="../assets/js/dome-data.js"></script>
+<script src="play.js"></script>
+<script>
+window.page = function (Dome) {
+  const P = window.Play, esc = Dome.esc;
+  P.bar({ sound: true });
+  const guests = P.guests();
+  const canvas = document.getElementById("c"), g = canvas.getContext("2d");
+  const card = document.getElementById("card"), lineEl = document.getElementById("line"), hintEl = document.getElementById("hint"), actions = document.getElementById("actions");
+
+  /* ---- The dome: a 5-frequency geodesic sphere, cut just under its equator ---- */
+  const t = (1 + Math.sqrt(5)) / 2;
+  const V0 = [[-1,t,0],[1,t,0],[-1,-t,0],[1,-t,0],[0,-1,t],[0,1,t],[0,-1,-t],[0,1,-t],[t,0,-1],[t,0,1],[-t,0,-1],[-t,0,1]];
+  const F0 = [[0,11,5],[0,5,1],[0,1,7],[0,7,10],[0,10,11],[1,5,9],[5,11,4],[11,10,2],[10,7,6],[7,1,8],[3,9,4],[3,4,2],[3,2,6],[3,6,8],[3,8,9],[4,9,5],[2,4,11],[6,2,10],[8,6,7],[9,8,1]];
+  const nrm = (p) => { const l = Math.hypot(...p); return p.map((c) => c / l); };
+  const a = Math.atan2(-1, t), ca = Math.cos(a), sa = Math.sin(a);
+  const rot = ([x, y, z]) => [x * ca - y * sa, x * sa + y * ca, z]; // a vertex to the top
+  const FREQ = 5, verts = [], vkey = new Map(), faces = [];
+  const vid = (p) => { const k = p.map((c) => c.toFixed(4)).join(","); if (!vkey.has(k)) { vkey.set(k, verts.length); verts.push(p); } return vkey.get(k); };
+  F0.forEach(([i, j, k]) => {
+    const A = nrm(V0[i]), B = nrm(V0[j]), C = nrm(V0[k]);
+    const Pt = (u, v) => { const w = FREQ - u - v; return rot(nrm([0, 1, 2].map((d) => (A[d] * u + B[d] * v + C[d] * w) / FREQ))); };
+    for (let u = 0; u < FREQ; u++) for (let v = 0; v < FREQ - u; v++) {
+      faces.push([vid(Pt(u + 1, v)), vid(Pt(u, v + 1)), vid(Pt(u, v))]);
+      if (u + v < FREQ - 1) faces.push([vid(Pt(u + 1, v)), vid(Pt(u + 1, v + 1)), vid(Pt(u, v + 1))]);
+    }
+  });
+  const cy = (f) => (verts[f[0]][1] + verts[f[1]][1] + verts[f[2]][1]) / 3;
+  const dome = faces.filter((f) => cy(f) >= -0.04).map((f) => ({ v: f, g: null }));
+  const ymin = Math.min(...dome.flatMap((f) => f.v.map((i) => verts[i][1])));
+  dome.forEach((f) => (f.ground = f.v.some((i) => verts[i][1] < ymin + 0.06)));
+  // neighbours share an edge
+  const edge = new Map();
+  dome.forEach((f, fi) => [[0,1],[1,2],[2,0]].forEach(([p, q]) => { const k = [f.v[p], f.v[q]].sort((x, y) => x - y).join("-"); (edge.get(k) || edge.set(k, []).get(k)).push(fi); }));
+  dome.forEach((f, fi) => (f.nb = [...new Set([[0,1],[1,2],[2,0]].flatMap(([p, q]) => edge.get([f.v[p], f.v[q]].sort((x, y) => x - y).join("-"))))].filter((x) => x !== fi)));
+  const OPEN = dome.length - guests.length; // the triangles left for whoever comes next
+
+  let placed = 0, yaw = 0.4, yawV = 0, tilt = 0.32, glow = 0, done = false, flash = new Map(), selected = -1, started = false;
+  const ready = (f) => !f.g && (f.ground || f.nb.some((n) => dome[n].g));
+
+  /* ---- Drawing: a pure function of time and state ---- */
+  let W = 0, H = 0, S = 0, Cx = 0, Cy = 0, dpr = 1, proj = [];
+  function size() { dpr = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight; canvas.width = W * dpr; canvas.height = H * dpr; S = Math.min(W * 0.42, H * 0.36); Cx = W / 2; Cy = H * (W < 700 ? 0.44 : 0.5) + S * 0.18; }
+  function project(p) {
+    const [x, y, z] = p, cY = Math.cos(yaw), sY = Math.sin(yaw);
+    const x1 = x * cY + z * sY, z1 = -x * sY + z * cY;
+    const cT = Math.cos(tilt), sT = Math.sin(tilt);
+    const y2 = y * cT - z1 * sT, z2 = y * sT + z1 * cT;
+    return [Cx + x1 * S, Cy - y2 * S, z2];
+  }
+  function draw(now) {
+    if (!dragging) { yaw += yawV + (done ? 0.0016 : 0.0009); yawV *= 0.92; }
+    glow += ((done ? 1 : 0) - glow) * 0.02;
+    g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
+    // ground and halo
+    const halo = g.createRadialGradient(Cx, Cy - S * .4, S * .1, Cx, Cy - S * .4, S * 1.8);
+    halo.addColorStop(0, `rgba(226,196,138,${0.05 + glow * 0.22})`); halo.addColorStop(1, "rgba(226,196,138,0)");
+    g.fillStyle = halo; g.fillRect(0, 0, W, H);
+    g.fillStyle = "rgba(30,48,34,.55)"; g.beginPath(); g.ellipse(Cx, Cy + S * 0.04, S * 1.25, S * 0.2, 0, 0, Math.PI * 2); g.fill();
+    proj = verts.map(project);
+    const order = dome.map((f, i) => ({ i, z: (proj[f.v[0]][2] + proj[f.v[1]][2] + proj[f.v[2]][2]) / 3 })).sort((p, q) => p.z - q.z);
+    const pulse = 0.5 + 0.5 * Math.sin(now / 520);
+    order.forEach(({ i, z }) => {
+      const f = dome[i], [A, B, C] = f.v.map((k) => proj[k]);
+      const front = (B[0] - A[0]) * (C[1] - A[1]) - (B[1] - A[1]) * (C[0] - A[0]) < 0;
+      f.front = front;
+      g.beginPath(); g.moveTo(A[0], A[1]); g.lineTo(B[0], B[1]); g.lineTo(C[0], C[1]); g.closePath();
+      if (f.g) {
+        const col = P.seasonColor[f.g.season] || "#E2C48A";
+        const fl = flash.get(i); const fk = fl ? Math.max(0, 1 - (now - fl) / 900) : 0;
+        g.globalAlpha = (front ? 0.9 : 0.28) * (0.85 + glow * 0.15);
+        g.fillStyle = fk > 0 ? mix(col, "#ffffff", fk) : col; g.fill();
+        g.globalAlpha = 1;
+        g.strokeStyle = front ? "rgba(7,11,9,.55)" : "rgba(7,11,9,.2)"; g.lineWidth = 1; g.stroke();
+        if (i === selected) { g.strokeStyle = "#fff"; g.lineWidth = 2; g.stroke(); }
+      } else {
+        const r = started && ready(f), openSlot = done;
+        if (openSlot) { g.setLineDash([3, 4]); g.strokeStyle = "rgba(245,240,232,.55)"; g.lineWidth = 1; g.stroke(); g.setLineDash([]); }
+        else {
+          if (r && front) { g.fillStyle = `rgba(226,196,138,${0.08 + pulse * 0.1})`; g.fill(); }
+          g.strokeStyle = front ? (r ? "rgba(226,196,138,.7)" : "rgba(245,240,232,.22)") : "rgba(245,240,232,.07)"; g.lineWidth = 1; g.stroke();
+        }
+      }
+    });
+    requestAnimationFrame(draw);
+  }
+  function mix(h1, h2, k) { const p = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)); const A = p(h1), B = p(h2); return `rgb(${A.map((v, i) => Math.round(v + (B[i] - v) * k)).join(",")})`; }
+
+  function hit(x, y) {
+    let best = -1, bz = -9;
+    dome.forEach((f, i) => {
+      if (!f.front) return; const [A, B, C] = f.v.map((k) => proj[k]);
+      const d = (B[1] - C[1]) * (A[0] - C[0]) + (C[0] - B[0]) * (A[1] - C[1]);
+      const l1 = ((B[1] - C[1]) * (x - C[0]) + (C[0] - B[0]) * (y - C[1])) / d, l2 = ((C[1] - A[1]) * (x - C[0]) + (A[0] - C[0]) * (y - C[1])) / d;
+      if (l1 >= 0 && l2 >= 0 && l1 + l2 <= 1) { const z = (A[2] + B[2] + C[2]) / 3; if (z > bz) { bz = z; best = i; } }
+    });
+    return best;
+  }
+
+  function showGuest(r) {
+    const s = P.sentence(r.text);
+    card.innerHTML = `<div class="guest fade-in" style="--gc:${P.seasonColor[r.season]}">${s ? `<q>${esc(s)}</q>` : ""}<span>${esc(r.name)} · ${P.month(r)} · guest #${r.n}</span></div>`;
+  }
+  function place(i) {
+    const f = dome[i]; if (!f || f.g || placed >= guests.length || !ready(f)) return false;
+    f.g = guests[placed++]; flash.set(i, performance.now()); selected = i;
+    showGuest(f.g);
+    P.tone(220 * Math.pow(2, (placed % 12) / 12), 1.2, 0.07);
+    if (placed === 1) { lineEl.textContent = "That’s the first one. Keep going, from the ground up."; hintEl.textContent = "Tap a glowing triangle · or hold the button to keep building"; }
+    if (placed === 40) lineEl.textContent = "That’s all of 2023, already.";
+    if (placed === 127) lineEl.textContent = "Halfway. Look how the seasons pile up.";
+    if (placed === guests.length) finish();
+    return true;
+  }
+  function finish() {
+    done = true; Dome.markWalked("build");
+    hintEl.textContent = "";
+    setTimeout(() => { card.innerHTML = ""; lineEl.textContent = `That’s everyone so far: ${guests.length} guests, one triangle each. The ${OPEN} left open are for whoever comes next.`;
+      const root = document.body.dataset.root;
+      actions.innerHTML = `<a class="pbtn act" href="${root}stay.html">Be one of the ${OPEN}</a><button class="pbtn" type="button" data-portal>Behind the point</button>`;
+      P.tone(136.1, 6, .14); P.tone(204.15, 6, .08);
+    }, 1400);
+  }
+
+  /* ---- Hands: tap to set, drag to turn, hold to keep building ---- */
+  let dragging = false, lastX = 0, moved = 0;
+  canvas.addEventListener("pointerdown", (e) => { canvas.setPointerCapture(e.pointerId); dragging = true; lastX = e.clientX; moved = 0; });
+  canvas.addEventListener("pointermove", (e) => { if (!dragging) return; const dx = e.clientX - lastX; lastX = e.clientX; moved += Math.abs(dx); yaw += dx * 0.008; yawV = dx * 0.002; });
+  canvas.addEventListener("pointerup", (e) => {
+    dragging = false; if (moved > 8 || !started) return;
+    const i = hit(e.clientX, e.clientY); if (i < 0) return;
+    if (dome[i].g) { selected = i; showGuest(dome[i].g); return; }
+    if (!place(i)) { lineEl.textContent = done ? "That one’s waiting for someone who hasn’t come yet." : "Not that one yet. I go up from the ground, and each one rests on another."; }
+  });
+  canvas.addEventListener("pointercancel", () => (dragging = false));
+
+  function nextReady() { // the lowest ready triangle facing you, so building climbs like a real one
+    const c = dome.map((f, i) => ({ f, i })).filter(({ f }) => ready(f));
+    if (!c.length) return -1;
+    c.sort((p, q) => (q.f.front - p.f.front) || (cy(p.f.v) - cy(q.f.v)));
+    return c[0].i;
+  }
+  // The hold engine: rises while held, drains when let go; building runs while it is full
+  let holdP = 0, holdTarget = 0, holdLast = 0, holdRun = false, buildAcc = 0;
+  function holdTick(tm) {
+    const dt = Math.min(64, tm - (holdLast || tm)); holdLast = tm;
+    holdP += holdTarget ? dt / 700 : -dt / 300; holdP = Math.max(0, Math.min(1, holdP));
+    const bar = document.querySelector(".holdbtn i"); if (bar) bar.style.transform = `scaleX(${holdP})`;
+    if (holdP >= 1 && !done) { buildAcc += dt; while (buildAcc > 110) { buildAcc -= 110; const i = nextReady(); if (i < 0 || !place(i)) break; yaw += 0.02; } }
+    if (holdP > 0 || holdTarget > 0) requestAnimationFrame(holdTick); else { holdRun = false; holdLast = 0; }
+  }
+  const press = () => { if (done) return; holdTarget = 1; if (!holdRun) { holdRun = true; requestAnimationFrame(holdTick); } };
+  const release = () => { holdTarget = 0; buildAcc = 0; };
+  function holdButton() {
+    actions.innerHTML = `<button class="pbtn holdbtn" type="button" id="hb"><i></i><span>Hold to keep building</span></button>`;
+    const hb = document.getElementById("hb");
+    hb.addEventListener("pointerdown", (e) => { e.preventDefault(); hb.setPointerCapture(e.pointerId); press(); });
+    ["pointerup", "pointercancel", "pointerleave"].forEach((ev) => hb.addEventListener(ev, release));
+    hb.addEventListener("contextmenu", (e) => e.preventDefault());
+    hb.addEventListener("keydown", (e) => { if ((e.key === " " || e.key === "Enter") && !e.repeat) { e.preventDefault(); press(); } });
+    hb.addEventListener("keyup", (e) => { if (e.key === " " || e.key === "Enter") release(); });
+  }
+  addEventListener("keydown", (e) => { if (e.key === "ArrowLeft") yawV -= 0.01; if (e.key === "ArrowRight") yawV += 0.01; });
+
+  window.__build = { dome, get placed() { return placed; } };
+  size(); addEventListener("resize", size); requestAnimationFrame(draw);
+  document.getElementById("begin").addEventListener("click", () => {
+    const it = document.getElementById("intro"); it.style.opacity = 0; setTimeout(() => it.remove(), 1000);
+    started = true; lineEl.textContent = "The glowing ones touch the ground. Start there.";
+    hintEl.textContent = "Tap a glowing triangle · drag to turn me"; holdButton();
+  });
+};
+</script>
+<script src="../assets/js/dome.js"></script>
+</body>
+</html>
