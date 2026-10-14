@@ -1,47 +1,53 @@
 <!doctype html>
-<html lang="en" data-season="fall" class="tm-snap">
+<html lang="en" data-season="fall" class="tm-lock">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Timeline in motion · Catskill Mountain Domes</title>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="assets/css/dome.css">
 <style>
-  /* One moment per screen, flowing across time: the point travels the thread of dates, comes to each moment,
-     draws it in beats (the dome's lattice, the place, the people, a pause, the point becoming the heart of it, the bloom),
-     and folds the picture back into itself when you move on. You can always move on. */
-  html.tm-snap { scroll-snap-type: y mandatory; }
+  /* The timeline in motion: a preview of three moments, beside the timeline as it is (timeline.html). If Eric and Mona
+     choose it, the other fifteen are drawn to the same contract (timeline-art/kit.js) and this becomes the timeline.
+     Flowing across time. One moment per screen, held in place: moving on takes a deliberate push.
+     The point travels the thread of dates, comes to each moment and draws it in beats: the dome's lattice, the place,
+     the people, a pause, the point becoming the heart of it, the bloom. Moving on folds it back into the point.
+     Engine here; each moment's drawing lives in assets/js/timeline-art/. Plan: docs/remembering-plan.md, timeline round. */
+  html.tm-lock, html.tm-lock body { overflow: hidden; overscroll-behavior: none; }
   body { background: #060A06; }
   .tm { position: relative; }
-  .mo { position: relative; height: 100svh; scroll-snap-align: start; scroll-snap-stop: always; overflow: hidden; color: #F5F0E8; display: grid; }
-  .foot { scroll-snap-align: end; }
+  .mo { position: relative; height: 100svh; overflow: hidden; color: #F5F0E8; display: grid; }
   .mo .ground { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 1.6s ease; }
   .mo.here .ground { opacity: 1; }
   .mo .ground svg { width: 100%; height: 100%; }
   .mo .tint { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 66% 50%, var(--tint) 0%, transparent 60%); opacity: 0; transition: opacity 2.4s ease; }
   .mo.here .tint { opacity: .55; }
-  .mo .in { position: relative; display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.3fr); align-items: center; gap: clamp(16px, 4vw, 56px); padding: 80px clamp(20px, 6vw, 96px) 40px clamp(64px, 9vw, 140px); max-width: 1400px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+  .mo .in { position: relative; display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.3fr); align-items: center; gap: clamp(16px, 4vw, 56px); padding: 80px clamp(20px, 6vw, 96px) 40px clamp(64px, 9vw, 140px); max-width: 1400px; margin: 0 auto; width: 100%; box-sizing: border-box; transition: transform .35s cubic-bezier(.2,.8,.2,1); }
   .mo .words { display: grid; gap: 14px; align-content: center; }
   .mo .when { font: 500 .78rem/1 "DM Sans"; letter-spacing: .2em; text-transform: uppercase; color: #E2C48A; font-variant-numeric: tabular-nums; min-height: 1em; }
+  .mo .chip { justify-self: start; font: 500 .7rem/1 "DM Sans"; letter-spacing: .12em; text-transform: uppercase; color: #1A2218; background: #E2C48A; padding: 6px 10px; border-radius: 99px; }
   .mo h2 { font: 500 clamp(2rem, 4.6vw, 3.6rem)/1.08 Lora, serif; margin: 0; color: #F5F0E8; }
   .mo blockquote { margin: 6px 0 0; font: italic 400 clamp(1.08rem, 1.8vw, 1.35rem)/1.5 Lora, serif; color: rgba(245,240,232,.92); }
   .mo blockquote .ph { opacity: 0; filter: blur(4px); transition: opacity 1.2s ease, filter 1.2s ease; }
   .mo blockquote .ph.on { opacity: 1; filter: none; }
   .mo .by { font: 500 .82rem/1 "DM Sans"; color: rgba(245,240,232,.62); opacity: 0; transition: opacity 1.2s ease; }
   .mo .by.on { opacity: 1; }
-  .mo .words > .when, .mo .words > h2 { opacity: 0; transform: translateY(14px); transition: opacity 1.1s ease, transform 1.1s cubic-bezier(.2,.8,.2,1); }
-  .mo.here .words > .when, .mo.here .words > h2 { opacity: 1; transform: none; }
+  .mo .slot { margin: .3rem 0 0; background: rgba(226,196,138,.07); border-color: rgba(226,196,138,.6); color: #F5F0E8; opacity: 0; transition: opacity 1.4s ease .6s; }
+  .mo.here .slot { opacity: 1; }
+  .mo .slot .slot-tag { color: #E2C48A; } .mo .slot .slot-tag::before { background: #E2C48A; }
+  .mo .slot .draft { color: rgba(245,240,232,.88); margin: 0; } .mo .slot .prompts { display: none; }
+  .mo .words > .when, .mo .words > .chip, .mo .words > h2 { opacity: 0; transform: translateY(14px); transition: opacity 1.1s ease, transform 1.1s cubic-bezier(.2,.8,.2,1); }
+  .mo.here .words > .when, .mo.here .words > .chip, .mo.here .words > h2 { opacity: 1; transform: none; }
   .mo.here .words > h2 { transition-delay: .25s; }
-  .intro .words > *, .end .words > * { opacity: 0; transform: translateY(14px); transition: opacity 1.1s ease, transform 1.1s cubic-bezier(.2,.8,.2,1); }
-  .intro.here .words > *, .end.here .words > * { opacity: 1; transform: none; }
-  .mo .art { background: none; box-shadow: none; border-radius: 0; position: relative; width: 100%; aspect-ratio: 1; max-height: 78svh; justify-self: center; transform-origin: var(--ox, 50%) var(--oy, 50%); transition: transform .9s cubic-bezier(.6,0,.3,1), opacity .9s ease; }
-  /* leaving: the picture folds back into the point */
+  .intro .words > *, .close .words > * { opacity: 0; transform: translateY(14px); transition: opacity 1.1s ease, transform 1.1s cubic-bezier(.2,.8,.2,1); }
+  .intro.here .words > *, .close.here .words > * { opacity: 1; transform: none; }
+  .mo .art { background: none; box-shadow: none; border-radius: 0; position: relative; width: 100%; aspect-ratio: 1; max-height: 78svh; justify-self: center; transform-origin: var(--ox, 50%) var(--oy, 50%); transition: transform .8s cubic-bezier(.6,0,.3,1), opacity .8s ease; }
   .mo .art.fold { transform: scale(.03); opacity: 0; }
   .mo .art.instant { transition: none; }
   .mo .art svg.draw { width: 100%; height: 100%; overflow: visible; }
   .draw .ln { fill: none; stroke: #E2C48A; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; }
   .draw .ln.thin { stroke-width: 1.3; stroke: rgba(226,196,138,.75); }
   .draw .ln.cream { stroke: #F5F0E8; stroke-width: 3.2; }
-  .draw .strokes, .draw .hero .ln, .draw #ring { filter: drop-shadow(0 0 3px rgba(226,196,138,.55)); }
+  .draw .strokes, .draw .hero .ln, .draw [class^="h-"] { filter: drop-shadow(0 0 3px rgba(226,196,138,.55)); }
   .draw .lat line { stroke: rgba(226,196,138,.9); stroke-width: 1; stroke-dasharray: 1; stroke-dashoffset: 1; }
   .draw .lat { transition: opacity 1.6s ease; }
   .draw .lat.dim { opacity: .2; }
@@ -50,7 +56,6 @@
   .draw .star { fill: #F5F0E8; opacity: 0; transition: opacity 2s; }
   .mo .art.bloom .draw .star { opacity: .5; animation: twinkle 4.5s ease-in-out infinite; }
   @keyframes twinkle { 0%, 100% { opacity: .12; } 50% { opacity: .85; } }
-  /* living after it is drawn */
   .alive .flame { animation: flame 1.3s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
   .alive .flame.b { animation-duration: 1.7s; animation-delay: -.4s; }
   @keyframes flame { 0%, 100% { transform: scale(1, 1); } 30% { transform: scale(.92, 1.08) skewX(2deg); } 60% { transform: scale(1.05, .94) skewX(-2deg); } }
@@ -62,69 +67,91 @@
   @keyframes steam { to { stroke-dashoffset: -1; } }
   .alive .mote { animation: mote 6s linear infinite; }
   @keyframes mote { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: .9; } 100% { transform: translateY(-160px); opacity: 0; } }
+  .alive .drift { animation: drift2 7s ease-in-out infinite alternate; }
+  @keyframes drift2 { to { transform: translateX(18px); } }
+  .alive .fall { animation: fall 5s linear infinite; }
+  @keyframes fall { 0% { transform: translateY(-60px); opacity: 0; } 12% { opacity: .9; } 100% { transform: translateY(220px); opacity: 0; } }
   .glint { opacity: 0; transform-box: fill-box; transform-origin: center; }
   .alive .glint { animation: glint 3.8s ease-in-out infinite 1s; }
   @keyframes glint { 0%, 78%, 100% { opacity: 0; transform: scale(.2) rotate(0); } 86% { opacity: 1; transform: scale(1.2) rotate(45deg); } }
-  /* the travelling point, and the trail it leaves across the screen */
+  /* a real drone clip, opening inside a circle at the heart of a moment */
+  .film { position: absolute; border-radius: 50%; overflow: hidden; transform: scale(0); box-shadow: 0 0 0 1.5px rgba(226,196,138,.8), 0 0 40px rgba(226,196,138,.35); pointer-events: none; }
+  .film video, .film img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  /* the travelling point, and the trail it leaves */
   .traveller { position: fixed; left: 0; top: 0; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: #fff; box-shadow: 0 0 18px 6px rgba(255,255,255,.55), 0 0 44px 14px rgba(226,196,138,.35); pointer-events: none; z-index: 30; opacity: 0; transition: opacity .5s; will-change: transform; }
   .traveller.on { opacity: 1; }
   .trail { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 29; overflow: visible; }
   .trail path { fill: none; stroke: rgba(226,196,138,.8); stroke-width: 1.4; stroke-linecap: round; filter: drop-shadow(0 0 4px rgba(226,196,138,.7)); }
   .spark { position: absolute; width: 4px; height: 4px; margin: -2px; border-radius: 50%; background: #FFF4D6; box-shadow: 0 0 10px 3px rgba(255,236,190,.7); pointer-events: none; }
-  /* the thread of time: one dot for every moment, spaced by when it happened */
+  /* the thread of time */
   .thread { position: fixed; left: clamp(22px, 3.4vw, 46px); top: 18svh; height: 64svh; width: 1px; z-index: 20; }
   .thread::before { content: ""; position: absolute; left: 0; top: -14px; bottom: -14px; width: 1px; background: linear-gradient(transparent, rgba(226,196,138,.55) 8%, rgba(226,196,138,.55) 92%, transparent); }
   .thread .lit { position: absolute; left: 0; top: 0; width: 1px; background: #F5F0E8; box-shadow: 0 0 6px rgba(255,255,255,.6); height: 0; transition: height 1s cubic-bezier(.6,0,.3,1); }
-  .thread a, .thread i { position: absolute; left: 0; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 50%; background: #060A06; border: 1px solid rgba(226,196,138,.7); display: block; }
-  .thread i { width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px; border-color: rgba(226,196,138,.35); }
-  .thread a.on { background: #fff; border-color: #fff; box-shadow: 0 0 12px 3px rgba(255,255,255,.55); }
-  .thread .yr { position: absolute; left: 12px; transform: translateY(-50%); font: 500 .62rem/1 "DM Sans"; letter-spacing: .14em; color: rgba(226,196,138,.55); }
-  .intro .in, .end .in { grid-template-columns: 1fr; text-align: center; justify-items: center; padding-left: clamp(20px, 6vw, 96px); }
+  .thread a { position: absolute; left: 0; width: 22px; height: 22px; margin: -11px 0 0 -11px; display: grid; place-items: center; }
+  .thread a::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #060A06; border: 1px solid rgba(226,196,138,.7); transition: transform .4s, background .4s; }
+  .thread a.past::before { background: rgba(226,196,138,.75); }
+  .thread a.on::before { background: #fff; border-color: #fff; box-shadow: 0 0 12px 3px rgba(255,255,255,.55); transform: scale(1.4); }
+  .thread a:focus-visible { outline: 1px solid #E2C48A; border-radius: 50%; }
+  .thread .yr { position: absolute; left: 14px; transform: translateY(-50%); font: 500 .62rem/1 "DM Sans"; letter-spacing: .14em; color: rgba(226,196,138,.55); }
+  /* the push: a thin arc fills as you press on to the next moment */
+  .push { position: fixed; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); width: 44px; height: 44px; margin-left: -22px; z-index: 25; pointer-events: none; opacity: 0; transition: opacity .3s; }
+  .push.show { opacity: 1; }
+  .push circle { fill: none; stroke-width: 1.6; }
+  .push .bg { stroke: rgba(245,240,232,.15); } .push .fg { stroke: #E2C48A; stroke-dasharray: 1; stroke-dashoffset: 1; transform: rotate(-90deg); transform-origin: center; }
+  .push path { fill: none; stroke: #F5F0E8; stroke-width: 1.6; stroke-linecap: round; transition: transform .2s; transform-origin: center; }
+  .push.up path { transform: rotate(180deg); }
+  .intro .in, .close .in { grid-template-columns: 1fr; text-align: center; justify-items: center; padding-left: clamp(20px, 6vw, 96px); }
   .intro .pt { width: 12px; height: 12px; border-radius: 50%; background: #fff; box-shadow: 0 0 30px 8px rgba(255,255,255,.4); margin: 0 auto 26px; animation: breathe 5s ease-in-out infinite; }
   .intro h1 { font: italic 400 clamp(2.6rem, 8vw, 5rem)/1.05 Lora, serif; margin: 0 0 14px; color: #F5F0E8; }
-  .intro p, .end p { max-width: 520px; color: rgba(245,240,232,.78); margin: 0 auto; }
-  .swipe { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%); font: 500 .7rem/1 "DM Sans"; letter-spacing: .2em; text-transform: uppercase; color: rgba(245,240,232,.5); animation: drift 3.4s ease-in-out infinite; }
-  @keyframes drift { 50% { transform: translate(-50%, 6px); opacity: .4; } }
+  .intro p, .close p { max-width: 540px; color: rgba(245,240,232,.78); margin: 0 auto; }
+  .hint { position: absolute; left: 50%; bottom: 74px; transform: translateX(-50%); font: 500 .7rem/1 "DM Sans"; letter-spacing: .2em; text-transform: uppercase; color: rgba(245,240,232,.5); animation: nudge 3.4s ease-in-out infinite; white-space: nowrap; }
+  @keyframes nudge { 50% { transform: translate(-50%, 6px); opacity: .4; } }
   @media (max-width: 760px), (orientation: portrait) and (max-width: 1100px) {
-    .mo .in { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1.15fr) auto; align-items: end; gap: 10px; padding: 64px 20px 30px 46px; height: 100%; }
-    .mo .art { order: -1; width: min(100%, 50svh); height: auto; max-height: none; align-self: end; }
+    .mo .in { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1.15fr) auto; align-items: end; gap: 10px; padding: 64px 20px 76px 46px; height: 100%; }
+    .mo .art { order: -1; width: min(100%, 48svh); height: auto; max-height: none; align-self: end; }
     .mo .words { min-width: 0; } .mo blockquote { font-size: 1.02rem; }
     .mo h2 { font-size: 1.9rem; }
+    .mo .slot { padding: 12px 14px; } .mo .slot .draft { font-size: .95rem; }
     .thread { left: 18px; } .thread .yr { display: none; }
   }
   @media (prefers-reduced-motion: reduce) {
-    html.tm-snap { scroll-snap-type: none; } .mo .art { transition: none; } .traveller, .trail { display: none; }
-    .alive .flame, .alive .breathe, .alive .flick, .alive .steam, .alive .mote, .alive .glint, .mo .art.bloom .draw .star { animation: none; }
-    .swipe, .intro .pt { animation: none; }
+    .mo .art, .mo .in { transition: none; } .traveller, .trail { display: none; }
+    .alive .flame, .alive .breathe, .alive .flick, .alive .steam, .alive .mote, .alive .glint, .alive .drift, .alive .fall, .mo .art.bloom .draw .star { animation: none; }
+    .hint, .intro .pt { animation: none; }
   }
 </style>
+<style id="artCss"></style>
 </head>
 <body data-root="./" data-page="timeline.html" data-noclose="1" data-element="light" data-bed="night">
 
 <nav class="thread" aria-label="The timeline, by date" id="thread"><span class="lit" id="lit"></span></nav>
 <div class="traveller" id="trav" aria-hidden="true"></div>
 <svg class="trail" id="trail" aria-hidden="true"></svg>
+<svg class="push" id="push" viewBox="0 0 44 44" aria-hidden="true"><circle class="bg" cx="22" cy="22" r="20"/><circle class="fg" cx="22" cy="22" r="20" pathLength="1"/><path d="M16 19 L22 25 L28 19"/></svg>
 <main class="tm" id="tm">
   <section class="mo intro" id="m-intro">
     <div class="ground" aria-hidden="true"></div>
     <div class="in"><div class="words">
       <div class="pt" aria-hidden="true"></div>
-      <span class="when">Timeline · a first look at three moments</span>
-      <h1>2023 to now.</h1>
-      <p>Each moment locks in place as you scroll. The point travels the thread of dates on the left, and draws each moment the way a guest remembered it.</p>
+      <span class="when">The timeline, in motion</span>
+      <h1>Three moments.</h1>
+      <p>A first look at the timeline told this way: three moments, in the words of the guests who were there. Each one holds still until you push on, and the point draws it as it was remembered.</p>
+      <p style="margin-top:1rem"><a href="timeline.html" style="color:#E2C48A">The whole timeline, as it is now</a></p>
     </div></div>
-    <span class="swipe" aria-hidden="true">Scroll</span>
+    <span class="hint" aria-hidden="true">Scroll or swipe, with a little push</span>
   </section>
 </main>
 <script src="assets/js/reviews.js"></script>
 <script src="assets/js/dome-data.js"></script>
+<script src="assets/js/timeline-art/kit.js"></script>
+<script src="assets/js/timeline-art/three.js"></script>
 <script>
 window.page = function (Dome) {
-  const { D, esc } = Dome;
+  const { D, esc, slotHTML } = Dome;
+  const ART = (window.TL && window.TL.art) || {};
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const SEASON_TINT = { winter: "rgba(160,190,225,.24)", spring: "rgba(150,196,138,.22)", summer: "rgba(226,196,138,.22)", fall: "rgba(217,134,78,.26)" };
   const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-  // When a moment happened, as a number of months, so the thread can space them and the date can roll between them
   function monthsOf(when) {
     if (/^Next/.test(when)) return 2026 * 12 + 14;
     const y = +((when.match(/(20\d\d)/) || [])[1] || 2023);
@@ -135,145 +162,82 @@ window.page = function (Dome) {
     return y * 12 + 6;
   }
   const seasonOf = (when) => { const m = monthsOf(when) % 12; return m === 11 || m <= 1 ? "winter" : m <= 4 ? "spring" : m <= 7 ? "summer" : "fall"; };
+  // ideas guests asked for, and where they stand now (from the ideas list)
+  const IDEA_OF = { "A guest asks for a safer ladder": "A safer loft ladder", "A guest asks for a light at the parking area": "A light that stays on at the parking area" };
+  const STATUS = { Heard: "Heard by Eric and Mona", Planned: "Planned", "Built?": "Built?", Built: "Built" };
 
-  /* ---------- The drawings ---------- */
-  // Gesture, not anatomy: a head, the line of a back, the reach of an arm.
-  const STARS = (n, seed, box) => { let r = seed; const rnd = () => (r = (r * 9301 + 49297) % 233280) / 233280; return Array.from({ length: n }, () => `<circle class="star" cx="${(box[0] + rnd() * box[2]).toFixed(0)}" cy="${(box[1] + rnd() * box[3]).toFixed(0)}" r="${(0.6 + rnd() * 1.6).toFixed(1)}" style="animation-delay:${(rnd() * 4).toFixed(2)}s"/>`).join(""); };
-  const HEAD = (x, y, r) => `M${x} ${y - r} a${r} ${r} 0 1 0 0.1 0`;
-  // the dome's own lattice, rising from the ground of each drawing
   function lattice(x0, w, g, rows = 2, s = 64) {
     const h = s * 0.866, segs = new Map();
     const add = (a, b) => { const k = [a, b].map((p) => p.map((v) => v.toFixed(1)).join(",")).sort().join("|"); if (!segs.has(k)) segs.set(k, [a, b]); };
-    for (let r = 0; r < rows; r++) {
-      const y = g - r * h, off = r % 2 ? s / 2 : 0;
-      for (let x = x0 - s + off; x < x0 + w + s; x += s) { add([x, y], [x + s / 2, y - h]); add([x + s / 2, y - h], [x + s, y]); add([x, y], [x + s, y]); }
-    }
+    for (let r = 0; r < rows; r++) { const y = g - r * h, off = r % 2 ? s / 2 : 0;
+      for (let x = x0 - s + off; x < x0 + w + s; x += s) { add([x, y], [x + s / 2, y - h]); add([x + s / 2, y - h], [x + s, y]); add([x, y], [x + s, y]); } }
     return [...segs.values()];
   }
-  const ART = {
-    "A proposal": {
-      vb: [110, 120, 440, 400], ground: 470, hero: [262, 296], bed: "night",
-      under: STARS(28, 7, [110, 120, 440, 190]),
-      strokes: [
-        { beat: "place", d: "M110 470 H550", t: .9, c: "thin" },
-        { beat: "place", d: "M352 470 C352 300 548 300 548 470", t: 1.3 },
-        { beat: "place", d: "M378 418 L450 470 L522 418 M366 446 L450 380 L534 446 M402 352 L450 380 L498 352 M450 323 V380", t: 1.1, c: "thin" },
-        // she stands, a hand rising to her mouth
-        { beat: "people", d: HEAD(212, 236, 17), t: .45, c: "cream" },
-        { beat: "people", d: "M206 258 C192 322 190 420 184 470 M218 258 C232 322 236 420 242 470 M184 470 Q213 477 242 470", t: 1.2, c: "cream" },
-        { beat: "people", d: "M217 270 C236 286 240 262 224 250", t: .45, c: "cream" },
-        // he kneels, reaching up with the ring
-        { beat: "people", d: HEAD(326, 310, 15), t: .45, c: "cream" },
-        { beat: "people", d: "M330 328 C348 352 350 382 342 406 C326 402 314 403 306 406 L302 470 M342 406 L352 470 L378 470", t: 1.3, c: "cream" },
-        { beat: "people", d: "M322 338 C302 330 286 312 272 302", t: .6, c: "cream" }
-      ],
-      // the point becomes the ring
-      heroSvg: `<circle class="fill breathe" cx="262" cy="296" r="80" fill="url(#gl)"/>
-        <circle id="ring" cx="262" cy="296" r="1" fill="none" stroke="#F5DCA8" stroke-width="3.2"/>
-        <path class="ln" pathLength="1" d="M253 284 L262 271 L271 284 L262 291 Z"/>
-        <path class="ln thin" pathLength="1" d="M262 252 V234 M290 266 L303 253 M234 266 L221 253 M298 296 H314 M226 296 H210"/>
-        <path class="glint" d="M262 262 l3 9 l9 3 l-9 3 l-3 9 l-3 -9 l-9 -3 l9 -3 Z" fill="#FFF8E6"/>`,
-      swell(svg, f) { svg.querySelector("#ring").setAttribute("r", (1 + 10 * f).toFixed(2)); },
-      fills: `<path class="fill" d="M352 470 C352 300 548 300 548 470 Z" fill="rgba(245,240,232,.06)"/>`,
-      burst: { x: 262, y: 290, n: 16 }, tone: [523.25, 659.25, 783.99]
-    },
-    "Scrabble by lantern": {
-      vb: [60, 20, 480, 540], ground: 452, hero: [300, 190], bed: "room",
-      strokes: [
-        { beat: "place", d: "M70 452 H530 M112 452 L98 548 M488 452 L502 548", t: 1.0, c: "thin" },
-        { beat: "place", d: "M168 440 L226 384 H374 L432 440 Z M188 421 H412 M208 402 H392 M254 384 L224 440 M300 384 V440 M346 384 L376 440", t: 1.3, c: "thin" },
-        { beat: "place", d: "M300 24 V84 M300 84 a12 12 0 1 0 0.1 0 M268 110 H332 L342 128 H258 Z", t: .9 },
-        { beat: "place", d: "M266 128 V232 Q300 250 334 232 V128 M283 128 V236 M317 128 V236 M258 232 H342 L332 250 H268 Z", t: 1.2 },
-        // three of them, bent over the board
-        { beat: "people", d: HEAD(176, 346, 17) + " M162 362 C140 392 140 424 148 452 M172 368 C198 392 222 404 244 414", t: 1.3, c: "cream" },
-        { beat: "people", d: HEAD(424, 346, 17) + " M438 362 C460 392 460 424 452 452 M428 368 C402 392 378 404 356 414", t: 1.3, c: "cream" },
-        { beat: "people", d: HEAD(300, 318, 14) + " M276 360 C284 340 316 340 324 360", t: .9, c: "cream" }
-      ],
-      // the point becomes the flame, and its light falls on the board
-      heroSvg: `<path class="fill" d="M262 252 L150 452 H450 L338 252 Z" fill="url(#beam)"/>
-        <circle class="fill flick" cx="300" cy="186" r="210" fill="url(#gl)"/>
-        <g id="flame" transform="translate(300 214) scale(0)"><path class="flame" d="M0 0 C-14 -16 -6 -34 0 -54 C6 -34 14 -16 0 0 Z" fill="#FFE2A8"/><path class="flame b" d="M0 0 C-6 -8 -3 -18 0 -30 C3 -18 6 -8 0 0 Z" fill="#FFF8E6"/></g>
-        ${[0, 1, 2, 3, 4].map((i) => `<circle class="fill mote" cx="${240 + i * 30}" cy="${430 - i * 9}" r="1.6" fill="#FFE9C2" style="animation-delay:${i * 1.2}s"/>`).join("")}`,
-      swell(svg, f) { svg.querySelector("#flame").setAttribute("transform", `translate(300 214) scale(${f.toFixed(3)})`); },
-      fills: `<g class="fill" font-family="Lora, serif" font-size="15" fill="#1A2218" text-anchor="middle">${[..."LANTERN"].map((c, i) => `<g transform="translate(${225 + i * 25} 408)"><rect x="-10" y="-11" width="20" height="20" rx="3" fill="#F2E3C4"/><text y="5">${c}</text></g>`).join("")}</g>`,
-      burst: { x: 300, y: 190, n: 12, warm: true }, tone: [392, 493.88, 587.33]
-    },
-    "The harvest supermoon": {
-      vb: [20, 60, 560, 500], ground: 540, hero: [300, 250], heroFrom: [300, 352], bed: "fire",
-      under: STARS(44, 11, [20, 60, 560, 230]),
-      sky: "M-600 392 L20 392 L110 318 L184 352 L270 286 L352 336 L438 292 L580 386 L1200 386 V-600 H-600 Z",
-      strokes: [
-        { beat: "place", d: "M20 392 L110 318 L184 352 L270 286 L352 336 L438 292 L580 386", t: 1.5 },
-        { beat: "place", d: "M226 520 Q300 552 374 520 M238 516 L248 494 M292 526 L294 500 M346 518 L336 496", t: 1.0, c: "thin" },
-        // two of them by the fire, tea in hand
-        { beat: "people", d: HEAD(160, 418, 16) + " M152 436 C138 464 140 496 148 526 C170 520 186 512 196 500 M158 448 C172 466 184 474 190 480", t: 1.4, c: "cream" },
-        { beat: "people", d: HEAD(440, 418, 16) + " M448 436 C462 464 460 496 452 526 C430 520 414 512 404 500 M442 448 C428 466 416 474 410 480", t: 1.4, c: "cream" },
-        { beat: "people", d: "M184 478 h14 v14 h-14 Z M402 478 h14 v14 h-14 Z", t: .5, c: "thin" }
-      ],
-      // the point rises from behind the ridge and becomes the moon
-      heroSvg: `<g clip-path="url(#sky)"><circle class="fill breathe" cx="300" cy="250" r="270" fill="url(#gl)"/>
-        <circle id="moon" cx="300" cy="352" r="3" fill="url(#moon)"/>
-        <path class="ln" pathLength="1" d="M300 250 m-138 0 a138 138 0 1 0 276 0 a138 138 0 1 0 -276 0"/>
-        <path class="ln thin" pathLength="1" d="M${248} 206 a18 18 0 1 0 0.1 0 M342 272 a26 26 0 1 0 0.1 0 M300 168 a9 9 0 1 0 0.1 0 M232 290 a11 11 0 1 0 0.1 0"/></g>
-        <g transform="translate(300 510)"><path class="fill flame" d="M0 0 C-22 -24 -6 -46 0 -76 C6 -46 22 -24 0 0 Z" fill="#FFB25E"/><path class="fill flame b" d="M0 0 C-10 -12 -4 -26 0 -42 C4 -26 10 -12 0 0 Z" fill="#FFF0C8"/></g>
-        <path class="fill steam" pathLength="1" d="M191 470 c-7 -9 7 -13 0 -24 c-7 -9 7 -13 0 -24 M409 470 c-7 -9 7 -13 0 -24 c-7 -9 7 -13 0 -24" fill="none" stroke="rgba(245,240,232,.6)" stroke-width="1.4"/>`,
-      swell(svg, f) { const m = svg.querySelector("#moon"); m.setAttribute("r", (3 + 135 * f).toFixed(1)); m.setAttribute("cy", (352 - 102 * Math.min(1, f * 1.15)).toFixed(1)); },
-      fills: "",
-      burst: { x: 300, y: 250, n: 10, warm: true }, tone: [329.63, 415.3, 493.88]
-    }
-  };
-  const PICK = ["A proposal", "Scrabble by lantern", "The harvest supermoon"];
-  const items = PICK.map((t) => D.timeline.find((x) => x.title === t)).filter(Boolean);
-
-  /* ---------- Build the screens ---------- */
-  const tm = document.getElementById("tm");
-  const ground = () => `<svg viewBox="0 0 600 600" preserveAspectRatio="xMidYMid slice"><defs><pattern id="tri" width="60" height="104" patternUnits="userSpaceOnUse"><path d="M0 0 L30 52 L60 0 M0 104 L30 52 L60 104 M0 52 H60" fill="none" stroke="rgba(226,196,138,.06)" stroke-width="1"/></pattern></defs><rect width="600" height="600" fill="url(#tri)"/><g fill="none" stroke="rgba(226,196,138,.05)">${[80, 160, 240, 320, 400].map((r) => `<circle cx="400" cy="300" r="${r}"/>`).join("")}</g></svg>`;
-  document.querySelector("#m-intro .ground").innerHTML = ground();
-  // the guest's words, staged in phrases (still exactly as written)
   const phrases = (t) => { const out = []; let cur = []; t.split(/\s+/).forEach((w) => { cur.push(w); if (/[,.;:!?]$/.test(w) || cur.length >= 5) { out.push(cur.join(" ")); cur = []; } }); if (cur.length) out.push(cur.join(" ")); return out; };
-  items.forEach((it, i) => {
-    const a = ART[it.title], [vx, vy, vw, vh] = a.vb;
-    const sec = document.createElement("section"); sec.className = "mo"; sec.id = "m" + i; sec.dataset.key = it.title; sec.dataset.when = it.when;
+  const ground = () => `<svg viewBox="0 0 600 600" preserveAspectRatio="xMidYMid slice"><defs><pattern id="tri" width="60" height="104" patternUnits="userSpaceOnUse"><path d="M0 0 L30 52 L60 0 M0 104 L30 52 L60 104 M0 52 H60" fill="none" stroke="rgba(226,196,138,.06)" stroke-width="1"/></pattern></defs><rect width="600" height="600" fill="url(#tri)"/><g fill="none" stroke="rgba(226,196,138,.05)">${[80, 160, 240, 320, 400].map((r) => `<circle cx="400" cy="300" r="${r}"/>`).join("")}</g></svg>`;
+
+  /* ---------- Build every moment ---------- */
+  const tm = document.getElementById("tm");
+  document.querySelector("#m-intro .ground").innerHTML = ground();
+  let css = "";
+  const ITEMS = D.timeline.map((it, i) => ({ it, i })).filter((x) => ART[x.it.title]);
+  ITEMS.forEach(({ it, i }) => {
+    const a = ART[it.title];
+    const sec = document.createElement("section"); sec.className = `mo tl-${i}`; sec.id = "m" + i; sec.dataset.when = it.when; sec.dataset.key = it.title;
     sec.style.setProperty("--tint", SEASON_TINT[seasonOf(it.when)]);
     const [n, name, text] = it.review || [];
-    const lat = lattice(vx, vw, a.ground, 2, 64);
+    const idea = IDEA_OF[it.title] && D.ideas.find((x) => x.idea === IDEA_OF[it.title]);
+    const words = `<span class="when" aria-label="${esc(it.when)}">${esc(it.when)}</span>
+      ${it.kind === "idea" ? `<span class="chip">An idea${idea ? " · " + esc(STATUS[idea.status] || idea.status) : ""}</span>` : ""}
+      <h2>${esc(it.title)}</h2>
+      ${text ? `<blockquote aria-label="${esc(text)}">${phrases(text).map((p, j, arr) => `<span class="ph">${j === 0 ? "“" : ""}${esc(p)}${j === arr.length - 1 ? "”" : " "}</span>`).join("")}</blockquote><span class="by">${esc(name)} · guest #${n}</span>` : ""}
+      ${it.slot ? slotHTML(it.slot) : ""}`;
+    let art = "";
+    if (a) {
+      const S = (x) => String(x || "").replace(/\{i\}/g, i).replace(/url\(#(gl|cool|moon|beam|sky)\)/g, (m0, k) => `url(#${k}${i})`);
+      const [vx, vy, vw, vh] = a.vb;
+      const lat = lattice(vx, vw, a.ground, 2, 64);
+      const film = a.film ? `<div class="film" style="left:${((a.hero[0] - a.film.r - vx) / vw * 100).toFixed(2)}%;top:${((a.hero[1] - a.film.r - vy) / vh * 100).toFixed(2)}%;width:${(2 * a.film.r / vw * 100).toFixed(2)}%;height:${(2 * a.film.r / vh * 100).toFixed(2)}%"><video muted playsinline loop preload="none" data-key="${a.film.key}" poster="${Dome.vsrc(a.film.key, "webp")}"></video></div>` : "";
+      art = `<div class="art" role="img" aria-label="A drawing of ${esc(it.title.toLowerCase())}" style="--ox:${((a.hero[0] - vx) / vw * 100).toFixed(1)}%;--oy:${((a.hero[1] - vy) / vh * 100).toFixed(1)}%">
+        <svg class="draw" viewBox="${a.vb.join(" ")}" aria-hidden="true"><defs>
+          <radialGradient id="gl${i}"><stop offset="0" stop-color="rgba(255,226,170,.55)"/><stop offset="1" stop-color="rgba(255,226,170,0)"/></radialGradient>
+          <radialGradient id="cool${i}"><stop offset="0" stop-color="rgba(200,224,245,.5)"/><stop offset="1" stop-color="rgba(200,224,245,0)"/></radialGradient>
+          <radialGradient id="moon${i}" cx=".42" cy=".38"><stop offset="0" stop-color="#FFF1D2"/><stop offset=".7" stop-color="#F2C98A"/><stop offset="1" stop-color="#D9864E"/></radialGradient>
+          <linearGradient id="beam${i}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(255,226,170,.32)"/><stop offset="1" stop-color="rgba(255,226,170,0)"/></linearGradient>
+          ${a.sky ? `<clipPath id="sky${i}"><path d="${a.sky}"/></clipPath>` : ""}</defs>
+          ${S(a.under)}
+          <g class="lat">${lat.map(([p, q]) => `<line pathLength="1" x1="${p[0]}" y1="${p[1]}" x2="${q[0]}" y2="${q[1]}" data-d="${Math.abs((p[0] + q[0]) / 2 - a.hero[0]).toFixed(0)}"/>`).join("")}</g>
+          ${S(a.fills)}
+          <g class="hero">${S(a.heroSvg)}</g>
+          <g class="strokes">${a.strokes.map((k) => `<path class="ln ${k.c || ""}" pathLength="1" d="${k.d}"${k.clip ? ` clip-path="url(#sky${i})"` : ""}/>`).join("")}</g>
+        </svg>${film}</div>`;
+      if (a.css) css += S(a.css).replace(/\.tl-\{?i\}?/g, ".tl-" + i) + "\n";
+    }
     sec.innerHTML = `<div class="ground" aria-hidden="true">${ground()}</div><div class="tint" aria-hidden="true"></div>
-      <div class="in"><div class="words"><span class="when" aria-label="${esc(it.when)}">${esc(it.when)}</span><h2>${esc(it.title)}</h2>
-        ${text ? `<blockquote aria-label="${esc(text)}">${phrases(text).map((p, j, arr) => `<span class="ph">${j === 0 ? "“" : ""}${esc(p)}${j === arr.length - 1 ? "”" : " "}</span>`).join("")}</blockquote><span class="by">${esc(name)} · guest #${n}</span>` : ""}</div>
-        <div class="art" role="img" aria-label="A drawing of ${esc(it.title.toLowerCase())}" style="--ox:${((a.hero[0] - vx) / vw * 100).toFixed(1)}%;--oy:${((a.hero[1] - vy) / vh * 100).toFixed(1)}%">
-          <svg class="draw" viewBox="${a.vb.join(" ")}" aria-hidden="true"><defs>
-            <radialGradient id="gl${i}"><stop offset="0" stop-color="rgba(255,226,170,.55)"/><stop offset="1" stop-color="rgba(255,226,170,0)"/></radialGradient>
-            <radialGradient id="moon${i}" cx=".42" cy=".38"><stop offset="0" stop-color="#FFF1D2"/><stop offset=".7" stop-color="#F2C98A"/><stop offset="1" stop-color="#D9864E"/></radialGradient>
-            <linearGradient id="beam${i}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(255,226,170,.32)"/><stop offset="1" stop-color="rgba(255,226,170,0)"/></linearGradient>
-            ${a.sky ? `<clipPath id="sky${i}"><path d="${a.sky}"/></clipPath>` : ""}</defs>
-            ${a.under || ""}
-            <g class="lat">${lat.map(([p, q]) => `<line pathLength="1" x1="${p[0]}" y1="${p[1]}" x2="${q[0]}" y2="${q[1]}" data-d="${Math.abs((p[0] + q[0]) / 2 - a.hero[0]).toFixed(0)}"/>`).join("")}</g>
-            ${a.fills}
-            <g class="hero">${a.heroSvg.replace(/url\(#(gl|moon|beam|sky)\)/g, (m0, k) => `url(#${k}${i})`)}</g>
-            <g class="strokes">${a.strokes.map((k) => `<path class="ln ${k.c || ""}" pathLength="1" d="${k.d}"/>`).join("")}</g>
-          </svg></div></div>`;
+      <div class="in"><div class="words">${words}</div>${art}</div>`;
     tm.append(sec);
   });
-  const end = document.createElement("section"); end.className = "mo end"; end.id = "m-end"; end.dataset.when = "Next";
-  end.innerHTML = `<div class="ground" aria-hidden="true">${ground()}</div><div class="tint" aria-hidden="true" style="--tint:rgba(226,196,138,.14)"></div>
-    <div class="in"><div class="words"><span class="when">Next</span><h2>Fifteen more moments are waiting to be drawn.</h2>
-    <p>The first guests, the blizzard, the handover, the summer shoot, the newest voice in the fall, and what comes next.</p>
-    <p><a class="btn act" href="timeline.html">The whole timeline, as it is now</a></p></div></div>`;
-  tm.append(end);
+  document.getElementById("artCss").textContent = css;
+  const close = document.createElement("section"); close.className = "mo close"; close.id = "m-close";
+  close.innerHTML = `<div class="ground" aria-hidden="true">${ground()}</div><div class="tint" aria-hidden="true" style="--tint:rgba(226,196,138,.14)"></div>
+    <div class="in"><div class="words"><span class="when">Fifteen more</span><h2>Every moment, drawn the same way.</h2>
+    <p>The other fifteen moments on the timeline would each get their own drawing like these three.</p>
+    <p class="btns center" style="margin-top:1.2rem"><a class="btn act" href="timeline.html">The whole timeline, as it is now</a> <a class="btn" href="stay.html" style="color:#F5F0E8;border-color:rgba(245,240,232,.5)">Find your dates</a></p></div></div>`;
+  tm.append(close);
   const secs = [...tm.querySelectorAll(".mo")];
+  const pages = [...secs, document.querySelector("footer.foot")].filter(Boolean);
 
-  /* ---------- The thread of time ---------- */
+  /* ---------- The thread: every moment, spaced half by its date and half evenly, so busy years stay readable ---------- */
   const thread = document.getElementById("thread"), lit = document.getElementById("lit");
-  const all = D.timeline.map((x) => monthsOf(x.when)), lo = Math.min(...all), hi = Math.max(...all);
-  const pos = (when) => (monthsOf(when) - lo) / (hi - lo);
-  D.timeline.forEach((x) => { if (!PICK.includes(x.title)) thread.insertAdjacentHTML("beforeend", `<i style="top:${(pos(x.when) * 100).toFixed(2)}%" title="${esc(x.when)}: ${esc(x.title)}"></i>`); });
-  secs.forEach((s, i) => {
-    const when = s === secs[0] ? D.timeline[0].when : s.dataset.when;
-    s.dataset.at = pos(when);
-    thread.insertAdjacentHTML("beforeend", `<a href="#${s.id}" style="top:${(pos(when) * 100).toFixed(2)}%" aria-label="${esc(s.querySelector("h2, h1").textContent)}"></a>`);
-  });
-  [2023, 2024, 2025, 2026].forEach((y) => thread.insertAdjacentHTML("beforeend", `<span class="yr" style="top:${(((y * 12) - lo) / (hi - lo) * 100).toFixed(2)}%">${y}</span>`));
+  // (the preview: the thread carries only the moments drawn so far, spaced the same way)
+  const all = ITEMS.map((x) => monthsOf(x.it.when)), lo = Math.min(...all), hi = Math.max(...all), N = ITEMS.length;
+  const atK = (k) => N < 2 ? 0.5 : 0.5 * (hi > lo ? (all[k] - lo) / (hi - lo) : k / (N - 1)) + 0.5 * k / (N - 1);
+  const kOf = new Map(ITEMS.map((x, k) => [x.i, k]));
+  secs.forEach((s) => { s.dataset.at = s.id === "m-intro" ? 0 : s.id === "m-close" ? 1 : atK(kOf.get(+s.id.slice(1))); });
+  ITEMS.forEach(({ it: x, i }, k) => thread.insertAdjacentHTML("beforeend", `<a href="#m${i}" data-i="${i}" style="top:${(atK(k) * 100).toFixed(2)}%" aria-label="${esc(x.when)}: ${esc(x.title)}"></a>`));
+  [2023, 2024, 2025, 2026].forEach((y) => { const k = ITEMS.findIndex((x) => Math.floor(monthsOf(x.it.when) / 12) === y); if (k >= 0) thread.insertAdjacentHTML("beforeend", `<span class="yr" style="top:${(atK(k) * 100).toFixed(2)}%">${y}</span>`); });
   const dots = [...thread.querySelectorAll("a")];
+  thread.addEventListener("click", (e) => { const a = e.target.closest("a"); if (!a) return; e.preventDefault(); goTo(pages.indexOf(document.getElementById("m" + a.dataset.i))); });
   const threadPoint = (sec) => { const r = thread.getBoundingClientRect(); return { x: r.left, y: r.top + r.height * +sec.dataset.at }; };
 
   /* ---------- Motion helpers ---------- */
@@ -287,19 +251,15 @@ window.page = function (Dome) {
   }
   const wait = (run, ms) => new Promise((res) => setTimeout(() => res(!run.stop), ms));
   const svgPt = (svg, x, y) => { const p = svg.createSVGPoint(); p.x = x; p.y = y; const q = p.matrixTransform(svg.getScreenCTM()); return { x: q.x, y: q.y }; };
-  // glide the point from where it is to a place on screen, along a gentle curve, leaving a trail that fades
   async function glide(run, to, ms, withTrail) {
     const from = travAt || to, mx = (from.x + to.x) / 2 + (to.y - from.y) * .18, my = (from.y + to.y) / 2 - Math.abs(to.x - from.x) * .12;
     let path = null;
     if (withTrail) { trail.innerHTML = `<path d="M${from.x} ${from.y} Q${mx} ${my} ${to.x} ${to.y}" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/>`; path = trail.firstChild; }
-    const ok = await tween(run, ms, (e) => {
-      const x = (1 - e) * (1 - e) * from.x + 2 * (1 - e) * e * mx + e * e * to.x, y = (1 - e) * (1 - e) * from.y + 2 * (1 - e) * e * my + e * e * to.y;
-      place({ x, y }); if (path) path.setAttribute("stroke-dashoffset", String(1 - e));
-    });
+    const ok = await tween(run, ms, (e) => { const x = (1 - e) * (1 - e) * from.x + 2 * (1 - e) * e * mx + e * e * to.x, y = (1 - e) * (1 - e) * from.y + 2 * (1 - e) * e * my + e * e * to.y; place({ x, y }); if (path) path.setAttribute("stroke-dashoffset", String(1 - e)); });
     if (path) path.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 1400, fill: "forwards" });
     return ok;
   }
-  const PACE = 0.52;   // the drawing's speed: about ten seconds for a whole moment
+  const PACE = 0.52;   // about ten seconds for a whole moment
   async function drawPath(run, svg, p, secs) {
     const L = p.getTotalLength(), s0 = p.getPointAtLength(0);
     if (!(await glide(run, svgPt(svg, s0.x, s0.y), 170))) return false;
@@ -307,76 +267,87 @@ window.page = function (Dome) {
   }
 
   /* ---------- Playing a moment ---------- */
-  let current = null, prevSec = null;
+  let current = null;
+  function filmOn(sec, on) { const v = sec.querySelector(".film video"); if (!v) return; if (on) { if (!v.getAttribute("src")) v.src = Dome.vsrc(v.dataset.key); v.play().catch(() => {}); } else v.pause(); }
   function reset(sec, done) {
     const art = sec.querySelector(".art"); if (!art) return;
-    const key = sec.dataset.key, a = ART[key], svg = art.querySelector("svg");
+    const a = ART[sec.dataset.key], svg = art.querySelector("svg");
     art.classList.toggle("bloom", done); art.classList.toggle("alive", done);
     svg.querySelectorAll(".lat line, .hero .ln").forEach((el) => el.getAnimations().forEach((x) => x.cancel()));
     svg.querySelectorAll(".strokes .ln, .hero .ln").forEach((p) => (p.style.strokeDashoffset = done ? 0 : 1));
     svg.querySelectorAll(".lat line").forEach((l) => (l.style.strokeDashoffset = done ? 0 : 1));
     svg.querySelector(".lat").classList.toggle("dim", done);
     a.swell(svg, done ? 1 : 0);
+    const f = art.querySelector(".film"); if (f) f.style.transform = done ? "scale(1)" : "scale(0)";
     sec.querySelectorAll(".ph, .by").forEach((x) => x.classList.toggle("on", done));
   }
   function rollDate(run, sec, fromWhen) {
     const el = sec.querySelector(".when"), to = sec.dataset.when, m1 = monthsOf(to);
-    if (!fromWhen || reduce || !/20\d\d/.test(to) || /–/.test(to)) { el.textContent = to; return; }
+    if (!fromWhen || reduce || !/20\d\d/.test(to) || /–/.test(to) || /^(Before|Spring)/.test(to)) { el.textContent = to; return; }
     const m0 = Math.min(monthsOf(fromWhen), m1);
     tween(run, 1400, (e) => { const m = Math.round(m0 + (m1 - m0) * e); el.textContent = e >= 1 ? to : `${MONTHS[m % 12]} ${Math.floor(m / 12)}`; }, (f) => 1 - Math.pow(1 - f, 3));
   }
   async function play(sec, from) {
     const run = { stop: false }; current = run;
-    const art = sec.querySelector(".art"), key = sec.dataset.key, a = ART[key], svg = art.querySelector("svg");
+    const art = sec.querySelector(".art"), a = ART[sec.dataset.key];
+    rollDate(run, sec, from && from.dataset.when);
+    const ph = [...sec.querySelectorAll(".ph")];
+    if (!art || !a) {   // a moment without a drawing yet: the words, and the point resting on its date
+      ph.forEach((x) => x.classList.add("on")); sec.querySelector(".by")?.classList.add("on");
+      trav.classList.add("on"); if (!travAt) place(threadPoint(from || secs[0])); glide(run, threadPoint(sec), 750);
+      return;
+    }
+    const svg = art.querySelector("svg");
     art.classList.add("instant"); art.classList.remove("fold"); void art.offsetWidth; art.classList.remove("instant");
     reset(sec, false);
-    rollDate(run, sec, from && from.dataset.when);
-    if (window.Flow) window.Flow.passageSound(a.bed);
-    if (reduce) { reset(sec, true); return; }
-    // the guest's words arrive phrase by phrase, across the whole drawing
-    const ph = [...sec.querySelectorAll(".ph")];
+    if (window.Flow) window.Flow.passageSound(a.bed || null);
+    if (reduce) { reset(sec, true); filmOn(sec, true); return; }
     ph.forEach((x, i) => setTimeout(() => { if (!run.stop) x.classList.add("on"); }, 1200 + i * (6400 / Math.max(1, ph.length))));
     setTimeout(() => { if (!run.stop) sec.querySelector(".by")?.classList.add("on"); }, 8200);
-    // 1. along the thread of time to this moment's date, then across to the moment
+    // 1. along the thread of time to this date, then across to the moment
     trav.classList.add("on");
     if (!travAt) place(threadPoint(from || secs[0]));
     if (!(await glide(run, threadPoint(sec), 750))) return;
-    const heroStart = a.heroFrom || a.hero, hp = svgPt(svg, heroStart[0], heroStart[1]);
-    if (!(await glide(run, hp, 1000, true))) return;
+    const heroStart = a.heroFrom || a.hero;
+    if (!(await glide(run, svgPt(svg, heroStart[0], heroStart[1]), 1000, true))) return;
     if (!(await wait(run, 250))) return;
-    // 2. the dome's lattice lights up from the ground, outward from beneath the point
-    const lines = [...svg.querySelectorAll(".lat line")];
-    lines.forEach((l) => l.animate([{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: 700, delay: +l.dataset.d * 3.2, easing: "ease-out", fill: "forwards" }));
+    // 2. the dome's lattice lights up from the ground
+    svg.querySelectorAll(".lat line").forEach((l) => l.animate([{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: 700, delay: +l.dataset.d * 3.2, easing: "ease-out", fill: "forwards" }));
     if (!(await wait(run, 850))) return;
     svg.querySelector(".lat").classList.add("dim");
-    // 3. the place, 4. the people, with a breath between
+    // 3. the place, 4. the people
     const paths = [...svg.querySelectorAll(".strokes .ln")];
     for (const beat of ["place", "people"]) {
       for (let i = 0; i < a.strokes.length; i++) if (a.strokes[i].beat === beat && !(await drawPath(run, svg, paths[i], a.strokes[i].t))) return;
       if (!(await wait(run, beat === "place" ? 300 : 550))) return;
     }
-    // 5. the point goes to the heart of it, and becomes it
+    // 5. the point becomes the heart of it
     if (!(await glide(run, svgPt(svg, heroStart[0], heroStart[1]), 500))) return;
     trav.classList.remove("on");
-    if (!(await tween(run, 1500, (e) => a.swell(svg, e), (f) => 1 - Math.pow(1 - f, 3)))) return;
-    for (const p of svg.querySelectorAll(".hero .ln")) p.animate([{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: 900, easing: "ease-in-out", fill: "forwards" });
+    const film = art.querySelector(".film"); if (film) filmOn(sec, true);
+    if (!(await tween(run, 1500, (e) => { a.swell(svg, e); if (film) film.style.transform = `scale(${e.toFixed(3)})`; }, (f) => 1 - Math.pow(1 - f, 3)))) return;
+    svg.querySelectorAll(".hero .ln").forEach((p) => p.animate([{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: 900, easing: "ease-in-out", fill: "forwards" }));
     if (!(await wait(run, 500))) return;
     // 6. the bloom
     art.classList.add("bloom");
-    const q = svgPt(svg, a.burst.x, a.burst.y), ar = art.getBoundingClientRect();
-    sparks(art, q.x - ar.left, q.y - ar.top, a.burst.n, a.burst.warm);
+    const bx = a.burst || { x: a.hero[0], y: a.hero[1], n: 10 };
+    const q = svgPt(svg, bx.x, bx.y), ar = art.getBoundingClientRect();
+    sparks(art, q.x - ar.left, q.y - ar.top, bx.n, bx.warm);
     if (window.Flow) window.Flow.burst(q.x, q.y, .9);
-    chord(a.tone);
+    chord(a.tone || [440, 554.37, 659.25]);
     if (!(await wait(run, 1200))) return;
     art.classList.add("alive");
     travAt = null;
   }
-  // leaving: the picture folds back into the point; whatever was unfinished is simply finished
-  function leave(sec) {
-    const art = sec.querySelector(".art"); if (!art) return;
-    if (current) current.stop = true;
-    reset(sec, true);
-    if (!reduce) art.classList.add("fold");
+  // moving on: whatever was unfinished is finished, and the picture folds back into the point
+  function fold(sec) {
+    const art = sec.querySelector(".art"); if (current) current.stop = true;
+    if (!art) return;
+    reset(sec, true); filmOn(sec, false);
+    if (reduce) return;
+    const a = ART[sec.dataset.key], svg = art.querySelector("svg");
+    place(svgPt(svg, a.hero[0], a.hero[1])); trav.classList.add("on");
+    art.classList.add("fold");
   }
   function sparks(host, x, y, n, warm) {
     for (let j = 0; j < n; j++) {
@@ -399,26 +370,86 @@ window.page = function (Dome) {
 
   /* ---------- Which moment is here ---------- */
   let here = null;
-  const io = new IntersectionObserver((es) => es.forEach((e) => {
-    if (!(e.isIntersecting && e.intersectionRatio > .6) || e.target === here) return;
-    const sec = e.target, from = here;
-    if (from) { from.classList.remove("here"); leave(from); }
+  function arrive(sec) {
+    if (sec === here) return;
+    if (current) current.stop = true;   // only one moment draws at a time
+    const from = here;
+    if (from) from.classList.remove("here");
     here = sec; sec.classList.add("here");
-    const idx = secs.indexOf(sec);
-    dots.forEach((d, i) => d.classList.toggle("on", i === idx));
+    const i = /^m\d+$/.test(sec.id) ? +sec.id.slice(1) : sec.id === "m-close" ? Infinity : -1;
+    dots.forEach((d) => { const k = +d.dataset.i; d.classList.toggle("on", k === i); d.classList.toggle("past", i >= 0 && k < i); });
     lit.style.height = (+sec.dataset.at * 100).toFixed(2) + "%";
-    if (sec.querySelector(".art")) play(sec, from);
-    else { trav.classList.remove("on"); travAt = null; if (window.Flow) window.Flow.passageSound(null); if (sec.classList.contains("end")) sec.querySelector(".when").textContent = "Next"; }
-  }), { threshold: [.6, .9] });
+    if (/^m\d+$/.test(sec.id)) play(sec, from && /^m\d+$/.test(from.id) ? from : null);
+    else { trav.classList.remove("on"); travAt = null; if (window.Flow) window.Flow.passageSound(null); }
+  }
+  // (while the page is carried from one moment to another, the moments passed on the way are not played)
+  const io = new IntersectionObserver((es) => es.forEach((e) => { if (!busy && e.isIntersecting && e.intersectionRatio > .6) arrive(e.target); }), { threshold: [.6, .9] });
   secs.forEach((s) => io.observe(s));
-  addEventListener("resize", () => { if (travAt && here && here.querySelector(".art")) { travAt = null; trav.classList.remove("on"); } });
-  // arrow keys and Page Down move one moment at a time
-  addEventListener("keydown", (e) => {
-    if (document.documentElement.classList.contains("menu-open") || /input|textarea|select/i.test(e.target.tagName)) return;
-    const dir = { ArrowDown: 1, PageDown: 1, " ": 1, ArrowUp: -1, PageUp: -1 }[e.key]; if (!dir) return;
-    const cur = secs.indexOf(here), nx = secs[Math.max(0, Math.min(secs.length - 1, cur + dir))];
-    if (nx) { e.preventDefault(); nx.scrollIntoView({ behavior: reduce ? "auto" : "smooth" }); }
+
+  /* ---------- The lock: one moment per screen; moving on takes a deliberate push ---------- */
+  const push = document.getElementById("push"), pushFg = push.querySelector(".fg");
+  var busy = false;
+  const pageIndex = () => { const y = scrollY + innerHeight / 2; let k = 0; pages.forEach((p, i) => { if (p.offsetTop <= y) k = i; }); return k; };
+  function showPush(f, dir) { push.classList.toggle("show", f > 0.04); push.classList.toggle("up", dir < 0); pushFg.style.strokeDashoffset = String(1 - Math.min(1, f)); }
+  async function goTo(k) {
+    k = Math.max(0, Math.min(pages.length - 1, k));
+    const cur = pageIndex(); if (k === cur || busy) return;
+    busy = true; showPush(0, 1);
+    const curSec = pages[cur];
+    if (curSec && curSec.classList.contains("mo")) { fold(curSec); if (!reduce && curSec.querySelector(".art")) await new Promise((r) => setTimeout(r, 380)); }
+    const target = pages[k], y0 = scrollY, y1 = Math.min(target.offsetTop, document.documentElement.scrollHeight - innerHeight);
+    if (reduce) scrollTo(0, y1);
+    else await tween({ stop: false }, 950, (e) => scrollTo(0, y0 + (y1 - y0) * e), (f) => (f < .5 ? 4 * f * f * f : 1 - Math.pow(-2 * f + 2, 3) / 2));
+    if (target.classList.contains("mo")) arrive(target);
+    setTimeout(() => { busy = false; }, 120);
+  }
+  const step = (dir) => goTo(pageIndex() + dir);
+  const blocked = (e) => document.documentElement.classList.contains("menu-open") || (e.target.closest && e.target.closest(".site-menu, .k-sheet, .k-panel, .guide, .portal"));
+  // wheel and trackpad: one gesture moves at most one moment, and only once it has pushed far enough
+  const NEED_WHEEL = 190;
+  let acc = 0, lastWheel = 0, spent = false, fadeT = 0;
+  addEventListener("wheel", (e) => {
+    if (blocked(e)) return;
+    e.preventDefault();
+    const now = performance.now();
+    if (now - lastWheel > 240) { acc = 0; spent = false; }
+    lastWheel = now;
+    if (busy || spent) return;
+    acc += e.deltaY * (e.deltaMode === 1 ? 18 : e.deltaMode === 2 ? innerHeight : 1);
+    const f = Math.abs(acc) / NEED_WHEEL; showPush(f, Math.sign(acc));
+    if (f >= 1) { spent = true; step(Math.sign(acc)); }
+    clearTimeout(fadeT); fadeT = setTimeout(() => { if (!busy) showPush(0, 1); }, 300);
+  }, { passive: false });
+  // touch: the page gives a little under your finger, and moves on only past a real swipe
+  let ty = null, tt = 0, inner = null;
+  addEventListener("touchstart", (e) => { if (blocked(e) || e.touches.length > 1) { ty = null; return; } ty = e.touches[0].clientY; tt = performance.now(); inner = pages[pageIndex()].querySelector(".in"); }, { passive: true });
+  addEventListener("touchmove", (e) => {
+    if (ty === null || blocked(e)) return;
+    e.preventDefault();
+    const dy = ty - e.touches[0].clientY;
+    if (inner && !reduce) { inner.style.transition = "none"; inner.style.transform = `translateY(${(-dy * 0.16).toFixed(1)}px)`; }
+    showPush(Math.abs(dy) / 120, Math.sign(dy));
+  }, { passive: false });
+  addEventListener("touchend", (e) => {
+    if (ty === null) return;
+    const dy = ty - (e.changedTouches[0] || {}).clientY, v = Math.abs(dy) / Math.max(1, performance.now() - tt);
+    if (inner) { inner.style.transition = ""; inner.style.transform = ""; }
+    showPush(0, 1); ty = null;
+    if (busy) return;
+    if (Math.abs(dy) > 120 || (Math.abs(dy) > 60 && v > 0.6)) step(Math.sign(dy));
   });
+  // keys: one moment at a time
+  addEventListener("keydown", (e) => {
+    if (blocked(e) || /input|textarea|select/i.test(e.target.tagName) || e.target.isContentEditable) return;
+    const dir = { ArrowDown: 1, PageDown: 1, " ": 1, ArrowUp: -1, PageUp: -1 }[e.key];
+    if (e.key === "Home") { e.preventDefault(); goTo(0); return; }
+    if (e.key === "End") { e.preventDefault(); goTo(pages.length - 1); return; }
+    if (!dir) return; e.preventDefault(); step(e.shiftKey && e.key === " " ? -1 : dir);
+  });
+  // keep the current moment square on the screen if the window changes size
+  addEventListener("resize", () => { if (busy) return; const k = pageIndex(); scrollTo(0, pages[k].offsetTop); travAt = null; trav.classList.remove("on"); });
+  // focus moving to something on another screen (a link, by keyboard) brings that screen in
+  document.addEventListener("focusin", (e) => { const s = e.target.closest && e.target.closest(".mo, footer.foot"); if (s && pages.includes(s) && pages.indexOf(s) !== pageIndex()) { scrollTo(0, s.offsetTop); if (s.classList.contains("mo")) arrive(s); } });
 };
 </script>
 <script src="assets/js/dome.js"></script>
