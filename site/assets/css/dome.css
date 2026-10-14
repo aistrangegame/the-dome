@@ -450,3 +450,5 @@ body.play .dock { left: auto; right: 10px; top: max(54px, calc(env(safe-area-ins
 .sc-say { min-height: 1.5em; margin: 12px 0 0; color: var(--muted, #5E6659); font-size: .95rem; text-align: center; }
 .sc-note { margin: 4px 0 0; font-size: .85rem; color: var(--muted, #5E6659); text-align: center; }
 @media (prefers-reduced-motion: reduce) { .sc-voice, .sc-edge i, .sc-begin { transition: none; } }
+/* while a game is being played, a held press on the stage is the game's, not the page's */
+.scene.playing { touch-action: none; }

@@ -47,10 +47,13 @@
       <p class="sc-note">${full ? "The full version, for this place." : `A short version, to play from anywhere. The full version waits at ${esc(lowerFirst(p.name))}, when you’re there.`}</p>`;
     const scene = host.querySelector(".scene"), stage = host.querySelector(".sc-stage"), edge = host.querySelector(".sc-edge i");
     const voice = host.querySelector(".sc-voice"), say = host.querySelector(".sc-say"), begin = host.querySelector(".sc-begin"), end = host.querySelector(".sc-end");
-    let loops = [], running = false, visible = true, prev = 0, ended = false, shown = new Set(), cleanups = [];
+    let loops = [], running = false, visible = true, prev = 0, ended = false, shown = new Set(), cleanups = [], chain = false;
+    // no long-press menu or text selection on the stage (a held press is a gesture here)
+    scene.addEventListener("contextmenu", (e) => { if (scene.classList.contains("playing")) e.preventDefault(); });
     const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible && running) kick(); }, { threshold: 0.15 }); io.observe(scene);
-    function kick() { if (!loops.length) return; prev = performance.now(); requestAnimationFrame(frame); }
-    function frame(t) { if (!running || !visible) return; const dt = Math.min(0.05, (t - prev) / 1000); prev = t; loops.forEach((f) => f(dt, t / 1000)); requestAnimationFrame(frame); }
+    // one drawing chain per game, however many loops it registers
+    function kick() { if (!loops.length || chain) return; chain = true; prev = performance.now(); requestAnimationFrame(frame); }
+    function frame(t) { if (!running || !visible) { chain = false; return; } const dt = Math.max(0, Math.min(0.05, (t - prev) / 1000)); prev = t; loops.forEach((f) => f(dt, t / 1000)); requestAnimationFrame(frame); }
     const local = (e) => { const r = stage.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
 
     const k = {
@@ -74,7 +77,7 @@
         k.progress(1); k.haptic(30);
         const r = stage.getBoundingClientRect(); k.ripple(r.width / 2, r.height / 2, 1);
         setTimeout(() => {
-          end.hidden = false; scene.classList.add("ending");
+          end.hidden = false; scene.classList.add("ending"); scene.classList.remove("playing");
           end.innerHTML = full
             ? `<p>${esc(G.fullEnd || "Done. This one is yours.")}</p><button class="btn act" type="button" data-again>Again</button>`
             : `<p>That was the short version. The full one waits at ${esc(lowerFirst(p.name))}: scan the card there.</p><button class="btn act" type="button" data-again>Play again</button>`;
@@ -123,9 +126,9 @@
       sensor: sensors(full, cleanups)
     };
 
-    function teardown() { running = false; io.disconnect(); cleanups.forEach((f) => { try { f(); } catch (e) {} }); }
+    function teardown() { running = false; scene.classList.remove("playing"); io.disconnect(); cleanups.forEach((f) => { try { f(); } catch (e) {} }); }
     begin.querySelector("button").addEventListener("click", async () => {
-      begin.classList.add("gone"); running = true; scene.focus({ preventScroll: true });
+      begin.classList.add("gone"); running = true; scene.classList.add("playing"); scene.focus({ preventScroll: true });
       if (window.Flow) window.Flow.Sound.ensure();
       try { await G.mount(k); } catch (e) { console.error(e); }
       kick();
