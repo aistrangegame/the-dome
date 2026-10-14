@@ -9,12 +9,14 @@
 # A file that already has a proxy is skipped, so the script can be stopped and run again.
 #
 # Needs: ffmpeg (brew install ffmpeg)
-# Usage: scripts/make-video-proxies.sh ["/path/to/The Dome/Media"]
+# Usage: scripts/make-video-proxies.sh ["/path/to/The Dome/Media"] ["Drone Raw Files"]
+#   (the second argument limits the run to one folder)
 
 set -uo pipefail
 MEDIA="${1:-$HOME/Library/CloudStorage/GoogleDrive-ashreys@gmail.com/My Drive/The Dome/Media}"
 OUT="$MEDIA/Proxies"
 FOLDERS=("Drone Raw Files" "Video Clips Raw Files" "EDITS")
+[ -n "${2:-}" ] && FOLDERS=("$2")
 command -v ffmpeg >/dev/null || { echo "ffmpeg is missing: brew install ffmpeg"; exit 1; }
 [ -d "$MEDIA" ] || { echo "Media folder not found: $MEDIA"; exit 1; }
 
@@ -28,7 +30,8 @@ for folder in "${FOLDERS[@]}"; do
   # oldest name first keeps each drone flight together
   find "$src" -maxdepth 1 -type f \( -iname '*.mp4' -o -iname '*.mov' \) -print0 | sort -z | while IFS= read -r -d '' v; do
     name="$(basename "$v")"; stem="${name%.*}"; done_n=$((done_n + 1))
-    if [ -s "$dst/$stem-proxy.mp4" ] && [ -s "$dst/$stem-sheet.jpg" ]; then continue; fi
+    # already done (a proxy, or a full web copy from an earlier run, plus its sheet): skip
+    if [ -s "$dst/$stem-sheet.jpg" ] && { [ -s "$dst/$stem-proxy.mp4" ] || [ -s "$dst/$stem-web.mp4" ]; }; then continue; fi
     echo "[$folder] $name" | tee -a "$log"
 
     # 1. facts (reading the file makes Drive download it; it stays in Drive's cache)
