@@ -46,7 +46,15 @@ window.page = function (Dome) {
     <a class="btn" href="${mode === "house" ? R("house/index.html") : R("places/index.html")}">All places</a>
     <a class="btn" href="${base + next.slug}.html">${esc(next.name)} →</a></div></section>`;
 
-  main.innerHTML = hero + (mode === "house" ? todo + voices + act + leave + ideaBand : voices + keeper + todo + ideaBand) + nav;
+  // The place's game: a short version on the website; on the mountain, the full version where the game has one
+  const scene = `<section class="band scene-band" id="play"><div class="wrap"><div id="sceneHost"></div></div></section>`;
+  main.innerHTML = hero + (mode === "house" ? todo + scene + voices + act + leave + ideaBand : voices + scene + keeper + todo + ideaBand) + nav;
+  (function loadScene() {
+    const host = document.getElementById("sceneHost");
+    const add = (src, cb) => { const s = document.createElement("script"); s.src = src; s.onload = cb; s.onerror = () => host.closest("section").remove(); document.body.append(s); };
+    const go = () => add(R("assets/js/scenes/" + slug + ".js"), () => window.Scene.mount(host, slug, mode === "house" ? "full" : "preview"));
+    window.Scene ? go() : add(R("assets/js/scenes/kit.js"), go);
+  })();
 
   const f = document.getElementById("leave");
   if (f) f.addEventListener("submit", async (e) => {

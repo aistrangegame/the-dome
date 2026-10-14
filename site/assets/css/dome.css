@@ -424,3 +424,29 @@ body.play .dock { left: auto; right: 10px; top: max(54px, calc(env(safe-area-ins
 @keyframes flowWave { 50% { height: 12px; } }
 @media (max-width: 600px) { .flow-sound .t { display: none; } .flow-sound { width: 38px; height: 38px; padding: 0; justify-content: center; } .flow-sound[aria-pressed="true"] .t { display: none; } }
 @media (prefers-reduced-motion: reduce) { .flow-sound .wave i { animation: none !important; } .hero .bg > img, .hero .bg > video { transform: none !important; } }
+
+/* ---------- Scenes: the place games (assets/js/scenes/) ---------- */
+.scene-band .wrap { max-width: 980px; }
+.sc-head { display: flex; gap: 14px; align-items: center; margin-bottom: 18px; }
+.sc-head h2 { margin: .15rem 0 0; }
+.sc-ic { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; background: #1A2218; color: #E2C48A; flex: none; }
+.scene { position: relative; aspect-ratio: 16 / 10; border-radius: 22px; overflow: hidden; background: #070B09; color: #F5F0E8; outline: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; isolation: isolate; }
+.scene:focus-visible { box-shadow: 0 0 0 3px #C9A96E; }
+@media (max-width: 700px) { .scene { aspect-ratio: 4 / 5; border-radius: 18px; } }
+.sc-stage { position: absolute; inset: 0; }
+.sc-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.sc-edge { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(245,240,232,.08); z-index: 3; }
+.sc-edge i { display: block; height: 100%; background: linear-gradient(90deg, rgba(226,196,138,.2), #E2C48A); transform: scaleX(0); transform-origin: left; transition: transform .6s ease; box-shadow: 0 0 14px rgba(226,196,138,.6); }
+.sc-voice { position: absolute; left: 0; right: 0; bottom: 0; padding: 40px 22px 20px; background: linear-gradient(to bottom, rgba(7,11,9,0), rgba(7,11,9,.78) 45%); text-align: center; z-index: 2; pointer-events: none; opacity: 0; transform: translateY(8px); transition: opacity 1.4s ease, transform 1.4s ease; text-shadow: 0 2px 18px rgba(0,0,0,.7); }
+.sc-voice.on { opacity: 1; transform: none; }
+.scene.voice-top .sc-voice { bottom: auto; top: 0; padding: 20px 22px 40px; background: linear-gradient(to top, rgba(7,11,9,0), rgba(7,11,9,.78) 45%); }
+.scene.ending .sc-voice { opacity: 0; }
+.sc-voice blockquote { margin: 0 auto .3rem; max-width: 640px; font: italic 400 clamp(1rem, 2.4vw, 1.3rem)/1.45 Lora, serif; }
+.sc-voice span { font: 500 .78rem/1 "DM Sans"; color: rgba(245,240,232,.72); }
+.sc-begin, .sc-end { position: absolute; inset: 0; z-index: 4; display: grid; place-content: center; justify-items: center; gap: 14px; padding: 24px; text-align: center; background: radial-gradient(ellipse at center, rgba(7,11,9,.72), rgba(7,11,9,.96)); transition: opacity .7s ease; }
+.sc-begin p, .sc-end p { margin: 0; max-width: 460px; font: italic 400 clamp(1.05rem, 2.6vw, 1.35rem)/1.45 Lora, serif; color: #F5F0E8; }
+.sc-begin.gone { opacity: 0; pointer-events: none; }
+.sc-end[hidden] { display: none; }
+.sc-say { min-height: 1.5em; margin: 12px 0 0; color: var(--muted, #5E6659); font-size: .95rem; text-align: center; }
+.sc-note { margin: 4px 0 0; font-size: .85rem; color: var(--muted, #5E6659); text-align: center; }
+@media (prefers-reduced-motion: reduce) { .sc-voice, .sc-edge i, .sc-begin { transition: none; } }
