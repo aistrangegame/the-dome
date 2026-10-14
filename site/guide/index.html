@@ -122,11 +122,13 @@
 <script>
 (function () {
   const params = new URLSearchParams(location.search);
-  const next = (params.get("next") || "/").replace(/^(?!\/)/, "/").replace(/^\/\/+/, "/");
+  // Only ever go somewhere on this site after signing in
+  let next = "/";
+  try { const u = new URL(params.get("next") || "/", location.origin); if (u.origin === location.origin && !u.pathname.startsWith("/guide")) next = u.pathname + u.search + u.hash; } catch (e) {}
   const box = document.getElementById("doorBox"), msg = document.getElementById("msg");
-  const go = () => (location.href = next.startsWith("/guide") ? "/" : next);
+  const go = () => location.assign(next);
   fetch("/api/keep/me", { credentials: "same-origin" }).then((r) => r.json()).then((j) => {
-    if (j && j.who) box.innerHTML = `<h2>You’re in.</h2><p>Signed in on this device.</p><p><a class="btn act" href="${next.startsWith("/guide") ? "/" : next.replace(/"/g, "")}">Start walking</a></p>`;
+    if (j && j.who) { box.innerHTML = `<h2>You’re in.</h2><p>Signed in on this device.</p><p><a class="btn act">Start walking</a></p>`; box.querySelector("a").href = next; }
   }).catch(() => {});
   document.getElementById("f").addEventListener("submit", async (e) => {
     e.preventDefault(); msg.textContent = "";

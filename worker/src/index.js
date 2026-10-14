@@ -14,8 +14,9 @@ const MAX_VOICE = 5 * 1024 * 1024;                     // Airtable's upload limi
 const KINDS = ["Note", "Own words", "Fix"];
 const BOOKING = [["GET", /^\/availability$/], ["POST", /^\/(quote|hold)$/], ["POST", /^\/stripe\/webhook$/], ["GET", /^\/cal\/[A-Za-z0-9_-]+\.ics$/], ["*", /^\/dash\//]];
 
-// Open without the code: the guide and what a page needs to draw itself. Pages (HTML) and the notes API are not.
-const OPEN = [/^\/guide(\/|\/index\.html)?$/, /^\/assets\//, /^\/favicon/, /^\/robots\.txt$/, /^\/api\/keep\/(signin|signout|health)$/];
+// Open without the code: the guide and only what the guide itself draws with. Pages, words, photos and films are not.
+const OPEN = [/^\/guide(\/|\/index\.html)?$/, /^\/assets\/css\/[\w.-]+\.css$/, /^\/assets\/media\/51-DJI_20260802173407_0329_D-1600\.webp$/, /^\/favicon\.svg$/, /^\/robots\.txt$/];
+const MAX_JSON = 64 * 1024;
 
 export default {
   async fetch(request, env) {
@@ -44,6 +45,9 @@ async function api(request, env, url) {
   const path = url.pathname, method = request.method;
   if (path === "/api/keep/health") return json({ ok: true, stored: env.AIRTABLE_TOKEN ? "airtable" : "local", ready: !!(env.ERIC_CODE && env.SESSION_SECRET) });
 
+  // Every write must come from this site's own pages (SameSite=Lax still lets sibling subdomains through)
+  if (method !== "GET" && method !== "HEAD" && request.headers.get("origin") !== url.origin) return json({ error: "Not from here." }, 403);
+
   if (path === "/api/keep/signin" && method === "POST") return signin(request, env);
   if (path === "/api/keep/signout" && method === "POST") return json({ ok: true }, 200, { "Set-Cookie": `${COOKIE}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax` });
 
@@ -55,9 +59,10 @@ async function api(request, env, url) {
   if (path === "/api/keep/notes" && method === "GET") return json({ notes: await store.list() });
 
   if (path === "/api/keep/notes" && method === "POST") {
+    if (!/^application\/json\b/.test(request.headers.get("content-type") || "")) return json({ error: "Send JSON." }, 415);
     const b = await readJson(request);
     const kind = KINDS.includes(b.kind) ? b.kind : "Note";
-    const page = clip(b.page, 200).replace(/[^\w\-./#?=&%]/g, "");
+    const page = clip(b.page, 200).replace(/[^\w\-./#?=&%]/g, "").replace(/^[/.]+/, "");
     const section = clip(b.section, 200) || "Whole page";
     const text = clip(b.text, 8000);
     if (!text && !b.voiceComing && kind !== "Fix") return json({ error: "Say or write something first." }, 400);
@@ -74,16 +79,18 @@ async function api(request, env, url) {
   if ((m = path.match(/^\/api\/keep\/notes\/(rec[A-Za-z0-9]{14}|loc[A-Za-z0-9]{10,20})\/voice$/)) && method === "POST") {
     const type = (request.headers.get("content-type") || "").split(";")[0].trim();
     if (!/^audio\/(webm|mp4|mpeg|ogg|aac|x-m4a|wav)$/.test(type)) return json({ error: "That isn't a recording this page knows." }, 415);
-    const buf = await request.arrayBuffer();
+    const buf = await readCapped(request, MAX_VOICE);
+    if (!buf) return json({ error: "That recording is too long. Keep it under about four minutes." }, 413);
     if (!buf.byteLength) return json({ error: "The recording was empty." }, 400);
-    if (buf.byteLength > MAX_VOICE) return json({ error: "That recording is too long. Keep it under about four minutes." }, 413);
-    await store.attachVoice(m[1], buf, type);
+    const kept = await store.attachVoice(m[1], buf, type);
+    if (!kept) return json({ error: "Your words were saved, but the recording was too long to keep until Airtable is connected." }, 413);
     return json({ ok: true });
   }
 
   if ((m = path.match(/^\/api\/keep\/notes\/(rec[A-Za-z0-9]{14}|loc[A-Za-z0-9]{10,20})\/approve$/)) && method === "POST") {
     const row = await store.get(m[1]);
     if (!row || row.kind !== "Own words") return json({ error: "Only your own words can be approved." }, 400);
+    if (!row.text.trim()) return json({ error: "There are no words in this one to use yet." }, 400);
     await store.update(m[1], { Status: "Approved" });
     return json({ ok: true });
   }
@@ -101,16 +108,14 @@ async function api(request, env, url) {
 /* ---------------- The code, the cookie, the lock ---------------- */
 async function signin(request, env) {
   if (!env.ERIC_CODE || !env.SESSION_SECRET) return json({ error: "The door isn't set up yet. Ashrey needs to add the code." }, 503);
-  const ip = request.headers.get("cf-connecting-ip") || "local";
+  const ip = netOf(request.headers.get("cf-connecting-ip") || "local");
   const gate = env.GATE.get(env.GATE.idFromName("door"));
-  const state = await (await gate.fetch("https://gate/check?ip=" + encodeURIComponent(ip))).json();
-  if (state.locked) return json({ error: `Too many tries. Try again in ${Math.ceil(state.wait / 60)} minutes.` }, 429);
+  // The try is counted before the code is compared, in one step, so a burst can't slip past the lock
+  const state = await (await gate.fetch("https://gate/attempt?ip=" + encodeURIComponent(ip), { method: "POST" })).json();
+  if (!state.ok) return json({ error: `Too many tries. Try again in ${Math.max(1, Math.ceil(state.wait / 60))} minutes.` }, 429);
   const b = await readJson(request);
   const code = String(b.code || "").replace(/\D/g, "");
-  if (!(await sameText(code, String(env.ERIC_CODE)))) {
-    const after = await (await gate.fetch("https://gate/fail?ip=" + encodeURIComponent(ip), { method: "POST" })).json();
-    return json({ error: after.locked ? "Too many tries. Try again in 15 minutes." : "That isn't the code." }, after.locked ? 429 : 401);
-  }
+  if (!(await sameText(code, String(env.ERIC_CODE)))) return json({ error: state.last ? "That isn't the code. That was the last try for now: wait 15 minutes." : "That isn't the code." }, 401);
   await gate.fetch("https://gate/clear?ip=" + encodeURIComponent(ip), { method: "POST" });
   const exp = Math.floor(Date.now() / 1000) + DAYS_30;
   const token = `eric.${exp}.${await sign(`eric.${exp}`, env.SESSION_SECRET)}`;
@@ -179,6 +184,7 @@ function airtableStore(env) {
       await at(`https://content.airtable.com/v0/${base}/${id}/${env.VOICE_FIELD}/uploadAttachment`, {
         method: "POST", body: JSON.stringify({ contentType: type, filename: `eric-${id}.${ext}`, file: b64(buf) }),
       });
+      return true;
     },
   };
 }
@@ -192,7 +198,7 @@ function localStore(env) {
     async get(id) { return (await call("get", { id })).note; },
     async create(fields) { return (await call("create", { fields })).id; },
     async update(id, fields) { await call("update", { id, fields }); },
-    async attachVoice(id, buf, type) { await call("voice", { id, type, data: b64(buf) }); },
+    async attachVoice(id, buf, type) { return (await call("voice", { id, type, data: b64(buf) })).ok; },
   };
 }
 
@@ -202,16 +208,23 @@ export class Gate {
   async fetch(request) {
     const url = new URL(request.url), st = this.state.storage;
     if (url.pathname.startsWith("/store/")) return this.store(url.pathname.slice(7), await request.json());
+    // Storage calls hold the object's input gate, so each request below runs as one step.
+    // Per network: 5 tries per 15 minutes. The whole door: 40 tries an hour, then shut for the hour.
+    // (Someone guessing could keep the door shut; Eric's own 30-day sign-in still works meanwhile.)
     const ip = url.searchParams.get("ip") || "?", key = "tries:" + ip, now = Date.now();
-    const t = (await st.get(key)) || { n: 0, until: 0, first: now };
-    if (url.pathname === "/check") return json({ locked: t.until > now, wait: Math.max(0, Math.round((t.until - now) / 1000)) });
-    if (url.pathname === "/clear") { await st.delete(key); return json({ ok: true }); }
-    if (url.pathname === "/fail") {
-      if (now - t.first > 15 * 60e3) { t.n = 0; t.first = now; }
-      t.n++; if (t.n >= 5) { t.until = now + 15 * 60e3; t.n = 0; t.first = now; }
-      await st.put(key, t);
-      return json({ locked: t.until > now });
+    const [t, all] = await Promise.all([st.get(key), st.get("tries:*")]).then(([a, b]) => [a || { n: 0, until: 0, first: now }, b || { n: 0, until: 0, first: now }]);
+    if (url.pathname === "/attempt") {
+      if (now - t.first > 15 * 60e3 && t.until <= now) { t.n = 0; t.first = now; }
+      if (now - all.first > 60 * 60e3 && all.until <= now) { all.n = 0; all.first = now; }
+      const until = Math.max(t.until, all.until);
+      if (until > now) return json({ ok: false, wait: Math.round((until - now) / 1000) });
+      t.n++; all.n++;
+      if (t.n >= 5) { t.until = now + 15 * 60e3; t.n = 0; t.first = now; }
+      if (all.n >= 40) { all.until = now + 60 * 60e3; all.n = 0; all.first = now; }
+      await st.put({ [key]: t, "tries:*": all });
+      return json({ ok: true, last: t.until > now });
     }
+    if (url.pathname === "/clear") { all.n = Math.max(0, all.n - 1); await st.put("tries:*", all); await st.delete(key); return json({ ok: true }); }
     return json({ error: "?" }, 404);
   }
   store(op, b) {
@@ -222,7 +235,7 @@ export class Gate {
     if (op === "create") { const id = "loc" + crypto.randomUUID().replace(/-/g, "").slice(0, 14); this.sql.exec("INSERT INTO notes (id, fields, created) VALUES (?, ?, ?)", id, JSON.stringify(b.fields), b.fields.Created); return json({ id }); }
     if (op === "update") { const r = one(b.id); if (r) this.sql.exec("UPDATE notes SET fields = ? WHERE id = ?", JSON.stringify({ ...JSON.parse(r.fields), ...b.fields }), b.id); return json({ ok: true }); }
     // SQLite keeps values up to 2 MB, so a longer recording is noted but not kept here (Airtable takes up to 5 MB)
-    if (op === "voice") { this.sql.exec("UPDATE notes SET voice = ?, vtype = ? WHERE id = ?", b.data.length < 1900000 ? b.data : null, b.type, b.id); return json({ ok: true }); }
+    if (op === "voice") { if (b.data.length >= 1900000) return json({ ok: false }); this.sql.exec("UPDATE notes SET voice = ?, vtype = ? WHERE id = ?", b.data, b.type, b.id); return json({ ok: true }); }
     return json({ error: "?" }, 404);
   }
 }
@@ -238,8 +251,33 @@ function json(body, status = 200, headers = {}) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", ...headers } });
 }
 async function readJson(request) {
-  if (+(request.headers.get("content-length") || 0) > 64 * 1024) return {};
-  try { return await request.json(); } catch (e) { return {}; }
+  const buf = await readCapped(request, MAX_JSON);
+  if (!buf) return {};
+  try { return JSON.parse(new TextDecoder().decode(buf)); } catch (e) { return {}; }
+}
+// Read a body, but stop (and return null) once it passes the limit, with or without a length header
+async function readCapped(request, limit) {
+  if (+(request.headers.get("content-length") || 0) > limit) return null;
+  if (!request.body) return new ArrayBuffer(0);
+  const reader = request.body.getReader(), parts = []; let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > limit) { await reader.cancel(); return null; }
+    parts.push(value);
+  }
+  const out = new Uint8Array(size); let o = 0;
+  for (const p of parts) { out.set(p, o); o += p.byteLength; }
+  return out.buffer;
+}
+// Count tries per network: an IPv6 address by its /64, since one household holds a whole /64
+function netOf(ip) {
+  if (!ip.includes(":")) return ip;
+  const [head, tail = ""] = ip.split("::");
+  const h = head ? head.split(":") : [], t = tail ? tail.split(":") : [];
+  const full = ip.includes("::") ? [...h, ...Array(8 - h.length - t.length).fill("0"), ...t] : h;
+  return full.slice(0, 4).map((x) => x.toLowerCase().replace(/^0+(?=.)/, "")).join(":") + "::/64";
 }
 function clip(s, n) { return String(s ?? "").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "").trim().slice(0, n); }
 function b64(buf) {

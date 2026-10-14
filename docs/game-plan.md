@@ -8,6 +8,8 @@
 
 **Behind the point, October 14, 2026:** the header point opens the dome's own room (`site/play/`): its story in nine stages and three games. *Find the Point* (find the dome from six heights of drone photos, high to close), *One Triangle at a Time* (rebuild the dome from the ground up, one guest per triangle in the order they came, coloured by season, with the leftover triangles kept for guests still to come) and *Be Still* (stillness lights a star for each of 14 guests who wrote about the night sky). The dome speaks there too; see recognition ruling 1.
 
+**Eric's walk-through, October 14, 2026:** only Eric walks it this round (Mona left out, Ashrey's ruling). The whole site sits behind his code at dome.aistrangegame.com, with a guide at `/guide`. He leaves notes, his own words and map fixes, by voice or typing, into one Airtable table, Eric's Notes. Built, audited and tested; waiting on the deploy from Ashrey's Mac (`docs/deploy-prompt.md`). This is step 1.6, done early, for Eric alone. See `docs/keepers-plan.md` and `docs/handoff-2026-10-14.md`.
+
 Each phase below starts when the gate before it passes. No dates are set.
 
 ## Phase 0 · Ground — now

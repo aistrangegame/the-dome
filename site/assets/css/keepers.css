@@ -4,7 +4,7 @@
 .k-btn.act { background: #C9A96E; color: #1A2218; }
 .k-btn .n { min-width: 20px; height: 20px; border-radius: 99px; background: #C9A96E; color: #1A2218; display: inline-grid; place-items: center; font-size: .72rem; padding: 0 5px; }
 .k-btn:focus-visible { outline: 2px solid #C9A96E; outline-offset: 2px; }
-body.play .k-bar { bottom: auto; top: max(54px, calc(env(safe-area-inset-top) + 46px)); right: 60px; }
+body.play .k-bar { z-index: 210; bottom: auto; top: max(54px, calc(env(safe-area-inset-top) + 46px)); right: 60px; }
 @media (max-width: 600px) { .k-btn { min-height: 38px; padding: 0 13px; font-size: .8rem; } }
 
 /* choosing the part of the page a note is about */

@@ -1,6 +1,6 @@
 # Eric's walk-through: game plan, version 3 (Oct 14, 2026)
 
-**Status:** agreed in shape with Ashrey; waiting on one answer (the code: 1187 or 11187) before the build starts.
+**Status:** built and tested locally (Oct 14, 2026); waiting on the deploy from Ashrey's Mac. The code is agreed with Ashrey and lives only as a Worker secret.
 
 ## Done looks like
 Eric opens **dome.aistrangegame.com/guide**, reads the guide, enters his code, walks the whole site, leaves a typed or spoken note on any part of it, and records his own words into the boxes waiting for them. Each lands as a row in **Eric's Notes** in Airtable. Claude reads the rows, makes the changes or replies, and sets the status; Eric sees it all under **My notes**.
@@ -27,7 +27,7 @@ Eric opens **dome.aistrangegame.com/guide**, reads the guide, enters his code, w
 
 ## Steps
 **Ashrey**
-1. Confirm the code: 1187 or 11187.
+1. Confirm the code. Done.
 2. Create an Airtable token: scopes `data.records:read`, `data.records:write`; base The Dome only.
 3. Run the deploy prompt in Claude Code on the Mac: sign in to Cloudflare, add three secrets (Airtable token, Eric's code, a signing key the prompt generates), deploy to dome.aistrangegame.com.
 4. Walk it once as Eric; leave one test note.

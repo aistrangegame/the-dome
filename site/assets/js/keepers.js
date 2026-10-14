@@ -39,6 +39,8 @@
   }
   function labelOf(el) {
     if (el.matches(".slot")) { const s = D.slots[el.dataset.slot]; if (s) return s.title; }
+    if (el.matches("header.top")) return "The top bar";
+    if (el.matches("footer.foot")) return "The footer";
     const c = el.cloneNode(true); c.querySelectorAll(".k-pin, .dnote, .k-own, .k-draft, script, style").forEach((x) => x.remove());
     const h = c.querySelector("h1, h2, h3, .p-line .serif, .p-line .voice, blockquote, .eyebrow, b, legend, label");
     const t = (h ? h.textContent : el.getAttribute("aria-label") || c.textContent || "").replace(/\s+/g, " ").trim();
@@ -50,20 +52,33 @@
     if (document.querySelector(".k-banner")) return;
     document.body.classList.add("k-pick");
     const banner = document.createElement("div"); banner.className = "k-banner"; banner.setAttribute("role", "dialog"); banner.setAttribute("aria-label", "Choose what your note is about");
-    banner.innerHTML = `<span>Touch the part of the page your note is about.</span><span style="display:flex;gap:6px"><button class="k-btn act" type="button" data-w>The whole page</button><button class="k-btn" type="button" data-c>Cancel</button></span>`;
+    banner.innerHTML = `<span>Touch the part of the page your note is about (or Tab to it and press Enter).</span><span style="display:flex;gap:6px"><button class="k-btn act" type="button" data-w>The whole page</button><button class="k-btn" type="button" data-c>Cancel</button></span>`;
     document.body.append(banner);
     let hover = null;
-    const over = (e) => { const el = e.target.closest && e.target.closest(CAND); if (hover && hover !== el) hover.classList.remove("k-hover"); if (el && !el.closest(".k-banner, .k-bar, .dock")) { el.classList.add("k-hover"); hover = el; } };
-    const done = () => { document.body.classList.remove("k-pick"); if (hover) hover.classList.remove("k-hover"); banner.remove(); document.removeEventListener("mouseover", over, true); document.removeEventListener("click", click, true); document.removeEventListener("keydown", key, true); };
+    const mark = (el) => { if (hover && hover !== el) hover.classList.remove("k-hover"); if (el && !el.closest(".k-banner, .k-bar, .dock")) { el.classList.add("k-hover"); hover = el; } };
+    const over = (e) => mark(e.target.closest && e.target.closest(CAND));
+    const focusIn = (e) => mark(e.target.closest && e.target.closest(CAND));
+    // Keyboard: every part becomes reachable with Tab while choosing
+    const added = [...document.querySelectorAll(CAND)].filter((el) => !el.closest(".k-banner, .k-bar, .dock") && !el.hasAttribute("tabindex"));
+    added.forEach((el) => { el.setAttribute("tabindex", "0"); el.dataset.kt = "1"; });
+    const done = () => {
+      document.body.classList.remove("k-pick"); if (hover) hover.classList.remove("k-hover"); banner.remove();
+      added.forEach((el) => { el.removeAttribute("tabindex"); delete el.dataset.kt; });
+      document.removeEventListener("mouseover", over, true); document.removeEventListener("focusin", focusIn, true); document.removeEventListener("click", click, true); document.removeEventListener("keydown", key, true);
+    };
+    const choose = (el) => { done(); if (el) sheet({ kind: "Note", section: labelOf(el), anchor: anchorOf(el) }); else sheet({ kind: "Note", section: "Whole page" }); };
     const click = (e) => {
       if (e.target.closest(".k-banner")) return;
       if (e.target.closest(".k-bar, .dock")) { done(); return; }
       e.preventDefault(); e.stopPropagation();
-      const el = e.target.closest(CAND); done();
-      if (el) sheet({ kind: "Note", section: labelOf(el), anchor: anchorOf(el) }); else sheet({ kind: "Note", section: "Whole page" });
+      choose(e.target.closest(CAND));
     };
-    const key = (e) => { if (e.key === "Escape") done(); };
-    document.addEventListener("mouseover", over, true); document.addEventListener("click", click, true); document.addEventListener("keydown", key, true);
+    const key = (e) => {
+      if (e.key === "Escape") { done(); document.getElementById("kAdd")?.focus(); return; }
+      const a = document.activeElement;
+      if ((e.key === "Enter" || e.key === " ") && a && a.dataset && a.dataset.kt) { e.preventDefault(); e.stopPropagation(); choose(a); }
+    };
+    document.addEventListener("mouseover", over, true); document.addEventListener("focusin", focusIn, true); document.addEventListener("click", click, true); document.addEventListener("keydown", key, true);
     banner.querySelector("[data-w]").addEventListener("click", () => { done(); sheet({ kind: "Note", section: "Whole page" }); });
     banner.querySelector("[data-c]").addEventListener("click", done);
     banner.querySelector("[data-w]").focus();
@@ -83,21 +98,29 @@
       <div class="k-row"><button class="k-rec" type="button" id="kRec"><span class="dot"></span><span class="t">Speak</span></button><span class="k-time" id="kTime"></span></div>
       <p class="k-status" id="kStatus" role="status" aria-live="polite"></p>
       <div class="k-row" style="justify-content:flex-end"><button class="btn" type="button" id="kCancel">Cancel</button><button class="btn act" type="button" id="kSend">${slot ? "Save as a draft" : "Send"}</button></div>`;
+    const opener = o.from || document.getElementById("kAdd");
     document.body.append(back, el);
     const ta = el.querySelector("#kText"), status = el.querySelector("#kStatus"), recBtn = el.querySelector("#kRec"), time = el.querySelector("#kTime");
     setTimeout(() => ta.focus(), 50);
 
     let rec = null, chunks = [], blob = null, stream = null, speech = null, t0 = 0, timer = 0, base = "";
+    let starting = false, closed = false, noteId = null;
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const release = (st) => st && st.getTracks().forEach((t) => t.stop());
     async function start() {
+      if (starting) return;
+      starting = true;
       try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
-      catch (e) { status.textContent = "The microphone isn’t available here. Typing works just as well."; return; }
+      catch (e) { starting = false; if (!closed) status.textContent = "The microphone isn’t available here. Typing works just as well."; return; }
+      starting = false;
+      if (closed) { release(stream); return; }     // the sheet closed while the browser was asking
       const type = ["audio/webm;codecs=opus", "audio/mp4", "audio/webm"].find((t) => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || "";
       rec = new MediaRecorder(stream, type ? { mimeType: type } : undefined); chunks = []; blob = null;
       rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
       rec.onstop = () => {
         blob = new Blob(chunks, { type: (rec.mimeType || "audio/webm").split(";")[0] });
-        stream.getTracks().forEach((t) => t.stop());
+        release(stream);
+        if (closed) return;
         let a = el.querySelector("audio"); if (!a) { a = document.createElement("audio"); a.controls = true; recBtn.parentElement.after(a); }
         a.src = URL.createObjectURL(blob);
         status.textContent = "Recorded. Listen back if you like, then " + (slot ? "save it." : "send it.");
@@ -106,11 +129,13 @@
       timer = setInterval(() => { const s = Math.floor((Date.now() - t0) / 1000); time.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; if (s >= 240) stop(); }, 250);
       base = ta.value ? ta.value.replace(/\s*$/, " ") : "";
       if (SR) {
-        speech = new SR(); speech.continuous = true; speech.interimResults = true; speech.lang = "en-US";
-        let final = "";
-        speech.onresult = (e) => { let interim = ""; for (let i = e.resultIndex; i < e.results.length; i++) { const r = e.results[i]; if (r.isFinal) final += r[0].transcript; else interim += r[0].transcript; } ta.value = base + final + interim; };
-        speech.onerror = () => {}; speech.onend = () => { if (rec && rec.state === "recording") try { speech.start(); } catch (e) {} };
-        try { speech.start(); } catch (e) {}
+        const sp = (speech = new SR()); sp.continuous = true; sp.interimResults = true; sp.lang = "en-US";
+        let final = "", restarts = 0, dead = false;
+        sp.onresult = (e) => { let interim = ""; for (let i = e.resultIndex; i < e.results.length; i++) { const r = e.results[i]; if (r.isFinal) final += r[0].transcript; else interim += r[0].transcript; } ta.value = base + final + interim; };
+        // A refusal or a dropped connection won't fix itself: stop writing out, keep recording
+        sp.onerror = (e) => { if (/not-allowed|service-not-allowed|network|audio-capture|language-not-supported/.test(e.error)) { dead = true; status.textContent = "Recording only: this browser can’t write it out right now, but we’ll hear the recording."; } };
+        sp.onend = () => { if (dead || speech !== sp || !rec || rec.state !== "recording" || ++restarts > 40) return; setTimeout(() => { if (speech === sp && rec && rec.state === "recording") try { sp.start(); } catch (e) {} }, 300); };
+        try { sp.start(); } catch (e) {}
         status.textContent = "Listening. Your words appear above as you speak.";
       } else status.textContent = "Recording. This browser can’t write it out as you speak, but we’ll hear the recording.";
     }
@@ -120,9 +145,25 @@
       if (rec && rec.state === "recording") rec.stop();
     }
     recBtn.addEventListener("click", () => (rec && rec.state === "recording" ? stop() : start()));
-    const close = () => { stop(); back.remove(); el.remove(); };
+    const onKey = (e) => {
+      if (e.key === "Escape") { e.preventDefault(); close(); return; }
+      if (e.key !== "Tab") return;     // keep Tab inside the sheet while it is open
+      const f = [...el.querySelectorAll("button:not([disabled]), textarea, audio[controls]")].filter((x) => x.offsetParent !== null);
+      if (!f.length) return;
+      const first = f[0], last = f[f.length - 1];
+      if (!el.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+      else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
+    document.addEventListener("keydown", onKey, true);
+    const close = () => {
+      if (closed) return;
+      closed = true; stop(); release(stream);
+      document.removeEventListener("keydown", onKey, true);
+      back.remove(); el.remove();
+      (opener && document.contains(opener) ? opener : document.getElementById("kAdd"))?.focus();
+    };
     back.addEventListener("click", close); el.querySelector("#kCancel").addEventListener("click", close);
-    el.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
     el.querySelector("#kSend").addEventListener("click", async (e) => {
       const btn = e.currentTarget;
       if (rec && rec.state === "recording") { stop(); await new Promise((r) => setTimeout(r, 400)); }
@@ -130,19 +171,27 @@
       if (!text && !blob) { status.textContent = "Say or type something first."; return; }
       btn.disabled = true; status.textContent = "Sending…";
       try {
-        const { id } = await api("/notes", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ kind: o.kind, page: PAGE, title: TITLE, section: o.section, text, voiceComing: !!blob, value: o.anchor ? { anchor: o.anchor } : "" }) });
-        if (blob) { status.textContent = "Sending the recording…"; await api(`/notes/${id}/voice`, { method: "POST", headers: { "content-type": blob.type || "audio/webm" }, body: blob }); }
+        // A retry after a failed recording upload re-sends only the recording, not a second note
+        if (!noteId) noteId = (await api("/notes", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ kind: o.kind, page: PAGE, title: TITLE, section: o.section, text, voiceComing: !!blob, value: o.anchor ? { anchor: o.anchor } : "" }) })).id;
+        if (blob) {
+          status.textContent = "Sending the recording…";
+          try { await api(`/notes/${noteId}/voice`, { method: "POST", headers: { "content-type": blob.type || "audio/webm" }, body: blob }); }
+          catch (err) { if (err.status === 413) { close(); toast(err.message, 6000); await refresh(); return; } throw err; }
+        }
         close(); toast(slot ? "Saved as a draft. Approve it in the box when it sounds right." : "Sent. It’s with Ashrey and Claude.");
         await refresh();
-      } catch (err) { btn.disabled = false; status.textContent = err.message; }
+      } catch (err) { btn.disabled = false; status.textContent = noteId ? "Your words are saved. The recording didn’t go through: press Send to try it again." : err.message; }
     });
   }
 
   /* ---------- My notes ---------- */
-  function panel(focusId) {
+  let openPanel = null;
+  const here = (page) => { try { const u = new URL("/" + String(page).replace(/^[/\\.]+/, ""), location.origin); return u.origin === location.origin ? u.pathname + u.search : "/"; } catch (e) { return "/"; } };
+  function panel(focusId, keepScope) {
+    const opener = openPanel ? openPanel.opener : document.activeElement;
     document.querySelector(".k-panel")?.remove();
     const p = document.createElement("aside"); p.className = "k-panel"; p.setAttribute("aria-label", "My notes");
-    let scope = focusId ? "all" : "page";
+    let scope = keepScope || (focusId ? "all" : "page");
     p.innerHTML = `<header><h3>My notes</h3><div class="k-tabs"><button type="button" data-s="page">This page</button><button type="button" data-s="all">Everywhere</button></div><button class="k-x" type="button">Close</button></header><div class="k-list"></div>`;
     document.body.append(p);
     const list = p.querySelector(".k-list");
@@ -151,7 +200,7 @@
       const show = notes.filter((n) => scope === "all" || n.page === PAGE);
       list.innerHTML = show.length ? show.map((n) => `<article class="k-note" data-id="${esc(n.id)}">
           <div class="k-meta"><span class="k-chip">${esc(n.kind)}</span><span class="k-chip s-${esc(n.status)}">${esc(n.status)}</span><span class="k-chip">${esc(when(n.created))}</span></div>
-          <a class="where" href="/${esc(n.page)}">${esc(n.title || n.page)} · ${esc(n.kind === "Own words" ? ((D.slots[n.section] || {}).title || n.section) : n.section)}</a>
+          <a class="where" href="${esc(here(n.page))}">${esc(n.title || n.page)} · ${esc(n.kind === "Own words" ? ((D.slots[n.section] || {}).title || n.section) : n.section)}</a>
           ${n.text ? `<p>${esc(n.text)}</p>` : `<p><i>A recording.</i></p>`}
           ${n.voice && n.voice.url ? `<audio controls preload="none" src="${esc(n.voice.url)}"></audio>` : ""}
           ${n.reply ? `<div class="k-reply">${esc(n.reply)}<small>${SIGN}</small></div>` : ""}
@@ -159,9 +208,11 @@
       if (focusId) { const a = list.querySelector(`[data-id="${CSS.escape(focusId)}"]`); if (a) { a.scrollIntoView({ block: "center" }); a.classList.add("flash"); } focusId = null; }
     };
     p.querySelectorAll(".k-tabs button").forEach((b) => b.addEventListener("click", () => { scope = b.dataset.s; draw(); }));
-    p.querySelector(".k-x").addEventListener("click", () => p.remove());
-    p.addEventListener("keydown", (e) => { if (e.key === "Escape") p.remove(); });
-    draw(); p.querySelector(".k-x").focus();
+    const shut = () => { p.remove(); openPanel = null; (opener && document.contains(opener) ? opener : document.getElementById("kMine"))?.focus(); };
+    p.querySelector(".k-x").addEventListener("click", shut);
+    p.addEventListener("keydown", (e) => { if (e.key === "Escape") shut(); });
+    openPanel = { opener, el: p, draw, scope: () => scope };
+    draw(); if (!keepScope) p.querySelector(".k-x").focus();
   }
 
   /* ---------- Pins where his notes sit ---------- */
@@ -189,13 +240,20 @@
     document.querySelectorAll(".slot[data-slot]").forEach((s) => {
       const key = s.dataset.slot, def = D.slots[key]; if (!def) return;
       s.querySelectorAll(".k-own, .k-draft, .k-words, .k-words-by").forEach((x) => x.remove()); s.classList.remove("k-approved");
-      if (words[key]) {   // approved: his words stand where the stand-in was
+      const mine = /Eric/.test(def.who);
+      const ok = words[key];
+      if (ok) {   // approved: his words stand where the stand-in was
         s.classList.add("k-approved");
-        s.insertAdjacentHTML("beforeend", `<p class="k-words">${esc(words[key].text)}</p><span class="k-words-by">Eric</span>`);
+        s.insertAdjacentHTML("beforeend", `<p class="k-words">${esc(ok.text)}</p><span class="k-words-by">Eric</span>`);
+      }
+      if (!mine) return;     // Cody and Nicole's boxes wait for them
+      // the newest draft he hasn't approved yet (newer than what stands, if anything stands)
+      const draft = notes.find((n) => n.kind === "Own words" && n.section === key && n.status !== "Approved" && (!ok || n.created > ok.created));
+      if (ok && !draft) {
+        s.insertAdjacentHTML("beforeend", `<button class="k-own" type="button"><span class="dot"></span>Change these words</button>`);
+        s.querySelector(".k-own").addEventListener("click", (e) => sheet({ kind: "Own words", section: key, from: e.currentTarget }));
         return;
       }
-      if (!/Eric/.test(def.who)) return;     // Cody and Nicole's boxes wait for them
-      const draft = notes.find((n) => n.kind === "Own words" && n.section === key && n.status !== "Approved");
       if (draft) {
         s.insertAdjacentHTML("beforeend", `<div class="k-draft"><b>Your draft</b>${draft.text ? `<p>${esc(draft.text)}</p>` : `<p>A recording.</p>`}${draft.voice && draft.voice.url ? `<audio controls preload="none" src="${esc(draft.voice.url)}" style="width:100%;margin-bottom:10px"></audio>` : ""}
           <button class="btn act" type="button" data-ok>It sounds like me. Use it.</button> <button class="btn" type="button" data-again>Say it again</button></div>`);
@@ -204,10 +262,10 @@
           e.currentTarget.disabled = true;
           try { await api(`/notes/${draft.id}/approve`, { method: "POST" }); toast("Done. Your words now stand here."); await refresh(); } catch (err) { toast(err.message); e.currentTarget.disabled = false; }
         });
-        s.querySelector("[data-again]").addEventListener("click", () => sheet({ kind: "Own words", section: key }));
+        s.querySelector("[data-again]").addEventListener("click", (e) => sheet({ kind: "Own words", section: key, from: e.currentTarget }));
       } else {
         s.insertAdjacentHTML("beforeend", `<button class="k-own" type="button"><span class="dot"></span>Say it in your own words</button>`);
-        s.querySelector(".k-own").addEventListener("click", () => sheet({ kind: "Own words", section: key }));
+        s.querySelector(".k-own").addEventListener("click", (e) => sheet({ kind: "Own words", section: key, from: e.currentTarget }));
       }
     });
   }
@@ -227,7 +285,7 @@
       if (!moving) {
         if (map.classList.contains("inside")) map.querySelector(".pin.home").click();
         moving = true; map.classList.add("k-moving"); btn.textContent = "Save the pins"; btn.classList.add("act");
-        toast("Drag any pin to where it really is, then save.", 4000); return;
+        toast("Drag any pin to where it really is (or focus one and use the arrow keys), then save.", 4500); return;
       }
       moving = false; map.classList.remove("k-moving"); btn.textContent = "Move the pins"; btn.classList.remove("act");
       if (!moved.size) return;
@@ -242,15 +300,25 @@
       const pin = e.target.closest(".pin.out, .pin.home"); if (!pin) return;
       e.preventDefault(); e.stopPropagation(); pin.setPointerCapture(e.pointerId); pin.classList.add("dragging");
       const r = map.getBoundingClientRect(), key = pin.dataset.slug || "home";
-      const mv = (ev) => {
-        const x = Math.max(2, Math.min(98, ((ev.clientX - r.left) / r.width) * 100)), y = Math.max(2, Math.min(98, ((ev.clientY - r.top) / r.height) * 100));
-        pin.style.left = x + "%"; pin.style.top = y + "%";
-        const px = +toPhoto(x).toFixed(1), py = +y.toFixed(1);
-        if (key === "home") M.home.splice(0, 2, px, py); else M.pos[key] = [px, py];
-        moved.add(key);
-      };
-      const up = () => { pin.classList.remove("dragging"); pin.removeEventListener("pointermove", mv); pin.removeEventListener("pointerup", up); M.layout(); };
-      pin.addEventListener("pointermove", mv); pin.addEventListener("pointerup", up);
+      const mv = (ev) => place(pin, ((ev.clientX - r.left) / r.width) * 100, ((ev.clientY - r.top) / r.height) * 100);
+      const up = () => { pin.classList.remove("dragging"); ["pointermove", "pointerup", "pointercancel"].forEach((t, i) => pin.removeEventListener(t, i ? up : mv)); M.layout(); };
+      pin.addEventListener("pointermove", mv); pin.addEventListener("pointerup", up); pin.addEventListener("pointercancel", up);
+    }, true);
+    function place(pin, x, y) {
+      x = Math.max(2, Math.min(98, x)); y = Math.max(2, Math.min(98, y));
+      pin.style.left = x + "%"; pin.style.top = y + "%";
+      const key = pin.dataset.slug || "home", px = +toPhoto(x).toFixed(1), py = +y.toFixed(1);
+      if (key === "home") M.home.splice(0, 2, px, py); else M.pos[key] = [px, py];
+      moved.add(key);
+    }
+    map.addEventListener("keydown", (e) => {   // arrow keys nudge a focused pin; Shift moves further
+      if (!moving) return;
+      const pin = e.target.closest(".pin.out, .pin.home"); const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+      if (!pin || !d) return;
+      e.preventDefault(); e.stopPropagation();
+      const r = map.getBoundingClientRect(), b = pin.getBoundingClientRect(), step = e.shiftKey ? 5 : 1;
+      const x = parseFloat(pin.style.left) || ((b.left + b.width / 2 - r.left) / r.width) * 100, y = parseFloat(pin.style.top) || ((b.top + b.height / 2 - r.top) / r.height) * 100;
+      place(pin, x + d[0] * step, y + d[1] * step);
     }, true);
     map.addEventListener("click", (e) => { if (moving && e.target.closest(".pin")) { e.preventDefault(); e.stopPropagation(); } }, true);
   }
@@ -261,7 +329,7 @@
     catch (e) { if (e.status === 401) { bar.remove(); return; } }
     document.getElementById("kCount").textContent = String(notes.length);
     pins(); slots(); mapTools();
-    const open = document.querySelector(".k-panel"); if (open) { open.remove(); panel(); }
+    if (openPanel && document.contains(openPanel.el)) panel(null, openPanel.scope());
   }
   refresh();
 })();

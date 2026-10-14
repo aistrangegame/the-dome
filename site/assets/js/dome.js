@@ -118,7 +118,7 @@
   }
   /* ---------- The keeper layer: only where the Worker runs, only once Eric has signed in ---------- */
   function keepersInit() {
-    if (!(location.hostname === "dome.aistrangegame.com" || location.port === "8787")) return;
+    if (location.protocol === "file:") return;   // the server's answer below decides; a plain file has none
     fetch("/api/keep/me", { credentials: "same-origin" }).then((r) => r.json()).then((j) => {
       if (!j || !j.who) return;
       const css = document.createElement("link"); css.rel = "stylesheet"; css.href = "/assets/css/keepers.css"; document.head.append(css);
