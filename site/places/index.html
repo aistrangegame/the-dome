@@ -5,12 +5,44 @@
 <title>The places · Catskill Mountain Domes</title>
 <link rel="stylesheet" href="../assets/css/dome.css">
 <style>
-  .map { position: relative; border-radius: 22px; overflow: hidden; aspect-ratio: 16/9; background: #0b1f12; }
-  .map > img { width: 100%; height: 100%; object-fit: cover; }
-  .map a { position: absolute; transform: translate(-50%, -50%); text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 6px; color: #fff; font-size: .78rem; text-shadow: 0 1px 6px rgba(0,0,0,.8); }
-  .map a .l { width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 5px rgba(255,255,255,.22), 0 0 18px rgba(255,255,255,.7); animation: breathe 4.6s ease-in-out infinite; }
-  .map a:hover .l, .map a:focus-visible .l { background: var(--accent); }
-  @media (max-width: 600px) { .map a span:last-child { display: none; } .map a .l { width: 10px; height: 10px; } }
+  .map { position: relative; border-radius: 22px; overflow: hidden; aspect-ratio: 16/9; background: #0b1f12; isolation: isolate; }
+  .map > img { width: 100%; height: 100%; object-fit: cover; transition: filter 1.2s ease, transform 1.6s cubic-bezier(.2,.7,.2,1); }
+  .map.inside > img { filter: brightness(.55) saturate(.8); transform: scale(1.06); }
+  .map svg.paths { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .map svg.paths path { fill: none; stroke: rgba(255,248,230,.7); stroke-width: 1.2; vector-effect: non-scaling-stroke; stroke-dasharray: 3 4; stroke-dashoffset: 0; opacity: 0; transition: opacity 1.4s ease; }
+  .map.drawn svg.paths path { opacity: .85; animation: pathFlow 1.6s linear infinite; }
+  .map.inside svg.paths path { opacity: .15; }
+  @keyframes pathFlow { to { stroke-dashoffset: -14; } }
+  .pin { all: unset; box-sizing: border-box; cursor: pointer; position: absolute; transform: translate(-50%, -50%) scale(.3); opacity: 0; display: grid; justify-items: center; gap: 6px; color: #fff; z-index: 2; transition: transform .9s cubic-bezier(.2,.9,.25,1.25), opacity .7s ease, left .9s cubic-bezier(.2,.8,.2,1), top .9s cubic-bezier(.2,.8,.2,1); }
+  .map.drawn .pin { transform: translate(-50%, -50%); opacity: 1; }
+  .pin .badge { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; color: #E2C48A; background: rgba(7,11,9,.62); backdrop-filter: blur(6px); box-shadow: 0 0 0 1px rgba(226,196,138,.45), 0 6px 18px rgba(0,0,0,.4); transition: background .3s, box-shadow .3s, transform .3s; }
+  .pin .name { font: 500 .74rem/1.2 "DM Sans"; text-shadow: 0 1px 6px rgba(0,0,0,.9); white-space: nowrap; }
+  .pin:hover .badge, .pin:focus-visible .badge, .pin[aria-pressed="true"] .badge { background: #E2C48A; color: #1A2218; transform: scale(1.12); box-shadow: 0 0 0 6px rgba(226,196,138,.25), 0 0 26px rgba(226,196,138,.6); }
+  .pin:hover svg.ic *, .pin:focus-visible svg.ic *, .pin[aria-pressed="true"] svg.ic * { animation-play-state: running; }
+  .pin.home .badge { width: 54px; height: 54px; background: rgba(255,255,255,.92); color: #1A2218; }
+  .pin.home .badge i { width: 10px; height: 10px; border-radius: 50%; background: #1A2218; animation: breathe 4.6s ease-in-out infinite; }
+  .map .pin.in, .map.drawn .pin.in { opacity: 0; transform: translate(-50%, -50%) scale(.2); pointer-events: none; }
+  .map.drawn.inside .pin.in { opacity: 1; transform: translate(-50%, -50%); pointer-events: auto; }
+  .map.drawn.inside .pin.out { opacity: .14; pointer-events: none; }
+  .pin.home { z-index: 3; }
+  .map .hint { position: absolute; left: 14px; bottom: 12px; z-index: 3; font: 500 .7rem/1.3 "DM Sans"; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.85); text-shadow: 0 1px 8px rgba(0,0,0,.9); pointer-events: none; }
+  .placecard { display: grid; grid-template-columns: 140px 1fr; gap: 18px; align-items: center; margin-top: 16px; padding: 14px; border: 1px solid var(--line); border-radius: 18px; background: var(--ground); min-height: 132px; }
+  .placecard .ph { border-radius: 12px; overflow: hidden; aspect-ratio: 1; position: relative; }
+  .placecard .ph img { width: 100%; height: 100%; object-fit: cover; }
+  .placecard .ph .ic { position: absolute; right: 8px; bottom: 8px; color: #fff; filter: drop-shadow(0 1px 4px rgba(0,0,0,.7)); }
+  .placecard h3 { margin: .2rem 0 .3rem; }
+  .placecard p { margin: 0 0 .6rem; color: var(--muted); }
+  .placecard .q { font-family: Lora, serif; font-style: italic; color: var(--ink); }
+  .placecard.swap { animation: cardIn .7s cubic-bezier(.2,.7,.2,1); }
+  @keyframes cardIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  .card .num .ic { vertical-align: -5px; margin-right: 6px; color: var(--accent); }
+  @media (max-width: 600px) {
+    .map { aspect-ratio: 1/1; } .map > img { object-position: 50% 50%; }
+    .pin .name { display: none; } .pin .badge { width: 38px; height: 38px; } .pin.home .badge { width: 46px; height: 46px; }
+    .pin .badge .ic { width: 20px; height: 20px; }
+    .placecard { grid-template-columns: 96px 1fr; gap: 14px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .pin, .map > img { transition: none; } .map.drawn svg.paths path { animation: none; } }
 </style>
 </head>
 <body data-root="../" data-page="places/index.html">
@@ -18,10 +50,11 @@
   <section class="passage" data-mode="descend" data-h="190" data-alt="The property from directly above." data-season-img='{"summer":"disc"}' data-lines='[["Thirteen places, one point."]]'></section>
   <section class="band" style="padding-bottom:28px"><div class="wrap center rise">
     <span class="eyebrow">The places</span><h1>Thirteen places, one point.</h1>
-    <p class="lede">Seen from above, the dome is a single white point in the green. Every light on this map is a place with its own card on the mountain.</p>
+    <p class="lede">Seen from above, the dome is a single white point in the green. Every path on this map leads from it to a place with its own card on the mountain. Touch the dome to go inside.</p>
   </div></section>
   <section style="padding-bottom:48px"><div class="wrap">
-    <div class="map rise" id="map"><img src="../assets/media/51-DJI_20260802173407_0329_D-1600.webp" alt="The property from directly above: the white dome, the winding drive, the backyard sail, the pond and the meadow."></div>
+    <div class="map" id="map"><img src="../assets/media/51-DJI_20260802173407_0329_D-1600.webp" alt="The property from directly above: the white dome, the winding drive, the backyard sail, the pond and the meadow."><svg class="paths" id="paths" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg><span class="hint" id="mapHint">Touch a place</span></div>
+    <div class="placecard" id="placecard" aria-live="polite"></div>
     <p class="season-note" style="margin-top:10px">The map is the summer 2026 drone shoot, from directly above.</p>
   </div></section>
   <section class="band soft"><div class="wrap">
@@ -35,14 +68,55 @@
 <script>
 window.page = function (Dome) {
   const { D, esc } = Dome;
-  const pos = { gate: [63, 80], "cedar-pool": [47, 34], "fire-circle": [40, 30], meadow: [22, 30], trails: [73, 17], "night-sky": [50, 7], window: [50, 54] };
-  const label = { window: "The dome (seven places inside)" };
-  document.getElementById("map").insertAdjacentHTML("beforeend", Object.entries(pos).map(([slug, [x, y]]) => {
-    const p = D.places.find((q) => q.slug === slug);
-    return `<a href="${slug}.html" style="left:${x}%;top:${y}%"><span class="l"></span><span>${esc(label[slug] || p.name)}</span></a>`;
-  }).join(""));
+  // Where each place sits on the summer 2026 drone photo (x, y as % of the picture). Inside places open in a ring round the dome.
+  const pos = { gate: [41, 79], "cedar-pool": [47, 40], "fire-circle": [53, 36], meadow: [24, 30], trails: [72, 17], "night-sky": [50, 8] };
+  const HOME = [50.5, 54];
+  const map = document.getElementById("map"), svg = document.getElementById("paths"), pc = document.getElementById("placecard"), hint = document.getElementById("mapHint");
+  const mobile = () => innerWidth <= 600;
+  // on a phone the picture is cropped square, so remap x into the visible middle of the 16:9 photo
+  const sx = (x) => mobile() ? Math.min(92, Math.max(8, 50 + (x - 50) * (16 / 9))) : x;
+  const sy = (y) => y;
+  const inside = D.places.filter((p) => p.inout === "Inside");
+  const ring = (i) => { const a = -Math.PI / 2 + (i / inside.length) * Math.PI * 2, r = mobile() ? [15.5, 26] : [17, 27]; return [HOME[0] + r[0] * Math.cos(a), HOME[1] + r[1] * Math.sin(a)]; };
+  function pinHTML(p, cls, x, y) {
+    return `<button class="pin ${cls}" type="button" data-slug="${p.slug}" aria-pressed="false" style="left:${x}%;top:${y}%" aria-label="${esc(p.name)}"><span class="badge">${Dome.icon(p.slug, { size: 24 })}</span><span class="name">${esc(p.name)}</span></button>`;
+  }
+  function layout() {
+    svg.innerHTML = Object.values(pos).map(([x, y]) => { const hx = sx(HOME[0]), hy = sy(HOME[1]), tx = sx(x), ty = sy(y), mx = (hx + tx) / 2 + (ty - hy) * 0.18, my = (hy + ty) / 2 - (tx - hx) * 0.18;
+      return `<path d="M${hx} ${hy} Q${mx} ${my} ${tx} ${ty}"/>`; }).join("");
+    map.querySelectorAll(".pin.out").forEach((b) => { const [x, y] = pos[b.dataset.slug]; b.style.left = sx(x) + "%"; b.style.top = sy(y) + "%"; });
+    map.querySelectorAll(".pin.in").forEach((b, i) => { const [x, y] = ring(i); b.style.left = (map.classList.contains("inside") ? sx(x) : sx(HOME[0])) + "%"; b.style.top = (map.classList.contains("inside") ? y : HOME[1]) + "%"; });
+    const h = map.querySelector(".pin.home"); h.style.left = sx(HOME[0]) + "%"; h.style.top = HOME[1] + "%";
+  }
+  map.insertAdjacentHTML("beforeend",
+    Object.keys(pos).map((slug) => pinHTML(D.places.find((q) => q.slug === slug), "out", 50, 50)).join("") +
+    inside.map((p) => pinHTML(p, "in", 50, 50)).join("") +
+    `<button class="pin home" type="button" aria-expanded="false" aria-label="The dome: show the seven places inside"><span class="badge"><i></i></span><span class="name">The dome · seven places inside</span></button>`);
+  const home = map.querySelector(".pin.home");
+  home.addEventListener("click", () => {
+    const open = !map.classList.contains("inside"); map.classList.toggle("inside", open); home.setAttribute("aria-expanded", String(open));
+    hint.textContent = open ? "Inside the dome · touch the dome again to step out" : "Touch a place"; layout();
+    map.querySelectorAll(".pin.in").forEach((b, i) => (b.style.transitionDelay = open ? (i * 0.06) + "s" : "0s"));
+    if (open) select(inside[0].slug, false);
+  });
+  function select(slug, focusCard) {
+    const p = D.places.find((q) => q.slug === slug); const im = p.img.summer || p.img.winter || "dome_ridge";
+    map.querySelectorAll(".pin[data-slug]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.slug === slug)));
+    pc.classList.remove("swap"); void pc.offsetWidth; pc.classList.add("swap");
+    pc.innerHTML = `<div class="ph"><img src="${Dome.M(im, 800)}" alt="">${Dome.icon(p.slug, { live: true, size: 30 })}</div>
+      <div><span class="num">${String(p.n).padStart(2, "0")} · ${esc(p.short)} · ${esc(p.inout)}</span><h3>${esc(p.name)}</h3>
+      <p class="q">“${esc(p.voices[0][2])}” · ${esc(p.voices[0][1])}</p><a class="btn" href="${p.slug}.html">Open the place</a></div>`;
+  }
+  map.addEventListener("click", (e) => { const b = e.target.closest(".pin[data-slug]"); if (b) select(b.dataset.slug); });
+  layout(); addEventListener("resize", layout);
+  select("gate");
+  // arrival: the paths draw out from the dome, then the places light one by one
+  const io = new IntersectionObserver((es) => es.forEach((en) => { if (!en.isIntersecting) return; io.disconnect();
+    map.querySelectorAll(".pin.out").forEach((b, i) => (b.style.transitionDelay = (0.5 + i * 0.18) + "s"));
+    map.classList.add("drawn"); setTimeout(() => map.querySelectorAll(".pin.out").forEach((b) => (b.style.transitionDelay = "0s")), 2600); }), { threshold: .35 });
+  io.observe(map);
   const card = (p) => `<a class="card rise" href="${p.slug}.html"><div class="media" data-season-img='${JSON.stringify(p.img.summer || p.img.winter ? p.img : { summer: "dome_ridge" })}' data-w="800"><img alt="${esc(p.name)}"><span class="imagined-tag">Imagined season</span></div>
-    <div class="body"><span class="num">${String(p.n).padStart(2, "0")} · ${esc(p.short)}</span><h3>${esc(p.name)}</h3><p>“${esc(p.voices[0][2])}” · ${esc(p.voices[0][1])}</p></div></a>`;
+    <div class="body"><span class="num">${Dome.icon(p.slug, { size: 22 })}${String(p.n).padStart(2, "0")} · ${esc(p.short)}</span><h3>${esc(p.name)}</h3><p>“${esc(p.voices[0][2])}” · ${esc(p.voices[0][1])}</p></div></a>`;
   document.getElementById("inside").innerHTML = D.places.filter((p) => p.inout === "Inside").map(card).join("");
   document.getElementById("outside").innerHTML = D.places.filter((p) => p.inout !== "Inside").map(card).join("");
 };

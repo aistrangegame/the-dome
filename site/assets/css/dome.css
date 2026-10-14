@@ -268,6 +268,41 @@ footer.foot small { opacity: .6; }
 @keyframes icWait { 0% { stroke-dashoffset: 0; } 6% { stroke-dashoffset: 76; } 78% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: 0; } }
 .ic .ic-star { animation: icStar 5.2s ease-in-out infinite; }
 @keyframes icStar { 0%, 100% { transform: none; opacity: 1; } 6% { transform: scale(.25); opacity: .2; } 76% { transform: scale(.25); opacity: .2; } 86% { transform: scale(1.3); opacity: 1; } }
+/* the place figures */
+.ic .ic-fill { fill: currentColor; stroke: none; }
+.ic .ic-soft { fill: currentColor; fill-opacity: .28; stroke: none; }
+.ic .a-swing { transform-origin: 0% 50%; animation: aSwing 5s ease-in-out infinite; }
+.ic .a-swing2 { transform-origin: 100% 50%; animation: aSwing 5s ease-in-out infinite; }
+@keyframes aSwing { 0%, 100% { transform: none; } 30%, 62% { transform: scaleX(.32); } }
+.ic .a-cloud { animation: aCloud 7s ease-in-out infinite; }
+@keyframes aCloud { 0%, 100% { transform: none; } 50% { transform: translateX(10px); } }
+.ic .a-sink { animation: aSink 4.4s ease-in-out infinite; }
+@keyframes aSink { 0%, 100% { transform: none; } 35%, 70% { transform: translateY(1.6px) scaleY(.82); } }
+.ic .a-tilt { transform-origin: 100% 100%; animation: aTilt 4.6s ease-in-out infinite; }
+@keyframes aTilt { 0%, 100% { transform: none; } 30%, 60% { transform: rotate(16deg); } }
+.ic .a-steam { animation: aSteam 3s ease-in-out infinite; }
+@keyframes aSteam { 0%, 100% { opacity: 1; transform: none; } 50% { opacity: .1; transform: translateY(-3px); } }
+.ic .a-glow { animation: aGlow 4s ease-in-out infinite; }
+@keyframes aGlow { 0%, 100% { fill: transparent; } 50% { fill: currentColor; fill-opacity: .55; } }
+.ic .a-rung { animation: aRung 3.2s ease-in-out infinite; }
+@keyframes aRung { 0%, 100% { opacity: 1; } 18% { opacity: .15; } 36% { opacity: 1; } }
+.ic .a-flame { transform-origin: 50% 100%; animation: aFlame 1.6s ease-in-out infinite; }
+@keyframes aFlame { 0%, 100% { transform: none; } 25% { transform: scale(.92, 1.1) skewX(-4deg); } 55% { transform: scale(1.05, .9) skewX(3deg); } 80% { transform: scale(.96, 1.06); } }
+.ic .a-ripple { animation: aRipple 2.6s ease-out infinite; }
+@keyframes aRipple { 0% { transform: scale(.4); opacity: 1; } 100% { transform: scale(3.2); opacity: 0; } }
+.ic .a-spark { animation: aSpark 2.1s ease-out infinite; }
+@keyframes aSpark { 0% { transform: translateY(4px); opacity: 0; } 30% { opacity: 1; } 100% { transform: translate(2px, -9px); opacity: 0; } }
+.ic .a-sway { transform-origin: 50% 100%; animation: aSway 3.8s ease-in-out infinite; }
+@keyframes aSway { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(6deg); } }
+.ic .a-draw { stroke-dasharray: 40; animation: aDraw 4.4s ease-in-out infinite; }
+@keyframes aDraw { 0% { stroke-dashoffset: 0; } 10% { stroke-dashoffset: 40; } 70%, 100% { stroke-dashoffset: 0; } }
+.ic .a-twinkle { animation: aTwinkle 2.8s ease-in-out infinite; }
+@keyframes aTwinkle { 0%, 100% { transform: none; opacity: 1; } 50% { transform: scale(.55); opacity: .4; } }
+.ic .a-shoot { stroke-dasharray: 10; animation: aShoot 4.8s ease-in infinite; }
+@keyframes aShoot { 0%, 60% { stroke-dashoffset: 0; opacity: 1; } 61% { stroke-dashoffset: 10; opacity: 1; } 75% { stroke-dashoffset: -10; opacity: 0; } 100% { stroke-dashoffset: 0; opacity: 1; } }
+.ic .a-write { stroke-dasharray: 7; animation: aWrite 3.6s ease-in-out infinite; }
+@keyframes aWrite { 0% { stroke-dashoffset: 0; } 8% { stroke-dashoffset: 7; } 40%, 100% { stroke-dashoffset: 0; } }
+.card:hover svg.ic *, .card:focus-visible svg.ic * { animation-play-state: running; }
 /* quiet on the finished frame until a hand comes near (the shorthands above reset play-state, so these sit after them) */
 svg.ic:not(.live) * { animation-play-state: paused; }
 a:hover svg.ic *, a:focus-visible svg.ic *, button:hover svg.ic *, button:focus-visible svg.ic * { animation-play-state: running; }
@@ -278,3 +313,5 @@ a:hover svg.ic *, a:focus-visible svg.ic *, button:hover svg.ic *, button:focus-
 .foot-play a { display: inline-flex; align-items: center; gap: 8px; }
 .foot-play .ic { color: var(--accent); }
 @media (prefers-reduced-motion: reduce) { .ic * { animation: none !important; } }
+.hero-ic { display: block; color: #fff; margin-bottom: 14px; filter: drop-shadow(0 2px 10px rgba(0,0,0,.5)); }
+.card .num .ic { vertical-align: -6px; margin-right: 8px; color: var(--accent); }

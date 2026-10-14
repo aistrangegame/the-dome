@@ -13,7 +13,7 @@ window.page = function (Dome) {
 
   const hero = `<section class="hero page-hero" data-season-img='${JSON.stringify(imgMap)}'>
     <div class="bg"><img alt="${esc(p.name)}"><span class="imagined-tag">Imagined season</span></div><div class="veil"></div>
-    <div class="inner"><span class="eyebrow" style="color:rgba(255,255,255,.75)">${String(p.n).padStart(2, "0")} · ${esc(p.short)}${mode === "house" ? " · on the mountain" : ""}</span>
+    <div class="inner"><span class="hero-ic">${Dome.icon(p.slug, { live: true, size: 44 })}</span><span class="eyebrow" style="color:rgba(255,255,255,.75)">${String(p.n).padStart(2, "0")} · ${esc(p.short)}${mode === "house" ? " · on the mountain" : ""}</span>
     <h1>${esc(p.name)}</h1>${mode === "house" ? `<p class="lede" style="font-family:Lora,serif;font-style:italic">${esc(p.dome)}</p>` : ""}</div></section>`;
 
   const voices = `<section class="band"><div class="reading"><span class="eyebrow">What guests said here</span>

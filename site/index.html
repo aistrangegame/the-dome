@@ -134,7 +134,7 @@ window.page = function (Dome) {
   document.getElementById("placeCards").innerHTML = pick.map((slug) => {
     const p = D.places.find((x) => x.slug === slug);
     return `<a class="card rise" href="places/${p.slug}.html"><div class="media" data-season-img='${JSON.stringify(p.img)}' data-w="800"><img alt="${esc(p.name)}"><span class="imagined-tag">Imagined season</span></div>
-      <div class="body"><span class="num">${String(p.n).padStart(2, "0")}</span><h3>${esc(p.name)}</h3><p>${esc(p.dome)}</p></div></a>`;
+      <div class="body"><span class="num">${Dome.icon(p.slug, { size: 22 })}${String(p.n).padStart(2, "0")}</span><h3>${esc(p.name)}</h3><p>${esc(p.dome)}</p></div></a>`;
   }).join("");
 
   // The sky of guests
