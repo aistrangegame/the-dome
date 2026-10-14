@@ -131,10 +131,11 @@ window.page = function (Dome) {
   const stage = bloom.querySelector(".stage"), inner = ap.querySelector(".iris-in");
   Dome.irisSize(stage); addEventListener("resize", () => { Dome.irisSize(stage); onScroll(); });
   let state = "";
+  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;   // reduced motion: the circle is simply open
   function onScroll() {
     const r = bloom.getBoundingClientRect(); const span = bloom.offsetHeight - innerHeight;
     const p = Math.min(1, Math.max(0, -r.top / span));
-    const e = Math.min(1, p / 0.8), eased = e * e * (3 - 2 * e);
+    const e = still ? 1 : Math.min(1, p / 0.8), eased = e * e * (3 - 2 * e);
     Dome.irisSet(stage, ap, inner, eased, window.Flow && !window.Flow.reduce ? 1 + Math.min(1, window.Flow.speed / 40) * 0.03 : 1);
     point.style.opacity = String(Math.max(0, 1 - p * 4));
     const st = p < 0.1 ? "hint" : p < 0.85 ? "" : "title";
@@ -143,7 +144,7 @@ window.page = function (Dome) {
   }
   let tick = false;
   addEventListener("scroll", () => { if (!tick) { tick = true; requestAnimationFrame(() => { onScroll(); tick = false; }); } }, { passive: true }); onScroll();
-  (function settle() { if (window.Flow && window.Flow.speed > 0) onScroll(); requestAnimationFrame(settle); })();
+  Dome.onFlow((F) => F.onTick(onScroll));   // redraw while the glide fades; no loop of its own
 
   const v = document.getElementById("film");
   if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {

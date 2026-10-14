@@ -17,6 +17,7 @@ Scene.register("library", {
     say("Run your finger along the spines (or use the arrow keys). Tap one (or press Enter) to pull it out.");
 
     function layout(W, H) {
+      if (anim && anim.t < 1.4) anim.t = 1.4;   // a resize mid-pull finishes the pull rather than pointing at a book that moved
       lw = W; lh = H; shelves = H > W ? 3 : 2; top = H * .3; sh = (H * .95 - top) / shelves;
       let seed = 21; const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
       const left = W > H ? W * .13 : W * .05, right = W - (W > H ? W * .04 : W * .05), sc = Math.max(.6, Math.min(1.1, W / 900));
@@ -72,7 +73,7 @@ Scene.register("library", {
       for (let i = 0; i < books.length; i++) books[i].lean *= Math.max(0, 1 - dt * 3);
       if (anim) {
         anim.t += dt;
-        const b = books[anim.i]; b.out = Math.min(1, anim.t / .6);
+        const b = books[anim.i]; if (b) b.out = Math.min(1, anim.t / .6);   // the shelf may have been rebuilt on a resize
         if (anim.t > 1.4 && shown < pulls) {
           shown = pulls; k.reveal(pulls - 1); k.tone([392, 440, 523.25][pulls - 1], 2.8, .035);
           if (pulls >= 3) { done = true; say(""); k.done(); }

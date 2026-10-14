@@ -54,8 +54,8 @@
     document.body.append(layer); return layer;
   }
   function ring(x, y, a, k, el) {
-    if (reduce || live > 14 || !document.body.animate) return;
-    const e = E[el || element], d = document.createElement("i"), R = Math.hypot(innerWidth, innerHeight) * .62 * e.spread * .75;
+    if (reduce || live > 10 || !document.body.animate) return;
+    const e = E[el || element], d = document.createElement("i"), R = Math.min(760, Math.hypot(innerWidth, innerHeight) * .62 * e.spread * .75);
     const life = (e.life / Math.min(2.2, k)) * 1000, w = Math.min(3, .8 + k * .7);
     d.style.cssText = `left:${x - R}px;top:${y - R}px;width:${2 * R}px;height:${2 * R}px;border:${w}px solid rgba(${e.c},1)`;
     host().append(d); live++;
@@ -84,6 +84,8 @@
     swelled.forEach((n) => { if (n._t !== t) { n._t = t; n.style.transform = t; } });
   }
 
+  // others (the zooms) join this tick while the glide fades, instead of running loops of their own
+  const ticks = new Set();
   function wake() { if (!running) { running = true; prev = performance.now(); requestAnimationFrame(tick); } }
   function tick(now) {
     const dt = Math.min(.05, (now - prev) / 1000); prev = now;
@@ -91,6 +93,7 @@
     if (vel < .05) vel = 0;
     if (!reduce) swellOn(Math.min(1, vel / 40));
     Sound.speed(vel);
+    ticks.forEach((f) => { try { f(vel); } catch (e) {} });
     // rings from the point, while a zoom is on screen and you are moving
     if (src && now < src.until && vel > .6) {
       acc += (0.5 + vel * 0.22) * dt;
@@ -149,8 +152,9 @@
       bedNode = [...nodes, { stop: () => timers.forEach((t) => t()) }];
     }
     function setOn(v) {
+      if (v && !ctx()) v = false;   // no Web Audio here: stay off, and say so honestly
       on = v; try { localStorage.setItem(KEY, v ? "on" : "off"); } catch (e) {}
-      if (v) { if (!ctx()) return; ac.resume(); startBed(passageBed || bed); master.gain.setTargetAtTime(.9, ac.currentTime, .5); }
+      if (v) { ac.resume(); startBed(passageBed || bed); master.gain.setTargetAtTime(.9, ac.currentTime, .5); }
       else if (ac) { master.gain.setTargetAtTime(0, ac.currentTime, .3); setTimeout(() => { if (!on) { stopBed(); curBed = null; } }, 1200); }
       document.querySelectorAll(".flow-sound").forEach((b) => { b.setAttribute("aria-pressed", String(on)); b.querySelector(".t").textContent = on ? "Sound on" : "Hear the mountain"; });
     }
@@ -158,6 +162,8 @@
     return {
       get on() { return on; },
       want, setOn,
+      // the games' sounds come through here: one context, one volume, silent unless sound is on
+      out() { return on && ac ? { ac, master } : null; },
       ensure() { if (want() && !on) setOn(true); },
       bed(kind) { passageBed = kind; if (on) startBed(kind || bed); },
       speed(v) { if (on && wind) wind.gg.gain.setTargetAtTime(.22 + Math.min(.5, v / 60), ac.currentTime, .15); },
@@ -174,15 +180,19 @@
     };
   })();
 
+  // sound rests while the page is hidden, and comes back with it
+  document.addEventListener("visibilitychange", () => { const a = Sound.out(); if (!a) return; document.hidden ? a.ac.suspend() : a.ac.resume(); });
+
   /* The quiet control, in the dock beside Notes */
   function soundButton() {
     const d = document.querySelector(".dock") || (() => { const x = document.createElement("div"); x.className = "dock"; document.body.append(x); return x; })();
-    const b = document.createElement("button"); b.type = "button"; b.className = "flow-sound"; b.setAttribute("aria-pressed", "false");
+    const b = document.createElement("button"); b.type = "button"; b.className = "flow-sound"; b.setAttribute("aria-pressed", "false"); b.setAttribute("aria-label", "Hear the mountain");
     b.innerHTML = `<span class="wave" aria-hidden="true"><i></i><i></i><i></i></span><span class="t">Hear the mountain</span>`;
     b.addEventListener("click", () => Sound.setOn(!Sound.on));
     d.append(b);
     // Browsers only allow sound after a touch or a key: if it was on last time, it comes back with the first one
-    if (Sound.want()) { b.querySelector(".t").textContent = "Sound on"; const go = () => { Sound.ensure(); removeEventListener("pointerdown", go, true); removeEventListener("keydown", go, true); }; addEventListener("pointerdown", go, true); addEventListener("keydown", go, true); }
+    // (iPhone only unlocks sound on a finished touch or a click, so those are what bring it back)
+    if (Sound.want()) { b.querySelector(".t").textContent = "Sound on"; const evs = ["click", "touchend", "keydown"]; const go = () => { Sound.ensure(); evs.forEach((x) => removeEventListener(x, go, true)); }; evs.forEach((x) => addEventListener(x, go, true)); }
   }
 
   /* Touch: a tap on a picture ripples there; a fast sideways swipe is a gust */
@@ -213,6 +223,6 @@
   let pinnedSound = null;
   function passageSound(kind) { if (kind === pinnedSound) return; pinnedSound = kind; Sound.bed(kind); }
 
-  window.Flow = { element, bed, ring, burst, zoom, passageSound, Sound, get speed() { return vel; }, get dir() { return dir; }, reduce };
+  window.Flow = { element, bed, ring, burst, zoom, passageSound, Sound, get speed() { return vel; }, get dir() { return dir; }, reduce, onTick(f) { ticks.add(f); } };
   soundButton(); touches(); arrival();
 })();

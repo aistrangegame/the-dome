@@ -468,3 +468,4 @@ body.play .dock { left: auto; right: 10px; top: max(54px, calc(env(safe-area-ins
 .sc-keep-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
 .sc-end .btn:not(.act) { background: rgba(245,240,232,.1); color: #F5F0E8; border-color: rgba(245,240,232,.25); }
 @media (prefers-reduced-motion: reduce) { .rm-dome .t.here { animation: none; } }
+.sc-begin[hidden] { display: none; }

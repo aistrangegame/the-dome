@@ -124,7 +124,7 @@ window.page = function (Dome) {
         g.beginPath(); g.moveTo(...A[i]); g.lineTo(...Bp[j]);
         if (useA) { g.lineTo(...A[i + 1]); i++; } else { g.lineTo(...Bp[j + 1]); j++; }
         g.closePath(); g.fill(); g.stroke(); } }
-    // the ring of staying (the only feedback): a thin arc filling with stillness
+    // the ring of staying (the only sign of progress): a thin arc filling with stillness
     if (!ended && given < stars.length) {
       const px = cx, py = base - R - 26, rr = 9 + Math.sin(now / 900) * 1.5;
       g.strokeStyle = `rgba(226,196,138,${busy ? 0.25 : 0.75})`; g.lineWidth = 1.2; g.beginPath(); g.arc(px, py, rr, -Math.PI / 2, -Math.PI / 2 + (acc / STEP) * Math.PI * 2); g.stroke();

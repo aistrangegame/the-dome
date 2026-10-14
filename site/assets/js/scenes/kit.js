@@ -24,10 +24,8 @@
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   let ac = null;
   const audio = () => {
-    if (!(window.Flow && window.Flow.Sound.on)) return null;
-    if (!ac) { const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null; ac = new AC(); }
-    if (ac.state === "suspended") ac.resume();
-    return ac;
+    // game sounds go through the site's own sound (one context, one volume): silent unless "Hear the mountain" is on
+    return window.Flow && window.Flow.Sound.out ? window.Flow.Sound.out() : null;
   };
 
   function mount(host, slug, mode) {
@@ -47,13 +45,20 @@
       <p class="sc-note">${onMountain ? "Played here, it lights one triangle of your own dome." : `A short version, to play from anywhere. The full version waits at ${esc(lowerFirst(p.name))}, when you’re there.`}</p>`;
     const scene = host.querySelector(".scene"), stage = host.querySelector(".sc-stage"), edge = host.querySelector(".sc-edge i");
     const voice = host.querySelector(".sc-voice"), say = host.querySelector(".sc-say"), begin = host.querySelector(".sc-begin"), end = host.querySelector(".sc-end");
-    let loops = [], running = false, visible = true, prev = 0, ended = false, shown = new Set(), cleanups = [], chain = false;
+    let loops = [], running = false, visible = true, prev = 0, ended = false, shown = new Set(), cleanups = [], streams = [], chain = false, started = false;
+    const runCleanups = () => cleanups.splice(0).forEach((f) => { try { f(); } catch (e) {} });
+    const stopStreams = () => streams.splice(0).forEach((f) => { try { f(); } catch (e) {} });
+    // the microphone and camera never stay on behind a hidden page
+    const onHide = () => { if (document.hidden) stopStreams(); };
+    document.addEventListener("visibilitychange", onHide); addEventListener("pagehide", stopStreams);
+    cleanups.push(() => { document.removeEventListener("visibilitychange", onHide); removeEventListener("pagehide", stopStreams); stopStreams(); });
     // no long-press menu or text selection on the stage (a held press is a gesture here)
     scene.addEventListener("contextmenu", (e) => { if (scene.classList.contains("playing")) e.preventDefault(); });
     const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible && running) kick(); }, { threshold: 0.15 }); io.observe(scene);
     // one drawing chain per game, however many loops it registers
     function kick() { if (!loops.length || chain) return; chain = true; prev = performance.now(); requestAnimationFrame(frame); }
-    function frame(t) { if (!running || !visible) { chain = false; return; } const dt = Math.max(0, Math.min(0.05, (t - prev) / 1000)); prev = t; loops.forEach((f) => f(dt, t / 1000)); requestAnimationFrame(frame); }
+    // the next frame is asked for first, and one game's error never stops the drawing
+    function frame(t) { if (!running || !visible) { chain = false; return; } requestAnimationFrame(frame); const dt = Math.max(0, Math.min(0.05, (t - prev) / 1000)); prev = t; for (const f of loops) { try { f(dt, t / 1000); } catch (e) { console.error(e); } } }
     // presses on controls, inputs and the beginning and ending cards belong to them, never to the game
     const ui = (e) => !!(e.target.closest && e.target.closest("button, a, input, textarea, select, label, .sc-end, .sc-begin"));
     const local = (e) => { const r = stage.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
@@ -79,6 +84,8 @@
         k.progress(1); k.haptic(30);
         const r = stage.getBoundingClientRect(); k.ripple(r.width / 2, r.height / 2, 1);
         setTimeout(() => {
+          // the game is over: its drawing, listeners, microphone and camera all stop here
+          running = false; runCleanups();
           end.hidden = false; scene.classList.add("ending"); scene.classList.remove("playing");
           if (onMountain) return keepLine();
           end.innerHTML = `<p>That was the short version. The full one waits at ${esc(lowerFirst(p.name))}: scan the card there.</p><button class="btn act" type="button" data-again>Play again</button>`;
@@ -86,6 +93,7 @@
         }, 300 + p.voices.length * 2600);
       },
       loop(fn) { loops.push(fn); if (running) kick(); },
+      cleanup(fn) { cleanups.push(fn); },
       hold(cb) {
         let on = false; const set = (v) => { if (v !== on) { on = v; cb(v); } };
         const dn = (e) => { if (ui(e)) return; set(true); }, up = () => set(false);
@@ -109,22 +117,22 @@
       },
       tap(cb) {
         scene.addEventListener("click", (e) => { if (ui(e)) return; cb(local(e)); });
-        scene.addEventListener("keydown", (e) => { if (e.key === "Enter" && document.activeElement === scene) { e.preventDefault(); cb({ x: stage.clientWidth / 2, y: stage.clientHeight / 2, key: true }); } });
+        scene.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.repeat && document.activeElement === scene) { e.preventDefault(); cb({ x: stage.clientWidth / 2, y: stage.clientHeight / 2, key: true }); } });
       },
       tone(f, dur = 1.2, vol = 0.08, type = "sine") {
-        const a = audio(); if (!a) return; const o = a.createOscillator(), g = a.createGain(), t = a.currentTime;
+        const out = audio(); if (!out) return; const a = out.ac; a.master = out.master; const o = a.createOscillator(), g = a.createGain(), t = a.currentTime;
         o.type = type; o.frequency.value = f; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-        o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + dur + 0.05);
+        o.connect(g); g.connect(a.master); o.start(t); o.stop(t + dur + 0.05);
       },
       noise(dur = 0.3, vol = 0.05, hz = 1200, type = "bandpass") {
-        const a = audio(); if (!a) return; const n = Math.floor(a.sampleRate * dur), b = a.createBuffer(1, n, a.sampleRate), d = b.getChannelData(0);
+        const out = audio(); if (!out) return; const a = out.ac; a.master = out.master; const n = Math.floor(a.sampleRate * dur), b = a.createBuffer(1, n, a.sampleRate), d = b.getChannelData(0);
         for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
         const s = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain(); s.buffer = b; f.type = type; f.frequency.value = hz; g.gain.value = vol;
-        s.connect(f); f.connect(g); g.connect(a.destination); s.start();
+        s.connect(f); f.connect(g); g.connect(a.master); s.start();
       },
       ripple(x, y, s = 0.7) { if (!window.Flow) return; const r = stage.getBoundingClientRect(); window.Flow.burst(r.left + x, r.top + y, s); },
       haptic(ms = 12) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} },
-      sensor: sensors(full, cleanups)
+      sensor: sensors(full, cleanups, streams)
     };
 
     function again() { teardown(); mount(host, slug, mode); host.querySelector(".sc-begin button").click(); }
@@ -150,9 +158,10 @@
       if (window.Remembering) draw();
       else { const sc = document.createElement("script"); sc.src = window.Dome.R("assets/js/remembering.js"); sc.onload = draw; document.body.append(sc); }
     }
-    function teardown() { running = false; scene.classList.remove("playing"); io.disconnect(); cleanups.forEach((f) => { try { f(); } catch (e) {} }); }
+    function teardown() { running = false; scene.classList.remove("playing"); io.disconnect(); runCleanups(); }
     begin.querySelector("button").addEventListener("click", async () => {
-      begin.classList.add("gone"); running = true; scene.classList.add("playing"); scene.focus({ preventScroll: true });
+      if (started) return; started = true;
+      begin.classList.add("gone"); setTimeout(() => { begin.hidden = true; }, 700); running = true; scene.classList.add("playing"); scene.focus({ preventScroll: true });
       if (window.Flow) window.Flow.Sound.ensure();
       try { await G.mount(k); } catch (e) { console.error(e); }
       kick();
@@ -161,7 +170,7 @@
   function lowerFirst(s) { return /^The /.test(s) ? "t" + s.slice(1) : s; }
 
   /* Device sensors, for the full version on the property. Each asks at the moment it is needed. */
-  function sensors(full, cleanups) {
+  function sensors(full, cleanups, streams) {
     const no = () => Promise.resolve(false);
     if (!full) return { mic: no, tilt: no, compass: no, camera: no };
     const iosAsk = async (C) => { if (C && typeof C.requestPermission === "function") { try { return (await C.requestPermission()) === "granted"; } catch (e) { return false; } } return true; };
@@ -169,11 +178,13 @@
       async mic(cb) {
         try {
           const st = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
-          const A = new (window.AudioContext || window.webkitAudioContext)(), an = A.createAnalyser(); an.fftSize = 1024; A.createMediaStreamSource(st).connect(an);
+          const A = new (window.AudioContext || window.webkitAudioContext)(); if (A.state === "suspended") A.resume();
+          const an = A.createAnalyser(); an.fftSize = 1024; A.createMediaStreamSource(st).connect(an);
           const buf = new Float32Array(an.fftSize), low = new Uint8Array(an.frequencyBinCount); let alive = true;
           (function read() { if (!alive) return; an.getFloatTimeDomainData(buf); an.getByteFrequencyData(low); let s = 0; for (const v of buf) s += v * v;
             let lo = 0; for (let i = 1; i < 12; i++) lo += low[i]; cb({ level: Math.sqrt(s / buf.length), low: lo / (11 * 255) }); requestAnimationFrame(read); })();
-          cleanups.push(() => { alive = false; st.getTracks().forEach((t) => t.stop()); A.close(); });
+          const stop = () => { if (!alive) return; alive = false; st.getTracks().forEach((t) => t.stop()); A.close(); };
+          cleanups.push(stop); streams.push(stop);
           return true;
         } catch (e) { return false; }
       },
@@ -191,7 +202,7 @@
         return true;
       },
       async camera(video) {
-        try { const st = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }); video.srcObject = st; video.muted = true; video.playsInline = true; await video.play(); cleanups.push(() => st.getTracks().forEach((t) => t.stop())); return true; }
+        try { const st = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }); video.srcObject = st; video.muted = true; video.playsInline = true; await video.play(); const stop = () => st.getTracks().forEach((t) => t.stop()); cleanups.push(stop); streams.push(stop); return true; }
         catch (e) { return false; }
       }
     };

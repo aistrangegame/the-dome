@@ -287,31 +287,31 @@
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const sized = () => list.forEach((sec) => irisSize(sec.querySelector(".p-stage")));
     sized();
-    const last = new Map();
+    // element references once; every frame reads all positions first, then writes (no forced layout in between)
+    const parts = list.map((sec) => { const stage = sec.querySelector(".p-stage"); return { sec, stage, iris: stage.querySelector(".iris"), inner: stage.querySelector(".iris-in"), point: sec.querySelector(".p-point"), ring: sec.querySelector(".p-ring"), lines: [...sec.querySelectorAll(".p-line")], mode: sec.dataset.mode, sound: sec.dataset.sound }; });
     function frame() {
-      let pinnedSound = null;
-      list.forEach((sec) => {
-        const r = sec.getBoundingClientRect(); const span = sec.offsetHeight - innerHeight;
-        if (r.bottom < -50 || r.top > innerHeight + 50) return;
-        const p = Math.min(1, Math.max(0, -r.top / span));
-        const stage = sec.querySelector(".p-stage"), iris = stage.querySelector(".iris"), inner = stage.querySelector(".iris-in"), point = sec.querySelector(".p-point"), mode = sec.dataset.mode;
+      const vh = innerHeight, vw = innerWidth;
+      const reads = parts.map((o) => { const r = o.sec.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, span: o.sec.offsetHeight - vh }; });
+      let pinnedSound = null; const sw = swell();
+      parts.forEach((o, idx) => {
+        const r = reads[idx];
+        if (r.bottom < -50 || r.top > vh + 50) return;
+        const p = Math.min(1, Math.max(0, -r.top / r.span)), mode = o.mode;
         let open = 1, scale = 1;
         if (reduce) { open = 1; }
         else if (mode === "open") open = Math.min(1, p / 0.55);
         else if (mode === "close") open = 1 - Math.min(1, Math.max(0, (p - 0.3) / 0.6));
         else if (mode === "descend") { open = 1; scale = 1 + 2.2 * Math.pow(1 - Math.min(1, p / 0.7), 2); }
         const e = open * open * (3 - 2 * open);
-        const rad = irisSet(stage, iris, inner, e, scale * swell());
-        const ring = sec.querySelector(".p-ring");
-        if (ring) { const R = stage._R; ring.style.transform = `scale(${((rad + 14) / (R + 14)).toFixed(4)}) rotate(${(-p * 140).toFixed(1)}deg)`; ring.style.opacity = String(Math.min(1, e * 2) * (1 - Math.max(0, (e - 0.85) / 0.15))); }
-        point.style.opacity = String(mode === "descend" ? 0 : Math.max(0, 1 - e * 3));
-        const ls = sec.querySelectorAll(".p-line"), n = ls.length;
-        ls.forEach((l, i) => { const a = 0.25 + (i / Math.max(1, n)) * 0.55, b = a + 0.55 / Math.max(1, n) + 0.12; const on = p > a && (i === n - 1 ? p < 0.97 : p < b); if (l._on !== on) { l._on = on; l.classList.toggle("on", on); } });
+        const rad = irisSet(o.stage, o.iris, o.inner, e, scale * sw);
+        if (o.ring) { const R = o.stage._R; o.ring.style.transform = `scale(${((rad + 14) / (R + 14)).toFixed(4)}) rotate(${(-p * 140).toFixed(1)}deg)`; o.ring.style.opacity = String(Math.min(1, e * 2) * (1 - Math.max(0, (e - 0.85) / 0.15))); }
+        o.point.style.opacity = String(mode === "descend" ? 0 : Math.max(0, 1 - e * 3));
+        const n = o.lines.length;
+        o.lines.forEach((l, i) => { const a = 0.25 + (i / Math.max(1, n)) * 0.55, b = a + 0.55 / Math.max(1, n) + 0.12; const on = p > a && (i === n - 1 ? p < 0.97 : p < b); if (l._on !== on) { l._on = on; l.classList.toggle("on", on); } });
         // the point is pinned in the middle of the screen while its section scrolls past: ripples leave from it
-        const pinned = r.top <= 1 && r.bottom >= innerHeight - 1;
-        if (window.Flow && pinned && mode !== "descend" && e > 0.001 && e < 0.995) window.Flow.zoom(true, innerWidth / 2, innerHeight / 2, mode === "open");
-        if (pinned && sec.dataset.sound) pinnedSound = sec.dataset.sound;
-        last.set(sec, p);
+        const pinned = r.top <= 1 && r.bottom >= vh - 1;
+        if (window.Flow && pinned && mode !== "descend" && e > 0.001 && e < 0.995) window.Flow.zoom(true, vw / 2, vh / 2, mode === "open");
+        if (pinned && o.sound) pinnedSound = o.sound;
       });
       if (window.Flow) window.Flow.passageSound(pinnedSound);
     }
@@ -319,9 +319,10 @@
     const ask = () => { if (!ticking) { ticking = true; requestAnimationFrame(() => { frame(); ticking = false; }); } };
     addEventListener("scroll", ask, { passive: true });
     addEventListener("resize", () => { sized(); frame(); }); frame();
-    // keep drawing while the glide fades, so the swell settles smoothly
-    (function settle() { if (window.Flow && window.Flow.speed > 0) ask(); requestAnimationFrame(settle); })();
+    // while the glide after a flick fades, the flow engine's tick redraws (so the swell settles); no loop of our own
+    onFlow((F) => F.onTick(ask));
   }
+  function onFlow(cb, n = 0) { if (window.Flow) cb(window.Flow); else if (n < 50) setTimeout(() => onFlow(cb, n + 1), 120); }
   function closingPassage() {
     if (document.body.dataset.noclose || document.body.dataset.bare) return;
     const f = document.querySelector("footer.foot"); if (!f) return;
@@ -430,7 +431,7 @@
   }
   function markWalked(k) { const w = store.get("dome-play-walked", {}); w[k] = true; store.set("dome-play-walked", w); }
   document.addEventListener("click", (e) => { const t = e.target.closest && e.target.closest("[data-portal]"); if (t) { e.preventDefault(); openPortal(t); } });
-  const api = { D, R, M, esc, store, icon, videoHTML, vsrc, wireVideos, irisSize, irisSet, openPortal, closePortal, markWalked, setSeason, seasonWipe, get season() { return season; }, seasonImage, slotHTML, voiceHTML, paintSeasonImages, rescan: null };
+  const api = { D, R, M, esc, store, icon, videoHTML, vsrc, wireVideos, irisSize, irisSet, onFlow, openPortal, closePortal, markWalked, setSeason, seasonWipe, get season() { return season; }, seasonImage, slotHTML, voiceHTML, paintSeasonImages, rescan: null };
   window.Dome = api;
 
   document.addEventListener("DOMContentLoaded", () => {

@@ -58,7 +58,7 @@ Scene.register("trails", {
       if (!cur) cur = centre(); cur = onPond(cur.x + d[0] * 18, cur.y + d[1] * 12);
     });
     const keyUp = (e) => { if (e.key === " " || e.key === "Enter") keyRain = false; };
-    addEventListener("keyup", keyUp);
+    addEventListener("keyup", keyUp); k.cleanup(() => removeEventListener("keyup", keyUp));
 
     function gust(dw, strength) {
       wind = Math.max(-2.6, Math.min(2.6, wind + dw));

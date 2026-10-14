@@ -41,7 +41,8 @@ Scene.register("meadow", {
       if (d) { e.preventDefault(); if (!cursor) cursor = { x: W / 2, y: H * .74, held: 0 }; const s = e.shiftKey ? 36 : 16; cursor.x = Math.max(8, Math.min(W - 8, cursor.x + d[0] * s)); cursor.y = Math.max(H * (HOR + .04), Math.min(H - 8, cursor.y + d[1] * s)); }
       if (e.key === " " || e.key === "Enter") { e.preventDefault(); if (!cursor) cursor = { x: W / 2, y: H * .74, held: 0 }; keyHeld = true; }
     });
-    addEventListener("keyup", (e) => { if (e.key === " " || e.key === "Enter") keyHeld = false; });
+    const keyUpM = (e) => { if (e.key === " " || e.key === "Enter") keyHeld = false; };
+    addEventListener("keyup", keyUpM); k.cleanup(() => removeEventListener("keyup", keyUpM));
 
     function grow(src, W, H, auto) {
       if (plants.length >= MAX) plants.shift();
