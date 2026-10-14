@@ -93,11 +93,21 @@ window.DOME_NOTES = (function () {
     "timeline.html": { layer: "door", title: "The living timeline",
       purpose: "The dome’s life from 2023 to now: first guests, the first winter, a proposal, the handover in April 2026, and what comes next.",
       who: "Anyone curious; returning guests finding their own season.",
-      data: [SRC.data, SRC.reviews, SRC.ideas, SRC.slots], links: ["ideas.html", "the-new-chapter.html", "how-it-began.html"],
+      data: [SRC.data, SRC.reviews, SRC.ideas, SRC.slots], links: ["timeline-motion.html", "ideas.html", "the-new-chapter.html", "how-it-began.html"],
       later: "When an idea is built, it appears here with the guest’s name.",
       sections: [
         { sel: "section.passage", t: "Into the timeline", x: "The camera comes down through the forest onto the dome." },
         { sel: "section.band:has(#tl)", t: "The entries", x: "Each entry is a guest moment (with their words), an idea a guest asked for, a turning point, or a marked slot for Eric and Mona or Cody and Nicole." }
+      ] },
+
+    "timeline-motion.html": { layer: "door", title: "The timeline in motion (a preview)",
+      purpose: "A second way to tell the timeline, for Eric and Mona to compare with the first: one moment per screen, held until you push on, drawn by the point as it was remembered. Three moments so far: the proposal, Scrabble by lantern, the harvest supermoon.",
+      who: "For now, Eric and Mona choosing between the two. If it's this one, the other fifteen moments are drawn the same way and it becomes the timeline.",
+      data: [SRC.data, SRC.reviews], links: ["timeline.html"],
+      later: "The other fifteen drawings; a real drone clip at the heart of the moments that have one.",
+      sections: [
+        { sel: "#m-intro", t: "The opening", x: "The point waits. A push (scroll, swipe or the arrow keys) moves one moment; a small nudge doesn't." },
+        { sel: "#thread", t: "The thread of dates", x: "The gold line on the left. The point travels it to each moment's date, then across to draw it: the dome's lattice, the place, the people, then the point becomes the heart of it (a ring, a lantern flame, the moon)." }
       ] },
 
     "ideas.html": { layer: "door", title: "The ideas loop",

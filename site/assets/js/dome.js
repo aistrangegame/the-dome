@@ -171,6 +171,7 @@
     if (/house\/choose\/(index\.html)?$/.test(path)) return "house/choose/index.html";
     if (/dashboard\/(index\.html)?$/.test(path)) return "dashboard/index.html";
     if (/house\/(index\.html)?$/.test(path)) return "house/index.html";
+    if (/timeline-motion(\.html)?$/.test(path)) return "timeline-motion.html";
     return b.page || "index.html";
   }
   let notesOn = false, notesBtn = null, guideBtn = null;
