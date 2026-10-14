@@ -31,8 +31,13 @@ export default {
         }
         return new Response("Not here", { status: 404 });
       }
+      // Films: Safari (Mac, iPhone, iPad) only plays a video when the server answers byte ranges
+      const range = request.headers.get("range");
+      if (range && /\.(mp4|webm|m4a|mp3)$/.test(path)) return secure(await ranged(env, request, range), path);
       const res = await env.ASSETS.fetch(request);
-      return secure(res, path);
+      const out = secure(res, path);
+      if (/\.(mp4|webm)$/.test(path)) out.headers.set("Accept-Ranges", "bytes");
+      return out;
     } catch (e) {
       console.error(e);
       return json({ error: "Something went wrong on our side." }, 500);
@@ -250,6 +255,20 @@ export class Property {
 }
 
 /* ---------------- Helpers ---------------- */
+async function ranged(env, request, range) {
+  const h = new Headers(request.headers); h.delete("range");
+  const full = await env.ASSETS.fetch(new Request(request.url, { method: "GET", headers: h }));
+  if (full.status !== 200) return full;
+  const buf = await full.arrayBuffer(), size = buf.byteLength;
+  const m = /^bytes=(\d*)-(\d*)$/.exec(range.trim());
+  let start, end;
+  if (m && m[1] !== "") { start = +m[1]; end = m[2] !== "" ? Math.min(+m[2], size - 1) : size - 1; }
+  else if (m && m[2] !== "") { start = Math.max(0, size - +m[2]); end = size - 1; }
+  if (!m || start === undefined || start > end || start >= size) return new Response(null, { status: 416, headers: { "Content-Range": `bytes */${size}` } });
+  const headers = new Headers(full.headers);
+  headers.set("Content-Range", `bytes ${start}-${end}/${size}`); headers.set("Content-Length", String(end - start + 1)); headers.set("Accept-Ranges", "bytes");
+  return new Response(request.method === "HEAD" ? null : buf.slice(start, end + 1), { status: 206, headers });
+}
 function json(body, status = 200, headers = {}) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", ...headers } });
 }

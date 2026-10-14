@@ -72,7 +72,7 @@ window.DOME = (function () {
       todo: "Turn on the fire and sit close enough to feel it on your face.",
       ask: "What was your first fear, and what did you build around it?",
       voices: [[57, "Gabriela", "We were a bit worried it might be chilly inside because of the whole dome thing, but it was super warm and cozy – perfect for chilling by the fireplace."], [97, "Liam", "It got really cold outside while we were there, but the dome stayed nice and warm and cozy the whole time."], [41, "Sophie", "a lovely and easy to use fireplace inside (you don't need to bring wood for the inside one)."]] },
-    { slug: "cedar-pool", film: "pool", n: 8, name: "The cedar plunge pool", short: "The pool", inout: "Outside", act: null,
+    { slug: "cedar-pool", n: 8, name: "The cedar plunge pool", short: "The pool", inout: "Outside", act: null,
       img: { summer: "backyard", winter: "listing-22" }, verb: "float",
       dome: "Warm water in a ring of cedar, the mountains on every side. People float here for hours and forget to count them.",
       todo: "Float on your back until you can’t tell where the water stops.",
