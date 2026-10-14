@@ -1,6 +1,10 @@
 # The game plan
 
-Each phase starts when the gate before it passes. No dates are set.
+**Ruling, October 13, 2026 (Ashrey):** we don't wait on Eric and Mona. We build the whole solution now, from everything already gathered, with a creative stand-in wherever their words (or Cody and Nicole's) belong, each one clearly marked. They see the finished result, and their words and any changes come in as the feedback round.
+
+**State, October 14, 2026:** the full showcase is built in `site/`: every public page, the 13 places on and off the mountain, the Awakening (acts 0 to 7), the story you choose, the booking flow and the dashboard, all working in the browser with no server. Next: Eric and Mona walk it; their words replace the markers; then the Worker, Airtable booking tables and real payments go live.
+
+Each phase below starts when the gate before it passes. No dates are set.
 
 ## Phase 0 · Ground — now
 

@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en" data-season="summer">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Around the mountain · Catskill Mountain Domes</title>
+<link rel="stylesheet" href="assets/css/dome.css">
+</head>
+<body data-root="./" data-page="around.html">
+<section class="hero page-hero"><div class="bg"><img src="assets/media/20-DJI_20260801151850_0267_D-1600.webp" alt="A waterfall pouring through a narrow rock gorge into a green pool."></div><div class="veil"></div>
+  <div class="inner"><span class="eyebrow" style="color:rgba(255,255,255,.75)">Around the mountain</span><h1>The field guide.</h1><p class="lede">The founding hosts’ own guidebook, by mood and drive time. Times are from the dome.</p></div></section>
+<main id="main"></main>
+<script>
+window.page = function (Dome) {
+  const { D, esc } = Dome;
+  document.getElementById("main").innerHTML = `<section class="band"><div class="wrap grid three">${D.around.map((g) => `<div class="card rise"><div class="body"><span class="eyebrow">${esc(g.group)}</span>
+    ${g.items.map(([n, t, d]) => `<div style="padding:10px 0;border-top:1px solid var(--line)"><b>${esc(n)}</b>${t ? ` <span class="pill">${esc(t)}</span>` : ""}${d ? `<p>${esc(d)}</p>` : ""}</div>`).join("")}</div></div>`).join("")}</div></section>
+    <section class="band soft"><div class="reading rise"><span class="eyebrow">From guests</span><div class="voices">
+      <figure class="voice-card"><blockquote class="voice">Stamford and Hobart are only ten minutes away with lots of charm (and so many bookstores).</blockquote><figcaption class="voice-by">Travis · guest #52</figcaption></figure>
+      <figure class="voice-card"><blockquote class="voice">In the surrounding area you can go, horseback riding, goat herding, hiking, etc.</blockquote><figcaption class="voice-by">Anastasya · guest #1</figcaption></figure>
+    </div><p class="notice" style="margin-top:24px">Drive times are the hosts’ own and are checked on a map before this page goes live. The waterfall photos were taken nearby during the summer 2026 shoot; their names are being confirmed.</p></div></section>`;
+};
+</script>
+<script src="assets/js/reviews.js"></script>
+<script src="assets/js/dome-data.js"></script>
+<script src="assets/js/dome.js"></script>
+</body>
+</html>

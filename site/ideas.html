@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en" data-season="summer">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ideas · Catskill Mountain Domes</title>
+<link rel="stylesheet" href="assets/css/dome.css">
+</head>
+<body data-root="./" data-page="ideas.html" data-solid="1">
+<main style="padding-top:72px">
+<section class="band" style="padding-bottom:20px"><div class="reading rise"><span class="eyebrow">The ideas loop</span><h1>Guests build the dome too.</h1>
+  <p class="lede">A guest leaves an idea. Eric and Mona decide. When it’s built, it goes on the timeline with the guest’s name, and the guest is invited back to see it.</p></div></section>
+<section class="band" style="padding-top:20px"><div class="wrap grid two" id="ideas"></div></section>
+<section class="band soft"><div class="reading center rise"><h2>Have an idea?</h2><p class="lede">Leave it on the card at any place on the property, or after your stay.</p></div></section>
+</main>
+<script>
+window.page = function (Dome) {
+  const { D, R, esc } = Dome;
+  document.getElementById("ideas").innerHTML = D.ideas.map((x) => {
+    const p = D.places.find((q) => q.slug === x.place);
+    return `<article class="card rise"><div class="body"><p style="margin-bottom:.6rem"><span class="pill">${esc(x.status)}</span> <span class="pill">${esc(p.name)}</span></p>
+      <h3>${esc(x.idea)}</h3><p style="margin:.2rem 0 1rem">Asked for by <b>${esc(x.who)}</b></p>
+      <blockquote class="voice" style="font-size:1.05rem">${esc(x.words[2])}</blockquote><span class="voice-by">${esc(x.words[1])} · guest #${x.words[0]}</span>
+      ${x.note ? `<p class="notice" style="margin-top:14px">${esc(x.note)}</p>` : ""}</div></article>`;
+  }).join("");
+};
+</script>
+<script src="assets/js/reviews.js"></script>
+<script src="assets/js/dome-data.js"></script>
+<script src="assets/js/dome.js"></script>
+</body>
+</html>

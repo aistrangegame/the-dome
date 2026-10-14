@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en" data-season="summer">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Stories · Catskill Mountain Domes</title>
+<link rel="stylesheet" href="assets/css/dome.css">
+<style>@media (min-width: 800px) { .story-side { position: sticky; top: 90px; } }</style>
+</head>
+<body data-root="./" data-page="stories.html">
+<section class="hero page-hero" data-season-img='{"summer":"dome_lace","winter":"listing-23"}'><div class="bg"><img alt="The dome above a hillside of wildflowers."><span class="imagined-tag">Imagined season</span></div><div class="veil"></div>
+  <div class="inner"><span class="eyebrow" style="color:rgba(255,255,255,.75)">Stories</span><h1>Told only in their words.</h1><p class="lede">Six kinds of guest, named by what they came for. Every line below was written by someone who stayed.</p></div></section>
+<main id="main"></main>
+<script>
+window.page = function (Dome) {
+  const { D, M, esc, voiceHTML } = Dome;
+  document.getElementById("main").innerHTML = D.stories.map((s, i) => `
+    <section class="band ${i % 2 ? "soft" : ""}" id="${s.slug}"><div class="wrap" style="display:grid;gap:36px;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));align-items:start">
+      <div class="rise story-side"><span class="num">${String(i + 1).padStart(2, "0")}</span><h2>${esc(s.title)}</h2><p class="lede">${esc(s.lead)}</p>
+        <div style="border-radius:18px;overflow:hidden;aspect-ratio:4/3;margin-top:18px"><img src="${M(s.img, 800)}" alt="" style="width:100%;height:100%;object-fit:cover"></div></div>
+      <div><div class="voices">${s.lines.map(voiceHTML).join("")}</div><p class="italic rise" style="margin-top:34px;font-size:1.2rem;color:var(--accent)">${esc(s.close)}</p></div>
+    </div></section>`).join("");
+};
+</script>
+<script src="assets/js/reviews.js"></script>
+<script src="assets/js/dome-data.js"></script>
+<script src="assets/js/dome.js"></script>
+</body>
+</html>

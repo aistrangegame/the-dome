@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en" data-season="summer">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The places · Catskill Mountain Domes</title>
+<link rel="stylesheet" href="../assets/css/dome.css">
+<style>
+  .map { position: relative; border-radius: 22px; overflow: hidden; aspect-ratio: 16/9; background: #0b1f12; }
+  .map > img { width: 100%; height: 100%; object-fit: cover; }
+  .map a { position: absolute; transform: translate(-50%, -50%); text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 6px; color: #fff; font-size: .78rem; text-shadow: 0 1px 6px rgba(0,0,0,.8); }
+  .map a .l { width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 5px rgba(255,255,255,.22), 0 0 18px rgba(255,255,255,.7); animation: breathe 4.6s ease-in-out infinite; }
+  .map a:hover .l, .map a:focus-visible .l { background: var(--accent); }
+  @media (max-width: 600px) { .map a span:last-child { display: none; } .map a .l { width: 10px; height: 10px; } }
+</style>
+</head>
+<body data-root="../" data-page="places/index.html" data-solid="1">
+<main id="main" style="padding-top:72px">
+  <section class="band" style="padding-bottom:28px"><div class="wrap center rise">
+    <span class="eyebrow">The places</span><h1>Thirteen places, one point.</h1>
+    <p class="lede">Seen from above, the dome is a single white point in the green. Every light on this map is a place with its own card on the mountain.</p>
+  </div></section>
+  <section style="padding-bottom:48px"><div class="wrap">
+    <div class="map rise" id="map"><img src="../assets/media/51-DJI_20260802173407_0329_D-1600.webp" alt="The property from directly above: the white dome, the winding drive, the backyard sail, the pond and the meadow."></div>
+    <p class="season-note" style="margin-top:10px">The map is the summer 2026 drone shoot, from directly above.</p>
+  </div></section>
+  <section class="band soft"><div class="wrap">
+    <span class="eyebrow">Inside the dome</span><div class="grid three" id="inside"></div>
+  </div></section>
+  <section class="band"><div class="wrap">
+    <span class="eyebrow">Outside, on the mountain</span><div class="grid three" id="outside"></div>
+  </div></section>
+</main>
+<script src="../assets/js/dome-data.js"></script>
+<script>
+window.page = function (Dome) {
+  const { D, esc } = Dome;
+  const pos = { gate: [63, 80], "cedar-pool": [47, 34], "fire-circle": [40, 30], meadow: [22, 30], trails: [73, 17], "night-sky": [50, 7], window: [50, 54] };
+  const label = { window: "The dome (seven places inside)" };
+  document.getElementById("map").insertAdjacentHTML("beforeend", Object.entries(pos).map(([slug, [x, y]]) => {
+    const p = D.places.find((q) => q.slug === slug);
+    return `<a href="${slug}.html" style="left:${x}%;top:${y}%"><span class="l"></span><span>${esc(label[slug] || p.name)}</span></a>`;
+  }).join(""));
+  const card = (p) => `<a class="card rise" href="${p.slug}.html"><div class="media" data-season-img='${JSON.stringify(p.img.summer || p.img.winter ? p.img : { summer: "dome_ridge" })}' data-w="800"><img alt="${esc(p.name)}"><span class="imagined-tag">Imagined season</span></div>
+    <div class="body"><span class="num">${String(p.n).padStart(2, "0")} · ${esc(p.short)}</span><h3>${esc(p.name)}</h3><p>“${esc(p.voices[0][2])}” · ${esc(p.voices[0][1])}</p></div></a>`;
+  document.getElementById("inside").innerHTML = D.places.filter((p) => p.inout === "Inside").map(card).join("");
+  document.getElementById("outside").innerHTML = D.places.filter((p) => p.inout !== "Inside").map(card).join("");
+};
+</script>
+<script src="../assets/js/dome.js"></script>
+</body>
+</html>

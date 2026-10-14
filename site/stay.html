@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en" data-season="summer">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Stay · Catskill Mountain Domes</title>
+<link rel="stylesheet" href="assets/css/dome.css">
+<style>
+  .months { display: grid; gap: 24px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
+  .month h3 { font-size: 1.05rem; }
+  .cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal .dow { font-size: .7rem; text-align: center; color: var(--muted); padding: 4px 0; }
+  .cal button { all: unset; box-sizing: border-box; text-align: center; padding: 6px 2px; border-radius: 10px; cursor: pointer; min-height: 52px; display: flex; flex-direction: column; justify-content: center; border: 1px solid transparent; }
+  .cal button .d { font-weight: 500; }
+  .cal button .p { font-size: .66rem; color: var(--muted); }
+  .cal button:hover { border-color: var(--accent); }
+  .cal button[disabled] { cursor: default; opacity: .32; text-decoration: line-through; }
+  .cal button.past { text-decoration: none; opacity: .18; }
+  .cal button.in { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+  .cal button.edge { background: var(--accent); color: #fff; } .cal button.edge .p { color: rgba(255,255,255,.85); }
+  .panel { position: sticky; top: 84px; background: var(--ground); border: 1px solid var(--line); border-radius: 18px; padding: 22px; }
+  .lines { width: 100%; border-collapse: collapse; margin: 12px 0; } .lines td { padding: 6px 0; border-bottom: 1px solid var(--line); } .lines td:last-child { text-align: right; }
+  .lines tr.total td { font-weight: 600; border-bottom: 0; font-size: 1.1rem; }
+  .layout { display: grid; gap: 28px; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); align-items: start; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } .panel { position: static; } }
+  .test { background: var(--deep); color: var(--on-deep); font-size: .82rem; padding: 10px 14px; border-radius: 12px; margin-bottom: 18px; }
+</style>
+</head>
+<body data-root="./" data-page="stay.html" data-solid="1">
+<main style="padding-top:72px">
+  <section class="band" style="padding-bottom:16px"><div class="wrap rise">
+    <span class="eyebrow">Stay</span><h1>Choose your nights.</h1>
+    <p class="lede">Tap your arrival, then your last morning. The price you see is the whole price: nights, cleaning and taxes, nothing added later.</p>
+  </div></section>
+  <section style="padding-bottom:80px"><div class="wrap">
+    <p class="test">Showcase mode: sample prices, and no card is ever charged. Eric and Mona set the real prices, seasons and policy in their dashboard.</p>
+    <div class="layout">
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><button class="btn" id="prev" type="button">←</button><span class="season-note">Prices shown per night</span><button class="btn" id="next" type="button">→</button></div>
+        <div class="months" id="months"></div>
+      </div>
+      <aside class="panel" id="panel"></aside>
+    </div>
+  </div></section>
+</main>
+<script src="assets/js/dome-data.js"></script>
+<script src="assets/js/booking.js"></script>
+<script>
+window.page = function (Dome) {
+  const B = window.DomeBooking, { esc } = Dome;
+  const money = (n) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 });
+  let offset = 0, a = null, z = null, step = "dates", heldQuote = null, holdInfo = null;
+  const today = new Date();
+  function monthHTML(y, m) {
+    const first = new Date(Date.UTC(y, m, 1)), days = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+    let h = `<div class="month"><h3>${first.toLocaleString("en-US", { month: "long", year: "numeric", timeZone: "UTC" })}</h3><div class="cal">` + ["S", "M", "T", "W", "T", "F", "S"].map((d) => `<div class="dow">${d}</div>`).join("");
+    for (let i = 0; i < first.getUTCDay(); i++) h += "<div></div>";
+    for (let d = 1; d <= days; d++) {
+      const s = B.iso(new Date(Date.UTC(y, m, d))), st = B.nightState(s);
+      const sel = a && ((z && s >= a && s <= z) || s === a);
+      const edge = s === a || s === z;
+      const canDepart = a && !z && s > a;
+      const dis = st !== "open" && !(canDepart && st !== "past");
+      h += `<button type="button" data-d="${s}" class="${st === "past" ? "past" : ""} ${sel ? "in" : ""} ${edge ? "edge" : ""}" ${dis ? "disabled" : ""} aria-label="${s} ${st}"><span class="d">${d}</span><span class="p">${st === "open" ? money(B.nightPrice(s)) : st === "past" ? "" : st}</span></button>`;
+    }
+    return h + "</div></div>";
+  }
+  function drawCal() {
+    const y = today.getFullYear(), m = today.getMonth() + offset;
+    document.getElementById("months").innerHTML = monthHTML(y, m) + monthHTML(y, m + 1);
+    document.querySelectorAll(".cal button[data-d]").forEach((b) => b.addEventListener("click", () => pick(b.dataset.d)));
+  }
+  function pick(s) {
+    if (step !== "dates") return;
+    if (!a || z || s <= a) { a = s; z = null; } else { z = s; }
+    drawCal(); drawPanel();
+  }
+  function quoteHTML(q) {
+    return `<table class="lines">${q.lines.map((l) => `<tr><td>${esc(l.label)}</td><td>${money(l.amount)}</td></tr>`).join("")}<tr class="total"><td>Total</td><td>${money(q.total)}</td></tr></table>
+      <p style="font-size:.9rem;color:var(--muted)">${q.payInFull ? `Your stay is less than 30 days away, so the full ${money(q.total)} is paid today.` : `Today: a ${money(q.deposit)} deposit. The rest, ${money(q.balance)}, is charged on ${q.balanceDue}.`}</p>`;
+  }
+  function drawPanel() {
+    const P = document.getElementById("panel");
+    if (step === "dates") {
+      if (!a) { P.innerHTML = `<h3>Your stay</h3><p style="color:var(--muted)">Pick your arrival date on the calendar.</p><p class="notice">Most stays are at least ${B.rates().minNights} nights.</p>`; return; }
+      if (!z) { P.innerHTML = `<h3>Arriving ${a}</h3><p style="color:var(--muted)">Now pick the morning you leave.</p>`; return; }
+      const q = B.quote(a, z, 2);
+      P.innerHTML = `<h3>${a} → ${z}</h3>${q.problems.length ? `<p class="notice">${q.problems.map(esc).join("<br>")}</p>` : quoteHTML(q)}
+        <div class="field"><label for="g">Guests</label><select id="g">${[1, 2, 3, 4, 5, 6].map((n) => `<option ${n === 2 ? "selected" : ""}>${n}</option>`).join("")}</select></div>
+        <button class="btn act" id="go" ${q.ok ? "" : "disabled"} style="width:100%">Hold these nights</button>`;
+      const go = document.getElementById("go");
+      if (go) go.addEventListener("click", () => { heldQuote = B.quote(a, z, +document.getElementById("g").value); holdInfo = B.hold(heldQuote); step = "details"; drawCal(); drawPanel(); });
+      return;
+    }
+    if (step === "details") {
+      const mins = Math.round((holdInfo.expires - Date.now()) / 60000);
+      P.innerHTML = `<h3>Held for you · ${mins} min</h3><p style="color:var(--muted)">${heldQuote.checkin} → ${heldQuote.checkout} · ${heldQuote.guests} guests</p>${quoteHTML(heldQuote)}
+        <form id="who"><div class="field"><label for="fn">First name</label><input id="fn" required autocomplete="given-name"></div>
+        <div class="field"><label for="ln">Last name</label><input id="ln" required autocomplete="family-name"></div>
+        <div class="field"><label for="em">Email</label><input id="em" type="email" required autocomplete="email"></div>
+        <div class="field"><label for="ph">Phone</label><input id="ph" type="tel" required autocomplete="tel"></div>
+        <label style="display:flex;gap:10px;align-items:flex-start;font-size:.88rem;margin:8px 0 14px"><input type="checkbox" required id="ag"> <span>I agree to the rental agreement and cancellation policy. <a href="#" id="pol">Read them</a></span></label>
+        <p class="notice" id="poltext" hidden>${esc(heldQuote.policy)} The full agreement is being drafted by a lawyer for Eric and Mona; this sample stands in for it.</p>
+        <button class="btn act" type="submit" style="width:100%">${heldQuote.payInFull ? "Pay" : "Pay the deposit"} (test)</button></form>`;
+      document.getElementById("pol").addEventListener("click", (e) => { e.preventDefault(); document.getElementById("poltext").hidden = false; });
+      document.getElementById("who").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const g = { first: fn.value.trim(), last: ln.value.trim(), email: em.value.trim(), phone: ph.value.trim() };
+        const b = B.confirm(holdInfo.id, heldQuote, g); step = "done"; drawCal(); drawPanel(b);
+      });
+      return;
+    }
+  }
+  window.drawDone = null;
+  const origDraw = drawPanel;
+  drawPanel = function (b) {
+    if (step !== "done") return origDraw();
+    const P = document.getElementById("panel");
+    const url = URL.createObjectURL(new Blob([B.ics(b)], { type: "text/calendar" }));
+    P.innerHTML = `<span class="eyebrow">Confirmed</span><h3>See you on the mountain, ${esc(b.guest.first)}.</h3>
+      <p>Booking <b>${b.code}</b> · ${b.checkin} → ${b.checkout}</p>
+      <p style="color:var(--muted)">Your door code and the wifi details arrive by email 24 to 48 hours before you do, so you have them before the signal drops on the drive up.</p>
+      <p><a class="btn" href="${url}" download="catskill-dome-${b.code}.ics">Add to your calendar</a></p>
+      <p><a href="your-stays.html">Find this stay later</a> with your first name and the last four digits of your phone.</p>`;
+  };
+  document.getElementById("prev").addEventListener("click", () => { offset = Math.max(0, offset - 1); drawCal(); });
+  document.getElementById("next").addEventListener("click", () => { offset = Math.min(16, offset + 1); drawCal(); });
+  drawCal(); drawPanel();
+};
+</script>
+<script src="assets/js/dome.js"></script>
+</body>
+</html>

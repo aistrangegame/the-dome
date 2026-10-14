@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en" data-season="summer">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Catskill Mountain Domes · Under the same sky</title>
+<meta name="description" content="A hand-built geodesic dome on a Catskills mountain. 252 guests have stayed under the same sky.">
+<link rel="stylesheet" href="assets/css/dome.css">
+<style>
+  .sky { position: relative; height: min(70svh, 560px); border-radius: 22px; overflow: hidden; background: radial-gradient(ellipse at 50% 120%, #1c2f24 0%, #070b09 60%); }
+  .sky button { all: unset; position: absolute; width: 6px; height: 6px; margin: -3px; border-radius: 50%; background: #fff; cursor: pointer; opacity: .55; transition: transform .3s, opacity .3s; }
+  .sky button:hover, .sky button:focus-visible, .sky button.on { opacity: 1; transform: scale(2.2); box-shadow: 0 0 12px 3px rgba(255,255,255,.6); }
+  .sky button.em { background: var(--accent-soft); }
+  .sky .card-q { position: absolute; left: 16px; right: 16px; bottom: 16px; max-width: 520px; margin: 0 auto; background: rgba(8,12,10,.82); color: #F5F0E8; border-radius: 14px; padding: 16px 18px; backdrop-filter: blur(6px); }
+  .sky .card-q .voice { font-size: 1.05rem; }
+  .sky .card-q .voice-by { color: rgba(245,240,232,.7); }
+  .season-cards .card .media { aspect-ratio: 3/2; }
+  .season-cards button.card { all: unset; cursor: pointer; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+  .season-cards button.card[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .split { display: grid; gap: 28px; align-items: center; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); }
+  .split .media { border-radius: 18px; overflow: hidden; position: relative; aspect-ratio: 4/3; }
+  .split .media img { width: 100%; height: 100%; object-fit: cover; }
+</style>
+</head>
+<body data-root="./" data-page="index.html">
+
+<section class="bloom" aria-label="The white point">
+  <div class="stage">
+    <div class="layer aperture" id="aperture"><img src="assets/media/11-DJI_20260731173421_0224_D-1600.webp" alt="The dome from directly above: a white disc in a green clearing, mown paths looping through the meadow."></div>
+    <div class="point" id="point"></div>
+    <div class="words" id="words"><span class="hint">Scroll</span></div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="reading center rise">
+    <span class="eyebrow">Catskill Mountain Domes · Delaware County, New York</span>
+    <h1>Under the same sky.</h1>
+    <p class="lede">A white dome on a mountain in the Catskills, built by hand, kept with care, and loved by everyone who has stayed. 252 of them so far.</p>
+    <hr class="rule">
+    <div data-slot-key="em_welcome"></div>
+    <p><a class="btn act" href="stay.html">Find your dates</a> <a class="btn" href="places/index.html">Walk the places</a></p>
+  </div>
+</section>
+
+<section class="band deep">
+  <div class="wrap split">
+    <div class="media rise" data-season-img='{"summer":"living_dog","winter":"listing-08"}'><img alt="The great window: triangles of glass framing the valley, the sectional in front of it."><span class="imagined-tag">Imagined season</span></div>
+    <div class="rise">
+      <span class="eyebrow">The window</span>
+      <h2>Mostly window, and the whole valley inside it.</h2>
+      <p class="lede" data-season-line></p>
+      <div class="voices" style="margin-top:28px">
+        <figure class="voice-card"><blockquote class="voice">We loved the large sofa right against the big window overlooking the mountains.</blockquote><figcaption class="voice-by">Tim · guest #28</figcaption></figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap">
+    <div class="center rise" style="margin-bottom:36px">
+      <span class="eyebrow">The places</span>
+      <h2>Thirteen places, one point.</h2>
+      <p class="lede">Every place on the mountain has its own card, its own guests’ words, and one thing to do there.</p>
+    </div>
+    <div class="grid three" id="placeCards"></div>
+    <p class="center" style="margin-top:28px"><a class="btn" href="places/index.html">All thirteen places</a></p>
+  </div>
+</section>
+
+<section class="band deep">
+  <div class="wrap">
+    <div class="center rise" style="margin-bottom:28px">
+      <span class="eyebrow">The sky of guests</span>
+      <h2>Every star is someone who stayed.</h2>
+      <p class="lede">252 guests, 2023 to now. Touch a star to read what they wrote. The warmer stars are the guests of the new chapter.</p>
+    </div>
+    <div class="sky rise" id="sky" role="group" aria-label="252 guests as stars"></div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap">
+    <div class="center rise" style="margin-bottom:28px">
+      <span class="eyebrow">Four domes</span>
+      <h2>Guests come in every season.</h2>
+      <p class="lede">Choose one and the whole site changes with it. Where we don’t yet have a photo from that season, the picture is marked as imagined.</p>
+    </div>
+    <div class="grid four season-cards" id="seasonCards"></div>
+  </div>
+</section>
+
+<section class="band soft">
+  <div class="wrap split">
+    <div class="rise">
+      <span class="eyebrow">Stories</span>
+      <h2>The ones who came to celebrate, to stop, to look up.</h2>
+      <p class="lede">Six stories told only in guests’ own words.</p>
+      <p><a class="btn" href="stories.html">Read the stories</a></p>
+    </div>
+    <div class="rise">
+      <span class="eyebrow">Ideas</span>
+      <h2>Guests build the dome too.</h2>
+      <p class="lede">A guest asks for something, Eric and Mona build it, and the guest’s name goes on it.</p>
+      <p><a class="btn" href="ideas.html">See the ideas</a></p>
+    </div>
+  </div>
+</section>
+
+<section class="hero page-hero" data-season-img='{"summer":"dome_ridge","winter":"listing-23"}'>
+  <div class="bg"><img alt="The white dome against the ridge."><span class="imagined-tag">Imagined season</span></div>
+  <div class="veil"></div>
+  <div class="inner rise">
+    <span class="eyebrow" style="color:rgba(255,255,255,.75)"><span data-season-name></span> on the mountain</span>
+    <h1>Come and stay.</h1>
+    <p class="lede">See the open nights, the all-in price, and book directly with Eric and Mona.</p>
+    <p><a class="btn act" href="stay.html">Find your dates</a></p>
+  </div>
+</section>
+
+<script src="assets/js/reviews.js"></script>
+<script src="assets/js/dome-data.js"></script>
+<script>
+window.page = function (Dome) {
+  const { D, M, esc } = Dome;
+  // The point blooms
+  const ap = document.getElementById("aperture"), words = document.getElementById("words"), point = document.getElementById("point");
+  const bloom = document.querySelector(".bloom");
+  function onScroll() {
+    const r = bloom.getBoundingClientRect(); const span = bloom.offsetHeight - innerHeight;
+    const p = Math.min(1, Math.max(0, -r.top / span));
+    const max = Math.hypot(innerWidth, innerHeight) / 2;
+    ap.style.setProperty("--r", (6 + p * p * max) + "px");
+    point.style.opacity = String(Math.max(0, 1 - p * 4));
+    words.innerHTML = p < 0.1 ? '<span class="hint">Scroll</span>' : p < 0.85 ? "" : '<h1 class="serif">Under the same sky.</h1>';
+  }
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+
+  // Six place cards
+  const pick = ["window", "cedar-pool", "night-sky", "meadow", "hearth", "loft"];
+  document.getElementById("placeCards").innerHTML = pick.map((slug) => {
+    const p = D.places.find((x) => x.slug === slug);
+    return `<a class="card rise" href="places/${p.slug}.html"><div class="media" data-season-img='${JSON.stringify(p.img)}' data-w="800"><img alt="${esc(p.name)}"><span class="imagined-tag">Imagined season</span></div>
+      <div class="body"><span class="num">${String(p.n).padStart(2, "0")}</span><h3>${esc(p.name)}</h3><p>${esc(p.dome)}</p></div></a>`;
+  }).join("");
+
+  // The sky of guests
+  const sky = document.getElementById("sky");
+  let seed = 7; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+  const card = document.createElement("div"); card.className = "card-q"; card.hidden = true; sky.append(card);
+  window.DOME_REVIEWS.forEach((r) => {
+    const b = document.createElement("button"); b.type = "button";
+    b.style.left = (3 + rnd() * 94) + "%"; b.style.top = (4 + rnd() * 76) + "%";
+    if (r.era === "em") b.className = "em";
+    b.setAttribute("aria-label", `${r.name}, ${r.when}`);
+    b.addEventListener("click", () => {
+      sky.querySelectorAll("button.on").forEach((x) => x.classList.remove("on")); b.classList.add("on");
+      const t = r.text.length > 220 ? r.text.slice(0, 220).replace(/\s\S*$/, "") + "…" : r.text;
+      card.hidden = false;
+      card.innerHTML = `<blockquote class="voice">${esc(t)}</blockquote><span class="voice-by">${esc(r.name)} · ${esc(r.when)} · guest #${r.n}</span>`;
+    });
+    sky.append(b);
+  });
+
+  // Season cards
+  const sc = document.getElementById("seasonCards");
+  const hero = { summer: ["dome_goldenrod", true], fall: ["dome_mountain", false], winter: ["listing-23", true], spring: ["meadow_path", false] };
+  sc.innerHTML = ["spring", "summer", "fall", "winter"].map((s) => `<button type="button" class="card rise" data-s="${s}" aria-pressed="false">
+    <div class="media" data-season-fixed="${s}"><img class="seasonal ${hero[s][1] ? "real" : ""}" style="${hero[s][1] ? "" : "filter:" + getComputedStyle(document.documentElement).getPropertyValue("--img-filter")}" src="${M(hero[s][0], 800)}" alt="${D.seasons[s].name}">${hero[s][1] ? "" : '<span class="imagined-tag" style="display:inline-block">Imagined</span>'}</div>
+    <div class="body"><h3>${D.seasons[s].name}</h3><p>${esc(D.seasons[s].line)}</p><p style="margin-top:.5rem"><span class="pill">${D.seasons[s].count} stays</span></p></div></button>`).join("");
+  const filters = { fall: "sepia(.32) saturate(1.45) hue-rotate(-22deg) contrast(1.04)", spring: "saturate(1.15) brightness(1.06) hue-rotate(12deg)" };
+  sc.querySelectorAll("[data-season-fixed]").forEach((el) => { const s = el.dataset.seasonFixed; if (filters[s]) el.querySelector("img").style.filter = filters[s]; });
+  sc.querySelectorAll("button.card").forEach((b) => b.addEventListener("click", () => { Dome.setSeason(b.dataset.s); window.scrollTo({ top: 0, behavior: "smooth" }); }));
+  document.addEventListener("dome:season", (e) => sc.querySelectorAll("button.card").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.s === e.detail))));
+};
+</script>
+<script src="assets/js/dome.js"></script>
+</body>
+</html>

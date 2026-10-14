@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en" data-season="summer">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>What would you have built? · Catskill Mountain Domes</title>
+<link rel="stylesheet" href="../../assets/css/dome.css">
+<style>
+  .q { min-height: 70svh; display: grid; align-content: center; }
+  .opts { display: grid; gap: 10px; margin-top: 18px; }
+  .opts button { all: unset; cursor: pointer; border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; background: var(--ground); font-size: 1.02rem; }
+  .opts button:hover, .opts button:focus-visible { border-color: var(--accent); }
+  .bars { display: grid; gap: 10px; margin: 18px 0; }
+  .bar { position: relative; border-radius: 10px; overflow: hidden; background: var(--ground-2); padding: 10px 12px; font-size: .92rem; }
+  .bar i { position: absolute; inset: 0 auto 0 0; background: color-mix(in srgb, var(--accent) 28%, transparent); }
+  .bar span { position: relative; display: flex; justify-content: space-between; gap: 10px; }
+  .bar.mine { outline: 2px solid var(--accent); }
+  .bar.real b::after { content: " · what they built"; color: var(--accent); font-weight: 500; }
+  .chosen { font: italic 1.3rem/1.4 Lora, serif; }
+</style>
+</head>
+<body data-root="../../" data-solid="1">
+<main style="padding-top:72px"><section class="band"><div class="reading" id="game"></div></section></main>
+<script src="../../assets/js/dome-data.js"></script>
+<script>
+const QUESTIONS = [
+  { q: "You have a hillside in the Catskills. Where does it go?", o: ["On a rise above the meadow, facing the ridge", "Down by the pond", "Tucked in at the forest’s edge"], real: 0 },
+  { q: "What do you build?", o: ["A cabin", "An A-frame", "A white geodesic dome", "A yurt"], real: 2 },
+  { q: "The biggest window faces…", o: ["The sunrise", "The mountains", "The meadow and the flowers"], real: 1 },
+  { q: "Outside, for the evenings, you add…", o: ["A hot tub", "A heated cedar plunge pool", "Nothing. The stream is enough."], real: 1 },
+  { q: "One wall inside becomes…", o: ["Bare and white, for the light", "A big screen for movie nights", "Moss and shelves of books"], real: 2 },
+  { q: "Where do people sleep best?", o: ["A loft under a skylight", "Bedrooms with round porthole windows", "Both"], real: 2 }
+];
+window.page = function (Dome) {
+  const { esc, store, slotHTML, R } = Dome;
+  const g = document.getElementById("game");
+  let i = 0; const mine = [];
+  const local = () => store.get("dome-tally", {});
+  function intro() {
+    g.innerHTML = `<div class="q rise in"><span class="eyebrow">A game for everyone in the dome</span><h1>What would you have built?</h1>
+      <p class="lede">Before there was a dome, there was a hillside and two people deciding what to make of it. Make the six choices they faced. After each one, see what they really built, and what everyone else chose.</p>
+      <p><button class="btn act" type="button" id="go">Start</button></p></div>`;
+    document.getElementById("go").onclick = ask;
+  }
+  function ask() {
+    const Q = QUESTIONS[i];
+    g.innerHTML = `<div class="q"><span class="num">${i + 1} of ${QUESTIONS.length}</span><h2>${esc(Q.q)}</h2><div class="opts">${Q.o.map((o, k) => `<button type="button" data-k="${k}">${esc(o)}</button>`).join("")}</div></div>`;
+    g.querySelectorAll(".opts button").forEach((b) => (b.onclick = () => choose(+b.dataset.k)));
+  }
+  async function choose(k) {
+    const Q = QUESTIONS[i]; mine.push(k);
+    const t = local(); t[i] = t[i] || Q.o.map(() => 0); t[i][k]++; store.set("dome-tally", t);
+    let counts = t[i], shared = false;
+    try { const r = await fetch(R("tally"), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ game: "built", q: i, choice: k }) }); if (r.ok) { const j = await r.json(); if (Array.isArray(j.counts)) { counts = j.counts; shared = true; } } } catch (e) {}
+    const total = counts.reduce((a, b) => a + b, 0) || 1;
+    g.innerHTML = `<div class="q"><span class="num">${i + 1} of ${QUESTIONS.length}</span><h2>${esc(Q.q)}</h2>
+      <p class="chosen">${k === Q.real ? "You chose what they built." : "They chose differently."}</p>
+      <div class="bars">${Q.o.map((o, j) => `<div class="bar ${j === k ? "mine" : ""} ${j === Q.real ? "real" : ""}"><i style="width:${Math.round(counts[j] / total * 100)}%"></i><span><b>${esc(o)}</b><em>${Math.round(counts[j] / total * 100)}%</em></span></div>`).join("")}</div>
+      <p class="season-note">${shared ? "Everyone who has played on the mountain so far." : "Choices made on this device so far. Once the site is live, this shows everyone who has played."}</p>
+      ${slotHTML("cn_choice")}
+      <p><button class="btn act" type="button" id="nx">${i + 1 < QUESTIONS.length ? "Next" : "See what you built"}</button></p></div>`;
+    document.getElementById("nx").onclick = () => { i++; i < QUESTIONS.length ? ask() : end(); };
+  }
+  function end() {
+    const same = mine.filter((k, j) => k === QUESTIONS[j].real).length;
+    g.innerHTML = `<div class="q"><span class="eyebrow">Your dome</span><h2>${same === QUESTIONS.length ? "You built exactly what they built." : same >= 4 ? "You and the builders think alike." : same >= 2 ? "Some of your dome is in this one." : "You’d have built something else entirely."}</h2>
+      <ul class="lede">${mine.map((k, j) => `<li>${esc(QUESTIONS[j].o[k])}</li>`).join("")}</ul>
+      <p>${same} of ${QUESTIONS.length} match the dome you’re standing in.</p>
+      ${slotHTML("cn_line")}
+      <p><button class="btn" type="button" id="again">Play again</button> <a class="btn" href="${R("how-it-began.html")}">How it began</a></p></div>`;
+    document.getElementById("again").onclick = () => { i = 0; mine.length = 0; intro(); };
+  }
+  intro();
+};
+</script>
+<script src="../../assets/js/dome.js"></script>
+</body>
+</html>

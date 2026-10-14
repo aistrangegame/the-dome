@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en" data-season="summer">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>On the mountain · Catskill Mountain Domes</title>
+<link rel="stylesheet" href="../assets/css/dome.css">
+</head>
+<body data-root="../" data-solid="1">
+<main style="padding-top:72px">
+  <section class="band deep"><div class="reading center rise">
+    <div class="bloom-point" style="width:12px;height:12px;border-radius:50%;background:#fff;margin:0 auto 26px;box-shadow:0 0 24px 6px rgba(255,255,255,.45);animation:breathe 4.6s ease-in-out infinite"></div>
+    <span class="eyebrow">On the mountain</span><h1>You’re here.</h1>
+    <p class="lede">Every place on the property has a card like the one you just scanned. Each one opens its own page: what guests said there, one thing to do, and a place to leave your word.</p>
+    <p class="notice" style="background:rgba(255,255,255,.06);color:inherit">There’s little cell signal up here. These pages work on the dome’s wifi, and keep working once they’ve opened.</p>
+  </div></section>
+  <section class="band"><div class="wrap grid two">
+    <a class="card rise" href="awakening/index.html"><div class="media"><img src="../assets/media/listing-23-800.webp" alt="The dome glowing in the snow at night."></div><div class="body"><span class="num">For one</span><h3>The Awakening</h3><p>A story in seven places, from the gate to the night sky. Something here is waking up.</p></div></a>
+    <a class="card rise" href="choose/index.html"><div class="media"><img src="../assets/media/12-DJI_20260731173450_0226_D-800.webp" alt="The clearing from above, the dome a white dot."></div><div class="body"><span class="num">For everyone</span><h3>What would you have built?</h3><p>Make the choices the builders faced, then see what they chose, and what everyone else guessed.</p></div></a>
+  </div></section>
+  <section class="band soft"><div class="wrap"><span class="eyebrow">The thirteen places</span><div class="grid four" id="list"></div></div></section>
+</main>
+<script src="../assets/js/dome-data.js"></script>
+<script>
+window.page = function (Dome) {
+  const { D, esc } = Dome;
+  document.getElementById("list").innerHTML = D.places.map((p) => `<a class="card rise" href="places/${p.slug}.html"><div class="body"><span class="num">${String(p.n).padStart(2, "0")}${p.act ? " · Act " + p.act : ""}</span><h3>${esc(p.name)}</h3><p>${esc(p.todo)}</p></div></a>`).join("");
+};
+</script>
+<script src="../assets/js/dome.js"></script>
+</body>
+</html>

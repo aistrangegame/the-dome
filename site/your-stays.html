@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en" data-season="summer">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Your stays · Catskill Mountain Domes</title>
+<link rel="stylesheet" href="assets/css/dome.css">
+</head>
+<body data-root="./" data-page="your-stays.html" data-solid="1">
+<main style="padding-top:72px">
+  <section class="band"><div class="reading rise">
+    <span class="eyebrow">Your stays</span><h1>Welcome back.</h1>
+    <p class="lede">No account, no password. Your first name and the last four digits of your phone find every stay, every word and every idea you’ve left here.</p>
+    <form id="find" style="margin-top:24px"><div class="field"><label for="fn">First name</label><input id="fn" required autocomplete="given-name"></div>
+      <div class="field"><label for="l4">Last four digits of your phone</label><input id="l4" required inputmode="numeric" pattern="[0-9]{4}" maxlength="4"></div>
+      <button class="btn act" type="submit">Find my stays</button></form>
+    <div id="out" style="margin-top:28px"></div>
+  </div></section>
+</main>
+<script src="assets/js/dome-data.js"></script>
+<script src="assets/js/booking.js"></script>
+<script>
+window.page = function (Dome) {
+  const { esc, store } = Dome;
+  document.getElementById("find").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const fn = document.getElementById("fn").value.trim().toLowerCase(), l4 = document.getElementById("l4").value.trim();
+    const mine = window.DomeBooking.bookings().filter((b) => b.guest && b.guest.first.toLowerCase() === fn && b.guest.phone.replace(/\D/g, "").endsWith(l4));
+    const out = document.getElementById("out");
+    if (!mine.length) { out.innerHTML = `<p class="notice">No stays found yet for that name and number. In this showcase, stays booked on the Stay page on this device appear here.</p>`; return; }
+    out.innerHTML = mine.map((b) => `<div class="card" style="margin-bottom:14px"><div class="body"><span class="eyebrow">${esc(b.code)} · ${esc(b.status)}</span><h3>${b.checkin} → ${b.checkout}</h3>
+      <p>${b.guests} guests · total $${b.quote.total} · ${b.quote.payInFull ? "paid in full" : "balance due " + b.quote.balanceDue}</p></div></div>`).join("") +
+      `<p class="notice">When you come back, the ideas you left and whether they were built will show here too.</p>`;
+  });
+};
+</script>
+<script src="assets/js/dome.js"></script>
+</body>
+</html>

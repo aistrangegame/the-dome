@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en" data-season="summer">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#060a06"><meta name="apple-mobile-web-app-capable" content="yes">
+<title>The Awakening · Catskill Mountain Domes</title>
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon.svg">
+<link rel="stylesheet" href="../../assets/css/dome.css"><link rel="stylesheet" href="awakening.css">
+</head>
+<body data-root="../../" data-bare="1" data-act="0">
+<div class="aw" style="--hue:40;--lum:.05"><div class="glow"></div>
+  <div class="bar"><span>Catskill Mountain Domes</span><span>On the mountain</span></div>
+  <div class="scene"><div class="inner">
+    <div class="point"></div>
+    <div class="title">The Awakening</div>
+    <p class="line on">A story in seven places.</p>
+    <p class="line on">Something here is waking up. Walk with it, from the gate to the night sky, and it will ask you seven small questions about your own life.</p>
+    <p class="small">About an hour, at your own pace, over one day or the whole stay. One person at a time. Everything you answer stays on your phone.</p>
+    <div class="btnrow"><a class="btn act" href="act-0.html">Begin</a></div>
+    <div id="progress" class="small" style="margin-top:1.6rem"></div>
+  </div></div><div class="foot"></div>
+</div>
+<script>
+try { const m = JSON.parse(localStorage.getItem("dome-aw-memory") || '{"acts":{}}'); const k = Object.keys(m.acts).map(Number).sort((a,b)=>a-b);
+  if (k.length) document.getElementById("progress").innerHTML = `You have walked ${k.length} of 7 acts. <a href="act-${Math.min(7, Math.max(...k) + 1)}.html" style="color:#E2C48A">Continue</a>`; } catch (e) {}
+</script>
+</body>
+</html>

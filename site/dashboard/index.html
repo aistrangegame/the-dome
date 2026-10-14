@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en" data-season="summer">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dashboard · Catskill Mountain Domes</title>
+<link rel="stylesheet" href="../assets/css/dome.css">
+<style>
+  body { background: var(--ground-2); }
+  .shell { padding: 84px 0 80px; }
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 18px 0 22px; }
+  .tabs button { all: unset; cursor: pointer; padding: 10px 16px; border-radius: 99px; background: var(--ground); border: 1px solid var(--line); font-size: .9rem; }
+  .tabs button[aria-selected="true"] { background: var(--deep); color: var(--on-deep); border-color: var(--deep); }
+  .pane { background: var(--ground); border-radius: 18px; padding: 22px; border: 1px solid var(--line); }
+  .stats { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-bottom: 18px; }
+  .stat { background: var(--ground); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; } .stat b { display: block; font: 500 1.6rem/1.1 Lora, serif; } .stat span { font-size: .78rem; color: var(--muted); letter-spacing: .04em; }
+  .cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal .dow { font-size: .7rem; color: var(--muted); text-align: center; }
+  .cal button { all: unset; box-sizing: border-box; cursor: pointer; min-height: 62px; border-radius: 10px; padding: 6px; border: 1px solid var(--line); display: flex; flex-direction: column; gap: 2px; font-size: .78rem; }
+  .cal button .d { font-weight: 600; } .cal button .p { color: var(--muted); }
+  .cal button.ovr { border-color: var(--accent); } .cal button.blocked { background: repeating-linear-gradient(45deg, var(--ground-2), var(--ground-2) 4px, transparent 4px, transparent 8px); }
+  .cal button.booked { background: color-mix(in srgb, var(--leaf) 22%, transparent); } .cal button.held { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+  .cal button.past { opacity: .35; } .cal button.sel { outline: 2px solid var(--ink); }
+  .row { display: grid; gap: 18px; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); align-items: start; }
+  @media (max-width: 900px) { .row { grid-template-columns: 1fr; } }
+  table.t { width: 100%; border-collapse: collapse; font-size: .9rem; } table.t th, table.t td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; } table.t th { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .mgrid { display: grid; grid-template-columns: 1.4fr repeat(4, 1fr); gap: 6px; font-size: .82rem; }
+  .mgrid div { padding: 8px; border-radius: 8px; background: var(--ground-2); } .mgrid .h { background: none; font-weight: 600; } .mgrid .real { background: color-mix(in srgb, var(--leaf) 26%, transparent); } .mgrid .imag { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: .78rem; color: var(--muted); margin: 10px 0; }
+  .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 5px; border: 1px solid var(--line); }
+  .ib { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); }
+  .ib .col { background: var(--ground-2); border-radius: 14px; padding: 12px; } .ib .col h3 { font-size: 1rem; }
+  .ib .it { background: var(--ground); border-radius: 10px; padding: 10px; margin-top: 8px; font-size: .88rem; border: 1px solid var(--line); }
+</style>
+</head>
+<body data-root="../" data-solid="1" data-nodot="1">
+<main class="shell"><div class="wrap">
+  <span class="eyebrow">For Eric and Mona</span><h1 style="margin-bottom:.2em">The dashboard</h1>
+  <p class="notice">Showcase mode. When live, this page sits behind a one-time code sent to your email (Cloudflare Access), and everything here is saved to the Airtable base. In this preview it saves on this device, and the Stay page reads the same prices.</p>
+  <div class="tabs" role="tablist" id="tabs"></div>
+  <div id="pane"></div>
+</div></main>
+<script src="../assets/js/dome-data.js"></script>
+<script src="../assets/js/booking.js"></script>
+<script>
+window.page = function (Dome) {
+  const { D, M, esc, store } = Dome, B = window.DomeBooking;
+  const money = (n) => "$" + Number(n).toLocaleString("en-US", { maximumFractionDigits: 2 });
+  const TABS = [["today", "Today"], ["prices", "Prices and calendar"], ["bookings", "Bookings"], ["words", "Guests’ words"], ["ideas", "Ideas"], ["media", "Photos by season"]];
+  let tab = store.get("dome-dash-tab", "today"), month = 0, sel = null;
+  const tabs = document.getElementById("tabs"), pane = document.getElementById("pane");
+  function drawTabs() { tabs.innerHTML = TABS.map(([k, t]) => `<button role="tab" aria-selected="${k === tab}" data-k="${k}">${t}</button>`).join(""); tabs.querySelectorAll("button").forEach((b) => (b.onclick = () => { tab = b.dataset.k; store.set("dome-dash-tab", tab); draw(); })); }
+  function draw() { drawTabs(); ({ today, prices, bookings, words, ideas, media })[tab](); }
+
+  function today() {
+    const bk = B.bookings().filter((b) => b.status !== "cancelled"), w = store.get("dome-words", []);
+    const nextStay = bk.filter((b) => b.checkout >= B.iso(new Date())).sort((a, b) => a.checkin.localeCompare(b.checkin))[0];
+    pane.innerHTML = `<div class="stats">
+      <div class="stat"><b>${bk.length}</b><span>Direct bookings (test)</span></div>
+      <div class="stat"><b>${money(bk.reduce((a, b) => a + b.quote.total, 0))}</b><span>Booked value</span></div>
+      <div class="stat"><b>${w.filter((x) => x.status === "waiting").length}</b><span>Words waiting for you</span></div>
+      <div class="stat"><b>${D.ideas.length}</b><span>Ideas from guests</span></div>
+      <div class="stat"><b>252</b><span>Guest voices in the archive</span></div></div>
+      <div class="pane"><h3>Next arrival</h3>${nextStay ? `<p><b>${esc(nextStay.guest.first)} ${esc(nextStay.guest.last)}</b> · ${nextStay.checkin} → ${nextStay.checkout} · ${nextStay.guests} guests · code ${nextStay.code}</p><p class="notice">Door code and wifi go out automatically 24 to 48 hours before arrival.</p>` : `<p style="color:var(--muted)">No upcoming stays yet. Make a test booking on the <a href="../stay.html">Stay page</a> and it appears here.</p>`}</div>`;
+  }
+
+  function prices() {
+    const r = B.rates(); const now = new Date(); const y = now.getFullYear(), m = now.getMonth() + month;
+    const first = new Date(Date.UTC(y, m, 1)), days = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+    let cal = ["S", "M", "T", "W", "T", "F", "S"].map((d) => `<div class="dow">${d}</div>`).join("");
+    for (let i = 0; i < first.getUTCDay(); i++) cal += "<div></div>";
+    for (let d = 1; d <= days; d++) {
+      const s = B.iso(new Date(Date.UTC(y, m, d))), st = B.nightState(s, r), o = r.overrides[s] || {};
+      cal += `<button type="button" data-d="${s}" class="${st} ${o.price || o.blocked || o.min ? "ovr" : ""} ${sel === s ? "sel" : ""}"><span class="d">${d}</span><span class="p">${st === "blocked" ? "blocked" : st === "booked" ? "booked" : money(B.nightPrice(s, r))}</span>${o.min ? `<span class="p">min ${o.min}</span>` : ""}</button>`;
+    }
+    const o = sel ? r.overrides[sel] || {} : {};
+    pane.innerHTML = `<div class="row"><div class="pane">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><button class="btn" id="pm">←</button><h3 style="margin:0">${first.toLocaleString("en-US", { month: "long", year: "numeric", timeZone: "UTC" })}</h3><button class="btn" id="nm">→</button></div>
+        <div class="legend"><span><i style="background:color-mix(in srgb,var(--leaf) 22%,transparent)"></i>Booked</span><span><i style="background:color-mix(in srgb,var(--accent) 16%,transparent)"></i>Held</span><span><i style="border-color:var(--accent)"></i>Your own price or rule</span><span><i class="" style="background:repeating-linear-gradient(45deg,#ddd,#ddd 3px,transparent 3px,transparent 6px)"></i>Blocked</span></div>
+        <div class="cal">${cal}</div><p class="season-note" style="margin-top:10px">Tap a day to set its price, block it, or change its minimum stay.</p></div>
+      <div class="stack">
+        <div class="pane" id="day">${sel ? `<h3>${sel}</h3><p class="season-note">Without a rule this night is ${money(B.nightPrice(sel, Object.assign({}, r, { overrides: {} })))}.</p>
+          <div class="field"><label>Price for this night</label><input id="dp" type="number" min="0" step="5" value="${o.price ?? ""}" placeholder="Use the usual price"></div>
+          <div class="field"><label>Minimum stay starting this night</label><input id="dm" type="number" min="1" max="14" value="${o.min ?? ""}" placeholder="${r.minNights}"></div>
+          <label style="display:flex;gap:8px;align-items:center;margin-bottom:12px"><input type="checkbox" id="db" ${o.blocked ? "checked" : ""}> Block this night</label>
+          <button class="btn act" id="ds">Save this day</button> <button class="btn" id="dc">Clear</button>` : `<h3>A day</h3><p style="color:var(--muted)">Pick a day on the calendar.</p>`}</div>
+        <div class="pane"><h3>The usual prices</h3>
+          <div class="field"><label>Base price per night</label><input id="rb" type="number" value="${r.base}"></div>
+          <div class="field"><label>Friday and Saturday add</label><input id="rw" type="number" value="${r.weekend}"></div>
+          ${["spring", "summer", "fall", "winter"].map((s) => `<div class="field"><label>${D.seasons[s].name} adds</label><input data-su="${s}" type="number" value="${r.seasonUplift[s] || 0}"></div>`).join("")}
+          <div class="field"><label>Cleaning fee</label><input id="rc" type="number" value="${r.cleaning}"></div>
+          <div class="field"><label>Usual minimum stay (nights)</label><input id="rm" type="number" value="${r.minNights}"></div>
+          <div class="field"><label>Cancellation policy</label><textarea id="rp">${esc(r.policy)}</textarea></div>
+          <button class="btn act" id="rs">Save prices</button><p class="season-note" style="margin-top:10px">Order the price is worked out in: base, then season, then weekend, then any day you set yourself. Taxes (8% NY sales, 2% county) are added as their own lines.</p></div>
+      </div></div>`;
+    pane.querySelector("#pm").onclick = () => { month = Math.max(0, month - 1); prices(); };
+    pane.querySelector("#nm").onclick = () => { month = Math.min(18, month + 1); prices(); };
+    pane.querySelectorAll(".cal button").forEach((b) => (b.onclick = () => { sel = b.dataset.d; prices(); }));
+    if (sel) {
+      pane.querySelector("#ds").onclick = () => { const r2 = B.rates(); const p = pane.querySelector("#dp").value, mn = pane.querySelector("#dm").value, bl = pane.querySelector("#db").checked;
+        r2.overrides[sel] = { price: p === "" ? null : +p, min: mn === "" ? null : +mn, blocked: bl }; B.saveRates(r2); prices(); };
+      pane.querySelector("#dc").onclick = () => { const r2 = B.rates(); delete r2.overrides[sel]; B.saveRates(r2); prices(); };
+    }
+    pane.querySelector("#rs").onclick = () => { const r2 = B.rates(); r2.base = +rb.value; r2.weekend = +rw.value; r2.cleaning = +rc.value; r2.minNights = +rm.value; r2.policy = rp.value;
+      pane.querySelectorAll("[data-su]").forEach((x) => (r2.seasonUplift[x.dataset.su] = +x.value)); B.saveRates(r2); prices(); };
+  }
+
+  function bookings() {
+    const bk = B.bookings().slice().sort((a, b) => a.checkin.localeCompare(b.checkin));
+    pane.innerHTML = `<div class="pane"><h3>Bookings</h3>${bk.length ? `<div style="overflow-x:auto"><table class="t"><tr><th>Code</th><th>Guest</th><th>Stay</th><th>Total</th><th>Balance due</th><th>Status</th><th></th></tr>
+      ${bk.map((b) => `<tr><td>${b.code}</td><td>${esc(b.guest.first)} ${esc(b.guest.last)}<br><span class="season-note">${esc(b.guest.email)}</span></td><td>${b.checkin} → ${b.checkout}<br><span class="season-note">${b.guests} guests</span></td><td>${money(b.quote.total)}</td><td>${b.quote.payInFull ? "Paid in full" : money(b.quote.balance) + `<br><span class="season-note">${b.quote.balanceDue}</span>`}</td><td>${esc(b.status)}</td><td>${b.status !== "cancelled" ? `<button class="btn" data-c="${b.code}" style="min-height:34px">Cancel</button>` : ""}</td></tr>`).join("")}</table></div>` : `<p style="color:var(--muted)">No bookings yet. Try one on the <a href="../stay.html">Stay page</a>.</p>`}
+      <p class="season-note" style="margin-top:12px">Nothing is ever deleted: a cancelled booking stays here, marked. Refunds follow the policy the guest agreed to, stored with the booking.</p></div>`;
+    pane.querySelectorAll("[data-c]").forEach((x) => (x.onclick = () => { const all = B.bookings(); const b = all.find((y) => y.code === x.dataset.c); b.status = "cancelled"; store.set("dome-bookings", all); bookings(); }));
+  }
+
+  function words() {
+    const w = store.get("dome-words", []);
+    pane.innerHTML = `<div class="pane"><h3>Guests’ words and ideas</h3><p style="color:var(--muted)">What guests leave on the place cards waits here. Approved words appear on that place’s page; ideas move to the Ideas board.</p>
+      ${w.length ? w.map((x, i) => `<div class="voice-card" style="margin:16px 0"><span class="pill">${esc(x.kind)}</span> <span class="pill">${esc((D.places.find((p) => p.slug === x.place) || {}).name || x.place)}</span> <span class="pill">${esc(x.status)}</span>
+        <p class="italic" style="margin:.5rem 0">${esc(x.text)}</p><span class="voice-by">${esc(x.name || "No name")} · ${x.at.slice(0, 10)}</span>
+        <p style="margin-top:8px"><button class="btn act" data-a="${i}" style="min-height:34px">Approve</button> <button class="btn" data-o="${i}" style="min-height:34px">Mark OLD</button></p></div>`).join("") : `<p class="notice">Nothing waiting. Leave a word on any <a href="../house/places/window.html">place card</a> to see it arrive here.</p>`}</div>`;
+    pane.querySelectorAll("[data-a]").forEach((b) => (b.onclick = () => { w[b.dataset.a].status = "approved"; store.set("dome-words", w); words(); }));
+    pane.querySelectorAll("[data-o]").forEach((b) => (b.onclick = () => { w[b.dataset.o].status = "OLD"; store.set("dome-words", w); words(); }));
+  }
+
+  function ideas() {
+    const st = store.get("dome-idea-status", {});
+    const cols = ["Heard", "Planned", "Built", "Not for us"];
+    const all = D.ideas.map((x) => Object.assign({}, x, { status: st[x.idea] || (x.status === "Built?" ? "Heard" : x.status) }))
+      .concat(store.get("dome-words", []).filter((x) => x.kind === "idea" && x.status !== "OLD").map((x) => ({ idea: x.text, who: x.name || "A guest", place: x.place, status: st[x.text] || "Heard" })));
+    pane.innerHTML = `<div class="pane"><h3>The ideas board</h3><p style="color:var(--muted)">Move an idea along. When it’s built, it goes on the timeline with the guest’s name, and they’re invited back to see it.</p>
+      <div class="ib">${cols.map((c) => `<div class="col"><h3>${c}</h3>${all.filter((x) => x.status === c).map((x) => `<div class="it"><b>${esc(x.idea)}</b><br><span class="season-note">${esc(x.who)}</span><br>
+        <select data-i="${esc(x.idea)}" style="margin-top:6px;font:inherit;font-size:.8rem">${cols.map((k) => `<option ${k === c ? "selected" : ""}>${k}</option>`).join("")}</select></div>`).join("") || `<p class="season-note">Nothing here yet.</p>`}</div>`).join("")}</div></div>`;
+    pane.querySelectorAll("select[data-i]").forEach((s) => (s.onchange = () => { st[s.dataset.i] = s.value; store.set("dome-idea-status", st); ideas(); }));
+  }
+
+  function media() {
+    const ss = ["spring", "summer", "fall", "winter"];
+    pane.innerHTML = `<div class="pane"><h3>Photos by place and season</h3><p style="color:var(--muted)">Green: a real photo from that season. Gold: shown as “imagined” from another season until a real one arrives. This is Eric’s shot list.</p>
+      <div class="mgrid"><div class="h">Place</div>${ss.map((s) => `<div class="h">${D.seasons[s].name}</div>`).join("")}
+      ${D.places.map((p) => `<div><b>${esc(p.name)}</b></div>${ss.map((s) => p.img[s] ? `<div class="real">Real</div>` : (p.img.summer || p.img.winter) ? `<div class="imag">Imagined</div>` : `<div>Missing</div>`).join("")}`).join("")}</div>
+      <p class="season-note" style="margin-top:12px">Still to shoot, beyond the seasons: the hearth lit, the loft and skylight, the fire circle burning, the guest book table, interiors with no one in them, the plunge pool with no one in it.</p></div>`;
+  }
+  draw();
+};
+</script>
+<script src="../assets/js/dome.js"></script>
+</body>
+</html>
