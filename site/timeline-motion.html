@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en" data-season="fall" class="tm-snap">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Timeline in motion · Catskill Mountain Domes</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/css/dome.css">
+<style>
+  /* One moment per screen. The page snaps from moment to moment; you can always move on. */
+  html.tm-snap { scroll-snap-type: y mandatory; }
+  body { background: #060A06; }
+  .tm { position: relative; }
+  .mo { position: relative; height: 100svh; scroll-snap-align: start; scroll-snap-stop: always; overflow: hidden; color: #F5F0E8; display: grid; }
+  .foot { scroll-snap-align: end; }
+  /* the ground: the dome's triangle lattice, faint, tinted by the moment's season */
+  .mo .ground { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 1.6s ease; }
+  .mo.here .ground { opacity: 1; }
+  .mo .ground svg { width: 100%; height: 100%; }
+  .mo .tint { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 66% 50%, var(--tint) 0%, transparent 60%); opacity: 0; transition: opacity 2s ease; }
+  .mo.here .tint { opacity: .5; }
+  /* layout: words beside the drawing on wide screens, under it on phones */
+  .mo .in { position: relative; display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.3fr); align-items: center; gap: clamp(16px, 4vw, 56px); padding: 80px clamp(20px, 6vw, 96px) 40px clamp(48px, 8vw, 120px); max-width: 1400px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+  .mo .words { display: grid; gap: 14px; align-content: center; }
+  .mo .when { font: 500 .76rem/1 "DM Sans"; letter-spacing: .2em; text-transform: uppercase; color: #E2C48A; }
+  .mo h2 { font: 500 clamp(2rem, 4.6vw, 3.6rem)/1.08 Lora, serif; margin: 0; color: #F5F0E8; }
+  .mo blockquote { margin: 6px 0 0; font: italic 400 clamp(1.08rem, 1.8vw, 1.35rem)/1.5 Lora, serif; color: rgba(245,240,232,.92); }
+  .mo .by { font: 500 .82rem/1 "DM Sans"; color: rgba(245,240,232,.62); }
+  .mo .words > * { opacity: 0; transform: translateY(16px); transition: opacity 1s ease, transform 1s cubic-bezier(.2,.8,.2,1); }
+  .mo.here .words > * { opacity: 1; transform: none; }
+  .mo.here .words > *:nth-child(2) { transition-delay: .12s; } .mo.here .words > *:nth-child(3) { transition-delay: .3s; } .mo.here .words > *:nth-child(4) { transition-delay: .45s; }
+  .mo .art { position: relative; width: 100%; aspect-ratio: 1; max-height: 78svh; justify-self: center; }
+  .mo .art svg.draw { width: 100%; height: 100%; overflow: visible; }
+  .draw .ln { fill: none; stroke: #E2C48A; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; }
+  .draw .ln.thin { stroke-width: 1.2; stroke: rgba(226,196,138,.7); }
+  .draw .ln.cream { stroke: #F5F0E8; }
+  .draw .strokes { filter: drop-shadow(0 0 3px rgba(226,196,138,.55)); }
+  .draw .ln { stroke-width: 2.6; }
+  .draw .fill { opacity: 0; transition: opacity 1.4s ease; }
+  .draw .sil { stroke: none; }
+  .draw .star { fill: #F5F0E8; opacity: 0; }
+  .mo.here .draw .star { animation: twinkle 4s ease-in-out infinite; }
+  @keyframes twinkle { 0%, 100% { opacity: .15; } 50% { opacity: .8; } }
+  .mo.flicker .draw circle.fill { animation: flick 2.8s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+  @keyframes flick { 0%, 100% { opacity: 1; } 40% { opacity: .82; } 60% { opacity: .95; } 75% { opacity: .78; } }
+  .mo.drawn .draw .fill { opacity: 1; }
+  .pen { position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: #fff; box-shadow: 0 0 18px 6px rgba(255,255,255,.55), 0 0 40px 12px rgba(226,196,138,.35); pointer-events: none; opacity: 0; transition: opacity .4s; z-index: 2; }
+  .mo.drawing .pen { opacity: 1; }
+  /* sparkles and embers made at the end of a drawing */
+  .spark { position: absolute; width: 4px; height: 4px; margin: -2px; border-radius: 50%; background: #FFF4D6; box-shadow: 0 0 10px 3px rgba(255,236,190,.7); pointer-events: none; }
+  /* the thread: where you are in the timeline */
+  .thread { position: fixed; left: clamp(18px, 3vw, 40px); top: 50%; transform: translateY(-50%); z-index: 20; display: grid; gap: 22px; justify-items: center; }
+  .thread::before { content: ""; position: absolute; left: 50%; top: -30px; bottom: -30px; width: 1px; background: linear-gradient(transparent, rgba(226,196,138,.5), transparent); transform: translateX(-50%); }
+  .thread a { position: relative; width: 9px; height: 9px; border-radius: 50%; background: #060A06; border: 1px solid rgba(226,196,138,.6); display: block; }
+  .thread a.on { background: #fff; border-color: #fff; box-shadow: 0 0 12px 3px rgba(255,255,255,.55); }
+  .thread a.ghost { opacity: .35; border-style: dashed; width: 7px; height: 7px; }
+  .thread a span { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); font: 500 .66rem/1 "DM Sans"; letter-spacing: .12em; text-transform: uppercase; color: rgba(226,196,138,.8); white-space: nowrap; opacity: 0; transition: opacity .3s; }
+  .thread a:hover span, .thread a:focus-visible span { opacity: 1; }
+  .intro .in, .end .in { grid-template-columns: 1fr; text-align: center; justify-items: center; padding-left: clamp(20px, 6vw, 96px); }
+  .intro .pt { width: 12px; height: 12px; border-radius: 50%; background: #fff; box-shadow: 0 0 30px 8px rgba(255,255,255,.4); margin: 0 auto 26px; animation: breathe 5s ease-in-out infinite; }
+  .intro h1 { font: italic 400 clamp(2.6rem, 8vw, 5rem)/1.05 Lora, serif; margin: 0 0 14px; color: #F5F0E8; }
+  .intro p, .end p { max-width: 520px; color: rgba(245,240,232,.78); margin: 0 auto; }
+  .swipe { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%); font: 500 .7rem/1 "DM Sans"; letter-spacing: .2em; text-transform: uppercase; color: rgba(245,240,232,.5); animation: drift 3.4s ease-in-out infinite; }
+  @keyframes drift { 50% { transform: translate(-50%, 6px); opacity: .4; } }
+  @media (max-width: 760px), (orientation: portrait) and (max-width: 1100px) {
+    .mo .in { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1.15fr) auto; align-items: end; gap: 10px; padding: 64px 20px 30px 44px; height: 100%; }
+    .mo .art { order: -1; width: min(100%, 50svh); height: auto; max-height: none; align-self: end; }
+    .mo .words { min-width: 0; } .mo blockquote { font-size: 1.02rem; }
+    .mo h2 { font-size: 1.9rem; }
+    .thread { left: 14px; gap: 16px; } .thread a span { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { .mo.here .draw .star, .mo.flicker .draw circle.fill { animation: none; opacity: .6; } html.tm-snap { scroll-snap-type: none; } .mo .words > *, .mo .ground, .mo .tint { transition: none; } .swipe, .intro .pt { animation: none; } }
+</style>
+</head>
+<body data-root="./" data-page="timeline.html" data-noclose="1" data-element="light" data-bed="night">
+
+<nav class="thread" aria-label="Moments" id="thread"></nav>
+<main class="tm" id="tm">
+  <section class="mo intro" id="m-intro" data-tint="rgba(226,196,138,.16)">
+    <div class="ground" aria-hidden="true"></div><div class="tint" aria-hidden="true"></div>
+    <div class="in"><div class="words">
+      <div class="pt" aria-hidden="true"></div>
+      <span class="when">Timeline · a first look at three moments</span>
+      <h1>2023 to now.</h1>
+      <p>Each moment locks in place as you scroll. The words come first; then the white point draws what happened, the way a guest remembered it.</p>
+    </div></div>
+    <span class="swipe" aria-hidden="true">Scroll</span>
+  </section>
+</main>
+<script src="assets/js/reviews.js"></script>
+<script src="assets/js/dome-data.js"></script>
+<script>
+window.page = function (Dome) {
+  const { D, esc } = Dome;
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const NS = "http://www.w3.org/2000/svg";
+  const SEASON_TINT = { winter: "rgba(160,190,225,.22)", spring: "rgba(150,196,138,.2)", summer: "rgba(226,196,138,.22)", fall: "rgba(217,134,78,.24)" };
+  const seasonOf = (when) => /December|January|February/.test(when) ? "winter" : /March|April|May/.test(when) ? "spring" : /June|July|August/.test(when) ? "summer" : "fall";
+
+  /* Each moment: its words come from the timeline data (guest words verbatim), its drawing is a list of strokes
+     the point draws in order (d = SVG path, t = seconds), then fills that bloom, then a last touch. viewBox 600×600. */
+  // Silhouettes: a person standing (facing right) and a person kneeling (facing left), drawn as one outline each, then filled.
+  const STAND = (x, g) => `M${x} ${g - 262} a19 19 0 1 0 0.1 0 M${x - 10} ${g - 232} C${x - 26} ${g - 224} ${x - 30} ${g - 196} ${x - 28} ${g - 160} L${x - 24} ${g - 96} L${x - 18} ${g} H${x - 4} L${x} ${g - 84} L${x + 4} ${g} H${x + 18} L${x + 24} ${g - 96} L${x + 28} ${g - 160} C${x + 30} ${g - 196} ${x + 26} ${g - 224} ${x + 10} ${g - 232} Z`;
+  const KNEEL = (x, g) => `M${x} ${g - 182} a17 17 0 1 0 0.1 0 M${x + 8} ${g - 154} C${x + 24} ${g - 146} ${x + 28} ${g - 120} ${x + 24} ${g - 92} L${x + 20} ${g - 62} L${x + 46} ${g - 58} L${x + 50} ${g} H${x + 36} L${x + 32} ${g - 44} L${x - 4} ${g - 50} L${x - 22} ${g} H${x - 36} L${x - 14} ${g - 66} C${x - 18} ${g - 100} ${x - 16} ${g - 136} ${x + 8} ${g - 154} Z`;
+  const SEAT = (x, g, flip) => { const f = flip ? -1 : 1; return `M${x} ${g - 136} a16 16 0 1 0 0.1 0 M${x - 12 * f} ${g - 110} C${x - 30 * f} ${g - 100} ${x - 30 * f} ${g - 70} ${x - 26 * f} ${g - 44} L${x - 30 * f} ${g} H${x + 34 * f} L${x + 30 * f} ${g - 40} L${x + 12 * f} ${g - 46} C${x + 16 * f} ${g - 76} ${x + 14 * f} ${g - 100} ${x - 12 * f} ${g - 110} Z`; };
+  const STARS = (n, seed, box) => { let r = seed; const rnd = () => (r = (r * 9301 + 49297) % 233280) / 233280; return Array.from({ length: n }, () => `<circle class="star" cx="${(box[0] + rnd() * box[2]).toFixed(0)}" cy="${(box[1] + rnd() * box[3]).toFixed(0)}" r="${(0.6 + rnd() * 1.6).toFixed(1)}" style="animation-delay:${(rnd() * 4).toFixed(2)}s"/>`).join(""); };
+
+  /* Each moment: its words come from the timeline data (guest words verbatim); its drawing is a list of strokes the point
+     draws in order (d = SVG path, t = seconds), then fills that bloom, then sparks, a ripple and a chord. vb = the framing. */
+  const ART = {
+    "A proposal": {
+      vb: "110 120 440 400",
+      under: STARS(26, 7, [110, 120, 440, 180]),
+      strokes: [
+        { d: "M110 470 H550", t: .35, c: "thin" },
+        // the dome on the hill behind them, its triangles
+        { d: "M352 470 C352 300 548 300 548 470", t: .6 },
+        { d: "M378 418 L450 470 L522 418 M366 446 L450 380 L534 446 M402 352 L450 380 L498 352 M450 323 V380", t: .55, c: "thin" },
+        // the one standing, a hand at her mouth
+        { d: STAND(212, 470), t: .9, c: "cream" },
+        { d: "M224 252 C240 262 244 240 228 228", t: .25, c: "cream" },
+        // the one kneeling, holding the ring up
+        { d: KNEEL(318, 470), t: .9, c: "cream" },
+        { d: "M314 330 C298 318 284 306 272 296", t: .3, c: "cream" },
+        // the ring
+        { d: "M262 296 a11 11 0 1 0 0.1 0", t: .3 },
+        { d: "M254 282 L262 270 L270 282 L262 289 Z", t: .25 },
+        // light from it
+        { d: "M262 250 V232 M286 262 L298 250 M238 262 L226 250 M292 288 H308 M232 288 H216", t: .35, c: "thin" }
+      ],
+      fills: `<circle class="fill" cx="262" cy="288" r="70" fill="url(#gl)"/><path class="fill" d="M352 470 C352 300 548 300 548 470 Z" fill="rgba(245,240,232,.05)"/><path class="fill sil" d="${STAND(212, 470)}"/><path class="fill sil" d="${KNEEL(318, 470)}"/>`,
+      burst: { x: 262, y: 282, n: 16 }, tone: [523.25, 659.25, 783.99]
+    },
+    "Scrabble by lantern": {
+      vb: "60 20 480 540",
+      strokes: [
+        // the lantern, hanging
+        { d: "M300 24 V84", t: .25, c: "thin" },
+        { d: "M300 84 a12 12 0 1 0 0.1 0 M268 110 H332 L342 128 H258 Z", t: .45 },
+        { d: "M266 128 V232 Q300 250 334 232 V128 M283 128 V236 M317 128 V236 M258 232 H342 L332 250 H268 Z", t: .7 },
+        { d: "M300 212 C286 196 294 178 300 158 C306 178 314 196 300 212 Z", t: .3, c: "cream" },
+        // light falling from it
+        { d: "M262 252 L150 452 M338 252 L450 452", t: .4, c: "thin" },
+        // the table and the board
+        { d: "M70 452 H530 M112 452 L98 548 M488 452 L502 548", t: .45, c: "thin" },
+        { d: "M168 440 L226 384 H374 L432 440 Z M188 421 H412 M208 402 H392 M254 384 L224 440 M300 384 V440 M346 384 L376 440", t: .6, c: "thin" },
+        // three of them around it, heads bowed over the board
+        { d: SEAT(132, 452, false), t: .6, c: "cream" },
+        { d: SEAT(468, 452, true), t: .6, c: "cream" },
+        { d: "M300 300 a15 15 0 1 0 0.1 0 M288 326 C276 334 274 352 278 372 H322 C326 352 324 334 312 326 Z", t: .45, c: "cream" }
+      ],
+      fills: `<path class="fill" d="M262 252 L150 452 H450 L338 252 Z" fill="url(#beam)"/><circle class="fill" cx="300" cy="186" r="200" fill="url(#gl)"/><path class="fill sil" d="${SEAT(132, 452, false)}"/><path class="fill sil" d="${SEAT(468, 452, true)}"/><path class="fill sil" d="M300 300 a15 15 0 1 0 0.1 0 M288 326 C276 334 274 352 278 372 H322 C326 352 324 334 312 326 Z"/><g class="fill" font-family="Lora, serif" font-size="15" fill="#1A2218" text-anchor="middle">${[..."LANTERN"].map((c, i) => `<g transform="translate(${225 + i * 25} 408)"><rect x="-10" y="-11" width="20" height="20" rx="3" fill="#F2E3C4"/><text y="5">${c}</text></g>`).join("")}</g>`,
+      flicker: true, burst: { x: 300, y: 186, n: 12, warm: true }, tone: [392, 493.88, 587.33]
+    },
+    "The harvest supermoon": {
+      vb: "20 60 560 500",
+      under: STARS(40, 11, [20, 60, 560, 220]),
+      strokes: [
+        // the moon, very large, rising
+        { d: "M300 250 m-140 0 a140 140 0 1 0 280 0 a140 140 0 1 0 -280 0", t: .9, clip: true },
+        { d: "M248 206 a18 18 0 1 0 0.1 0 M342 272 a26 26 0 1 0 0.1 0 M300 168 a9 9 0 1 0 0.1 0 M232 290 a11 11 0 1 0 0.1 0", t: .4, c: "thin", clip: true },
+        // the ridge in front of it
+        { d: "M20 392 L110 318 L184 352 L270 286 L352 336 L438 292 L580 386", t: .7 },
+        // the fire pit, and the two of them by it
+        { d: "M226 520 Q300 552 374 520 M238 516 L248 494 M292 526 L294 500 M346 518 L336 496", t: .45, c: "thin" },
+        { d: "M300 508 C278 484 296 462 300 432 C304 462 322 484 300 508 Z M284 512 C276 498 284 488 288 478 M316 512 C324 498 316 488 312 478", t: .4, c: "cream" },
+        { d: SEAT(150, 540, false), t: .55, c: "cream" },
+        { d: SEAT(450, 540, true), t: .55, c: "cream" },
+        // tea, steaming
+        { d: "M182 478 h14 v14 h-14 Z M188 470 c-7 -9 7 -13 0 -24 M404 478 h14 v14 h-14 Z M410 470 c-7 -9 7 -13 0 -24", t: .4, c: "thin" }
+      ],
+      sky: "M20 392 L110 318 L184 352 L270 286 L352 336 L438 292 L580 386 V-200 H20 Z",
+      fills: `<g clip-path="url(#sky)"><circle class="fill moon" cx="300" cy="250" r="138" fill="url(#moon)"/><circle class="fill" cx="300" cy="250" r="260" fill="url(#gl)"/></g><path class="fill sil" d="${SEAT(150, 540, false)}"/><path class="fill sil" d="${SEAT(450, 540, true)}"/>`,
+      rise: true, burst: { x: 300, y: 480, n: 10, warm: true }, tone: [329.63, 415.3, 493.88]
+    }
+  };
+  const PICK = ["A proposal", "Scrabble by lantern", "The harvest supermoon"];
+  const items = PICK.map((t) => D.timeline.find((x) => x.title === t)).filter(Boolean);
+
+  const tm = document.getElementById("tm");
+  const lattice = () => `<svg viewBox="0 0 600 600" preserveAspectRatio="xMidYMid slice"><defs><pattern id="tri" width="60" height="104" patternUnits="userSpaceOnUse"><path d="M0 0 L30 52 L60 0 M0 104 L30 52 L60 104 M0 52 H60" fill="none" stroke="rgba(226,196,138,.07)" stroke-width="1"/></pattern></defs><rect width="600" height="600" fill="url(#tri)"/><g fill="none" stroke="rgba(226,196,138,.06)">${[80, 160, 240, 320, 400].map((r) => `<circle cx="400" cy="300" r="${r}"/>`).join("")}</g></svg>`;
+  document.querySelector("#m-intro .ground").innerHTML = lattice();
+  items.forEach((it, i) => {
+    const a = ART[it.title], s = seasonOf(it.when);
+    const sec = document.createElement("section"); sec.className = "mo"; sec.id = "m" + i; sec.style.setProperty("--tint", SEASON_TINT[s]);
+    const [n, name, text] = it.review || [];
+    sec.innerHTML = `<div class="ground" aria-hidden="true">${lattice()}</div><div class="tint" aria-hidden="true"></div>
+      <div class="in"><div class="words"><span class="when">${esc(it.when)}${it.kind === "idea" ? " · an idea" : ""}</span><h2>${esc(it.title)}</h2>
+        ${text ? `<blockquote>“${esc(text)}”</blockquote><span class="by">${esc(name)} · guest #${n}</span>` : ""}</div>
+        <div class="art" role="img" aria-label="A drawing of ${esc(it.title.toLowerCase())}"><div class="pen"></div>
+          <svg class="draw" viewBox="${a.vb || "0 0 600 600"}" aria-hidden="true"><defs>
+            <linearGradient id="beam${i}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(255,226,170,.32)"/><stop offset="1" stop-color="rgba(255,226,170,0)"/></linearGradient>
+            <linearGradient id="sil${i}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2A2A22"/><stop offset="1" stop-color="#121410"/></linearGradient>
+            <radialGradient id="gl${i}"><stop offset="0" stop-color="rgba(255,226,170,.55)"/><stop offset="1" stop-color="rgba(255,226,170,0)"/></radialGradient>
+            <radialGradient id="moon${i}" cx=".42" cy=".38"><stop offset="0" stop-color="#FFF1D2"/><stop offset=".7" stop-color="#F2C98A"/><stop offset="1" stop-color="#D9864E"/></radialGradient></defs>
+            ${a.sky ? `<clipPath id="sky${i}"><path d="${a.sky}"/></clipPath>` : ""}
+            ${a.under || ""}
+            ${a.fills.replace(/url\(#gl\)/g, `url(#gl${i})`).replace(/url\(#moon\)/g, `url(#moon${i})`).replace(/url\(#beam\)/g, `url(#beam${i})`).replace(/url\(#sky\)/g, `url(#sky${i})`).replace(/class="fill sil"/g, `class="fill sil" fill="url(#sil${i})"`)}
+            <g class="strokes">${a.strokes.map((k) => `<path class="ln ${k.c || ""}" pathLength="1" d="${k.d}"${k.clip ? ` clip-path="url(#sky${i})"` : ""}/>`).join("")}</g>
+          </svg></div></div>`;
+    tm.append(sec);
+  });
+  const end = document.createElement("section"); end.className = "mo end"; end.id = "m-end";
+  end.innerHTML = `<div class="ground" aria-hidden="true">${lattice()}</div><div class="tint" aria-hidden="true" style="--tint:rgba(226,196,138,.14)"></div>
+    <div class="in"><div class="words"><span class="when">Next</span><h2>Fifteen more moments are waiting to be drawn.</h2>
+    <p>The first guests, the blizzard, the handover, the summer shoot, the newest voice in the fall, and what comes next.</p>
+    <p><a class="btn act" href="timeline.html">The whole timeline, as it is now</a></p></div></div>`;
+  tm.append(end);
+
+  // the thread: one dot per moment here, ghosts for the moments still to come
+  const secs = [...tm.querySelectorAll(".mo")];
+  const thread = document.getElementById("thread");
+  thread.innerHTML = secs.map((s, i) => `<a href="#${s.id}" data-i="${i}"><span>${s.querySelector(".when") ? s.querySelector(".when").textContent.replace(/ · .*/, "") : ""}</span></a>`).join("") + Array.from({ length: 4 }, () => `<a class="ghost" aria-hidden="true" tabindex="-1"></a>`).join("");
+
+  /* Drawing: the pen (the point) travels each stroke as it appears; then the fills bloom, sparks lift, a ripple, a chord */
+  const runs = new WeakMap();
+  function draw(sec, fast) {
+    const art = sec.querySelector(".art"); if (!art) { sec.classList.add("drawn"); return; }
+    const key = PICK[secs.indexOf(sec) - 1], a = ART[key];
+    const svg = art.querySelector("svg.draw"), pen = art.querySelector(".pen"), paths = [...svg.querySelectorAll(".ln")];
+    const run = { stop: false }; runs.set(sec, run);
+    sec.classList.remove("drawn"); paths.forEach((p) => (p.style.strokeDashoffset = 1));
+    if (reduce) { paths.forEach((p) => (p.style.strokeDashoffset = 0)); sec.classList.add("drawn"); return; }
+    const speed = fast ? 0.45 : 1;
+    sec.classList.add("drawing");
+    let i = 0, t0 = performance.now() + (fast ? 150 : 650);
+    // map drawing units to the screen through the svg's own transform (whatever its framing)
+    const box = () => { const m = svg.getScreenCTM(), ar = art.getBoundingClientRect(); return { m, ar }; };
+    const toScreen = (bx, x, y) => { const pt = svg.createSVGPoint(); pt.x = x; pt.y = y; const q = pt.matrixTransform(bx.m); return { x: q.x - bx.ar.left, y: q.y - bx.ar.top }; };
+    let b = box(), lastTick = 0;
+    (function step(now) {
+      if (run.stop) return;
+      if (now < t0) return requestAnimationFrame(step);
+      const p = paths[i], k = a.strokes[i], dur = k.t * 1000 * speed;
+      const f = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - f, 2);
+      p.style.strokeDashoffset = String(1 - e);
+      try { const L = p.getTotalLength(), pt = p.getPointAtLength(L * e), q = toScreen(b, pt.x, pt.y); pen.style.left = q.x + "px"; pen.style.top = q.y + "px"; } catch (err) {}
+      if (now - lastTick > 90) { lastTick = now; tick(); }
+      if (f >= 1) { i++; t0 = now + 60; if (i >= paths.length) return finish(); }
+      requestAnimationFrame(step);
+    })(performance.now());
+    function finish() {
+      sec.classList.remove("drawing"); sec.classList.add("drawn");
+      if (a.rise) svg.querySelectorAll(".moon").forEach((f) => f.animate([{ transform: "translateY(40px)" }, { transform: "none" }], { duration: 3200, easing: "cubic-bezier(.2,.7,.2,1)" }));
+      b = box(); const q = toScreen(b, a.burst.x, a.burst.y);
+      sparks(art, q.x, q.y, a.burst.n, a.burst.warm);
+      if (window.Flow) window.Flow.burst(b.ar.left + q.x, b.ar.top + q.y, .9);
+      if (a.flicker) sec.classList.add("flicker");
+      chord(a.tone);
+    }
+  }
+  function sparks(host, x, y, n, warm) {
+    for (let j = 0; j < n; j++) {
+      const s = document.createElement("i"); s.className = "spark"; s.style.left = x + "px"; s.style.top = y + "px";
+      if (warm) s.style.background = "#FFC98A";
+      host.append(s);
+      const ang = (j / n) * Math.PI * 2 + Math.random() * .4, d = 40 + Math.random() * 70;
+      s.animate([{ transform: "translate(0,0) scale(1)", opacity: 1 }, { transform: `translate(${Math.cos(ang) * d}px, ${Math.sin(ang) * d - (warm ? 40 : 0)}px) scale(.3)`, opacity: 0 }], { duration: 1400 + Math.random() * 600, easing: "cubic-bezier(.2,.7,.3,1)" }).onfinish = () => s.remove();
+    }
+  }
+  // sound, only if "Hear the mountain" is on: the pen's faint scratch while drawing, a soft chord when the moment is whole
+  function out() { return window.Flow && window.Flow.Sound.out ? window.Flow.Sound.out() : null; }
+  function tick() {
+    const o = out(); if (!o) return; const ac = o.ac, t = ac.currentTime, n = ac.createBufferSource(), len = Math.floor(ac.sampleRate * .05), buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
+    for (let j = 0; j < len; j++) d[j] = (Math.random() * 2 - 1) * (1 - j / len);
+    const f = ac.createBiquadFilter(), g = ac.createGain(); f.type = "bandpass"; f.frequency.value = 3200; g.gain.value = .012; n.buffer = buf; n.connect(f); f.connect(g); g.connect(o.master); n.start(t);
+  }
+  function chord(fs) {
+    const o = out(); if (!o) return; const ac = o.ac;
+    fs.forEach((fq, j) => { const t = ac.currentTime + j * .09, osc = ac.createOscillator(), g = ac.createGain(); osc.frequency.value = fq; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.05, t + .04); g.gain.exponentialRampToValueAtTime(.0001, t + 3.2); osc.connect(g); g.connect(o.master); osc.start(t); osc.stop(t + 3.3); });
+  }
+
+  // Arriving on a moment: its words, then its drawing. Leaving mid-drawing finishes it at once (nobody is held back).
+  const seen = new Set();
+  const io = new IntersectionObserver((es) => es.forEach((e) => {
+    const sec = e.target, idx = secs.indexOf(sec);
+    if (e.isIntersecting && e.intersectionRatio > .6) {
+      secs.forEach((s) => s.classList.toggle("here", s === sec));
+      thread.querySelectorAll("a[data-i]").forEach((a) => a.classList.toggle("on", +a.dataset.i === idx));
+      if (sec.querySelector(".art")) draw(sec, seen.has(sec));
+      seen.add(sec);
+    } else if (!e.isIntersecting || e.intersectionRatio < .3) {
+      const r = runs.get(sec); if (r && !sec.classList.contains("drawn")) { r.stop = true; sec.classList.remove("drawing"); sec.querySelectorAll(".ln").forEach((p) => (p.style.strokeDashoffset = 0)); sec.classList.add("drawn"); }
+    }
+  }), { threshold: [0, .3, .6, .9] });
+  secs.forEach((s) => io.observe(s));
+  // arrow keys and Page Down move one moment at a time
+  addEventListener("keydown", (e) => {
+    if (document.documentElement.classList.contains("menu-open") || /input|textarea|select/i.test(e.target.tagName)) return;
+    const dir = { ArrowDown: 1, PageDown: 1, " ": 1, ArrowUp: -1, PageUp: -1 }[e.key]; if (!dir) return;
+    const cur = secs.findIndex((s) => s.classList.contains("here")), nx = secs[Math.max(0, Math.min(secs.length - 1, cur + dir))];
+    if (nx) { e.preventDefault(); nx.scrollIntoView({ behavior: reduce ? "auto" : "smooth" }); }
+  });
+};
+</script>
+<script src="assets/js/dome.js"></script>
+</body>
+</html>
