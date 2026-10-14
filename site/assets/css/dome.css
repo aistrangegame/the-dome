@@ -128,6 +128,11 @@ img.seasonal.real { filter: none; }
 .passage .p-stage { position: sticky; top: 0; height: 100svh; overflow: hidden; display: grid; place-items: center; }
 .passage .p-layer { position: absolute; inset: 0; will-change: clip-path, transform; }
 .passage .p-layer img { width: 100%; height: 100%; object-fit: cover; }
+.passage .p-layer video.dvid { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.has-imagined video.dvid { filter: var(--img-filter); transition: filter 1s ease; }
+.passage .p-ring { position: absolute; left: 50%; top: 50%; translate: -50% -50%; pointer-events: none; overflow: visible; }
+.passage .p-ring circle { fill: none; stroke: rgba(255,248,230,.75); stroke-width: .6; vector-effect: non-scaling-stroke; }
+.passage .p-ring circle.t { stroke-dasharray: 1 7; stroke-width: 1.4; stroke: #E2C48A; }
 .passage .p-point { position: absolute; width: 12px; height: 12px; border-radius: 50%; background: #fff; box-shadow: 0 0 30px 6px rgba(255,255,255,.5); animation: breathe 4.6s ease-in-out infinite; pointer-events: none; }
 .passage .p-words { position: absolute; inset: auto 0 14svh 0; display: grid; place-items: center; padding: 0 16px; pointer-events: none; }
 .passage .p-line { grid-area: 1 / 1; max-width: 760px; text-align: center; color: #fff; margin: 0; opacity: 0; transform: translateY(10px); transition: opacity 1s ease, transform 1s ease; text-shadow: 0 2px 24px rgba(0,0,0,.55); }
@@ -379,3 +384,5 @@ html.notes .passage.dn-target { outline-offset: -10px; }
 .constel a:hover text { fill: #9A7A3E; text-decoration: underline; }
 @media (max-width: 700px) { .guide { top: auto; height: 82vh; width: 100%; border-radius: 20px 20px 0 0; transform: translateY(104%); box-shadow: 0 -20px 60px rgba(0,0,0,.3); } .guide.open { transform: none; } }
 @media (prefers-reduced-motion: reduce) { .dnote, .constel .ln, .guide { animation: none !important; transition: none !important; } .constel .ln { stroke-dashoffset: 0; } }
+.notes-btn[hidden] { display: none; }
+.passage .p-layer.has-video::after { content: ""; position: absolute; inset: 40% 0 0 0; background: linear-gradient(to bottom, transparent, rgba(4,7,5,.62)); pointer-events: none; }

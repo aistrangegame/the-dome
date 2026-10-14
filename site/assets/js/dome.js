@@ -221,13 +221,33 @@
 
   /* ---------- Passages: the point that opens, descends and closes ---------- */
   // <section class="passage" data-mode="open|descend|close" data-season-img='{"summer":"key"}' data-lines='[["text","who #n"],...]'>
+  /* ---------- Moving pictures: drone clips, upright for phones and wide for screens ---------- */
+  // Each clip has -p (720 wide, upright) and -l (1920 wide) versions with a still of the first frame.
+  const tall = () => innerHeight > innerWidth * 1.05;
+  // H.264 where the browser has it (Safari, Chrome, Edge), WebM (VP9) everywhere else
+  const VEXT = (() => { try { return document.createElement("video").canPlayType('video/mp4; codecs="avc1.640028"') ? "mp4" : "webm"; } catch (e) { return "mp4"; } })();
+  const vsrc = (key, ext) => R("assets/video/" + key + "-" + (tall() ? "p" : "l") + "." + (ext || VEXT));
+  const reduceMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function videoHTML(key, cls) {
+    return `<video class="dvid ${cls || ""}" data-key="${key}" muted playsinline loop preload="none" poster="${vsrc(key, "webp")}" aria-hidden="true"></video>`;
+  }
+  // play only while on screen; reduced motion keeps the still
+  const vio = "IntersectionObserver" in window ? new IntersectionObserver((es) => es.forEach((e) => {
+    const v = e.target;
+    if (e.isIntersecting && !reduceMotion()) { if (!v.getAttribute("src")) v.src = vsrc(v.dataset.key); v.play().catch(() => {}); }
+    else v.pause();
+  }), { rootMargin: "120px" }) : null;
+  function wireVideos(root) { (root || document).querySelectorAll("video.dvid:not([data-wired])").forEach((v) => { v.dataset.wired = "1"; if (vio) vio.observe(v); }); }
+
   function passages() {
     const list = [...document.querySelectorAll(".passage")];
     list.forEach((sec) => {
       if (sec.dataset.built) return; sec.dataset.built = "1";
       const lines = JSON.parse(sec.dataset.lines || "[]");
       sec.style.height = (sec.dataset.h || 220) + "svh";
-      sec.innerHTML = `<div class="p-stage"><div class="p-layer" data-season-img='${sec.dataset.seasonImg}'><img alt="${esc(sec.dataset.alt || "")}"><span class="imagined-tag">Imagined season</span></div>
+      const vid = sec.dataset.video ? videoHTML(sec.dataset.video) : "";
+      sec.innerHTML = `<div class="p-stage"><div class="p-layer${vid ? " has-video" : ""}" data-season-img='${sec.dataset.seasonImg}'><img alt="${esc(sec.dataset.alt || "")}">${vid}<span class="imagined-tag">Imagined season</span></div>
+        ${sec.dataset.ring ? `<svg class="p-ring" viewBox="0 0 200 200" aria-hidden="true"><circle cx="100" cy="100" r="96"/><circle class="t" cx="100" cy="100" r="88"/></svg>` : ""}
         <div class="p-point"></div><div class="p-words">${lines.map(([t, by], i) => `<p class="p-line" data-i="${i}">${by ? `<span class="voice">${esc(t)}</span><span class="voice-by">${esc(by)}</span>` : `<span class="serif">${esc(t)}</span>`}</p>`).join("")}</div></div>`;
     });
     if (!list.length) return;
@@ -247,6 +267,8 @@
         const e = open * open * (3 - 2 * open);
         layer.style.clipPath = mode === "descend" ? "none" : `circle(${6 + e * max}px at 50% 50%)`;
         layer.style.transform = `scale(${scale})`;
+        const ring = sec.querySelector(".p-ring");
+        if (ring) { const rad = 6 + e * max; ring.style.width = ring.style.height = (rad * 2 + 28) + "px"; ring.style.opacity = String(Math.min(1, e * 2) * (1 - Math.max(0, (e - 0.85) / 0.15))); ring.style.transform = `rotate(${-p * 140}deg)`; }
         point.style.opacity = String(mode === "descend" ? Math.max(0, 1 - p * 3) * 0 : Math.max(0, 1 - e * 3));
         const ls = sec.querySelectorAll(".p-line"), n = ls.length;
         ls.forEach((l, i) => { const a = 0.25 + (i / Math.max(1, n)) * 0.55, b = a + 0.55 / Math.max(1, n) + 0.12; l.classList.toggle("on", p > a && (i === n - 1 ? p < 0.97 : p < b)); });
@@ -260,7 +282,8 @@
     if (document.body.dataset.noclose || document.body.dataset.bare) return;
     const f = document.querySelector("footer.foot"); if (!f) return;
     const s = document.createElement("section"); s.className = "passage"; s.dataset.mode = "close"; s.dataset.h = "170";
-    s.dataset.seasonImg = JSON.stringify({ summer: "disc" }); s.dataset.alt = "The dome from directly above, closing back into a single point.";
+    s.dataset.seasonImg = JSON.stringify({ summer: "disc" }); s.dataset.alt = "The dome from directly above, turning slowly in the evening light, closing back into a single point.";
+    s.dataset.video = "turn"; s.dataset.ring = "1";
     s.dataset.lines = JSON.stringify([["Under the same sky."]]);
     f.before(s);
   }
@@ -363,7 +386,7 @@
   }
   function markWalked(k) { const w = store.get("dome-play-walked", {}); w[k] = true; store.set("dome-play-walked", w); }
   document.addEventListener("click", (e) => { const t = e.target.closest && e.target.closest("[data-portal]"); if (t) { e.preventDefault(); openPortal(t); } });
-  const api = { D, R, M, esc, store, icon, openPortal, closePortal, markWalked, setSeason, seasonWipe, get season() { return season; }, seasonImage, slotHTML, voiceHTML, paintSeasonImages, rescan: null };
+  const api = { D, R, M, esc, store, icon, videoHTML, vsrc, wireVideos, openPortal, closePortal, markWalked, setSeason, seasonWipe, get season() { return season; }, seasonImage, slotHTML, voiceHTML, paintSeasonImages, rescan: null };
   window.Dome = api;
 
   document.addEventListener("DOMContentLoaded", () => {
@@ -374,6 +397,7 @@
     buttonRows();
     closingPassage();
     passages();
+    wireVideos();
     api.rescan = rise();
     setSeason(season);
     markerToggle();

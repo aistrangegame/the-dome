@@ -21,7 +21,7 @@ window.DOME_NOTES = (function () {
     data: "dome-data.js: the one content file (places, stories, timeline, ideas, prices). Becomes Airtable when the Worker is live.",
     reviews: "Airtable · Reviews: all 252 guest reviews, quoted word for word with first name and number.",
     places: "Airtable · Places: the 13 places, their lines, their one thing to do.",
-    media: "Airtable · Media: every photo, its season, and whether the photographer is in it (those are never used).",
+    media: "Airtable · Media: every photo and film clip, its season, and whether the photographer or an unknown person is in it (those are never used).",
     ideas: "Airtable · Ideas: each idea a guest left, who left it, and whether it’s heard, planned or built.",
     slots: "Marked slots: dashed boxes where Eric and Mona’s (or Cody and Nicole’s) own words will go. The text inside is a stand-in.",
     booking: "The Worker (Cloudflare) holds the calendar and takes payment through Stripe. Until it is live, booking runs on this device only.",
@@ -35,7 +35,7 @@ window.DOME_NOTES = (function () {
       data: [SRC.data, SRC.reviews, SRC.slots], links: ["places/index.html", "stories.html", "stay.html", "play/index.html"],
       later: "The season the site opens in follows today’s date. Eric and Mona’s welcome replaces the marked slot.",
       sections: [
-        { sel: "section.bloom", t: "The opening", x: "The dome seen from straight above, opening out of a single point as you scroll. It’s the site’s signature move and returns as the page closes.", d: "Photo: summer 2026 drone shoot." },
+        { sel: "section.bloom", t: "The opening", x: "A single point opens into a circle as you scroll, and inside it the drone comes down from the whole property onto the dome. Your scrolling drives the film: scroll back up and it rises again.", d: "Drone clip DJI_20260801165035_0293, Aug 1 2026, from 8.5 seconds on (the earlier seconds show a guest in the pool and are never used)." },
         { sel: "section.band:has([data-slot-key='em_welcome']), section.band:has(.slot)", t: "Welcome", x: "The seed line, Under the same sky, then Eric and Mona’s welcome in a marked slot and the two main ways in: dates, or the places." },
         { sel: "section.passage[data-mode='open']", t: "Passages", x: "Between parts of the page a photo opens in a circle and guests’ words appear over it. Every page uses these to move from one thing to the next." },
         { sel: "section.band:has(#placeCards)", t: "Six of the thirteen places", x: "Each card opens a place page. The little moving icon on each card acts out the place.", d: "Places from dome-data.js." },
@@ -51,7 +51,7 @@ window.DOME_NOTES = (function () {
       data: [SRC.places, SRC.reviews, SRC.media], links: ["places/window.html", "house/places/window.html", "index.html"],
       later: "The same thirteen places are printed as QR cards on the property. The pin positions on the map are close but should be checked by Eric.",
       sections: [
-        { sel: "section.passage", t: "The descent", x: "The camera comes down from the sky onto the dome. It sets up the map below." },
+        { sel: "section.passage", t: "The descent", x: "The camera comes down from the sky onto the dome, moving: the drone drifts high over the forest at evening. It sets up the map below.", d: "Drone clip DJI_20260802173317_0328, Aug 2 2026." },
         { sel: "section:has(#map)", t: "The living map", x: "The summer drone photo from straight above. Paths draw out from the dome to each place outside. Touch the dome and the seven places inside open in a ring around it. Touch any place to see its card below.", d: "Pin positions are set in this page and want Eric’s check." },
         { sel: "section.band.soft:has(#inside)", t: "Inside the dome", x: "Seven places inside: the window, couch, library wall, table, loft, hearth and the guest book table." },
         { sel: "section.band:has(#outside)", t: "Outside, on the mountain", x: "The gate, the cedar pool, the fire circle, the meadow, the trails and pond, the night sky." }
@@ -115,6 +115,7 @@ window.DOME_NOTES = (function () {
       data: ["The Cody guidebook (docs/guidebook-notes.md). Drive times follow the guidebook, to be checked on a map before going live.", SRC.reviews],
       links: ["stay.html"], sections: [
         { sel: "section.hero", t: "Around", x: "The groups: close by, eat and drink, snow, water and trails, further afield." },
+        { sel: "section.passage", t: "The waterfall", x: "A drone flight under a road bridge to a waterfall, filmed the same summer weekend. The falls are deliberately not named until Eric confirms which they are.", d: "Drone clip DJI_20260801145457_0255, Aug 1 2026." },
         { sel: "section.band.soft", t: "From guests", x: "Guests’ own tips about the area, quoted exactly." }
       ] },
 
