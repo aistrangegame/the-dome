@@ -33,6 +33,22 @@ Never commit anything, and never write any secret into a file.
 
 ---
 
+## Then: connect the Worker to GitHub (once, about two minutes)
+
+After the first deploy, every later change goes live by itself when Claude pushes to `main`.
+
+1. Go to dash.cloudflare.com → **Workers & Pages** → **the-dome** → **Settings** → **Build** → **Connect**.
+2. Choose **GitHub**. If asked, install the Cloudflare app on the `aistrangegame` account and give it access to **the-dome** repository only.
+3. Fill in:
+   - **Repository:** `aistrangegame/the-dome`
+   - **Branch:** `main`
+   - **Root directory:** `worker` (where `wrangler.toml` is; the build fails without this)
+   - **Build command:** leave empty
+   - **Deploy command:** `npx wrangler deploy` (the default)
+   - **API token:** leave as offered (Cloudflare creates one)
+4. Save. The secrets you set stay in place, since builds never touch them.
+5. To test it, in **Deployments** press **Retry** on the newest build, or wait for Claude's next push, and check that it finishes green.
+
 After it reports, bring the output back here. Claude then signs in to the live site, leaves one test note, checks that its row lands in Eric's Notes in Airtable, marks that row OLD, and you're ready to send Eric the link.
 
 **If the custom domain step fails** (for instance, the zone isn't in that Cloudflare account, or a DNS record already exists for `dome`), the Worker still deploys at a `*.workers.dev` address. Bring the error back and we'll fix the domain separately.
