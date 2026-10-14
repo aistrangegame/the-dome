@@ -11,45 +11,36 @@
   P.month = (r) => ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][r.month] + " " + r.year;
   P.seasonColor = { spring: "#9CC48A", summer: "#E2C48A", fall: "#D9864E", winter: "#B9CFE4" };
 
-  // Sound waits for the reader's switch. Root 136.1 Hz for the point.
-  let ctx = null, master = null, drone = null;
-  P.sound = { on: false };
-  P.ensureAudio = () => {
-    if (ctx) return ctx;
-    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null;
-    ctx = new AC(); master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination);
-    return ctx;
-  };
-  P.setSound = (on) => {
-    P.sound.on = on; const c = P.ensureAudio(); if (!c) return;
-    if (c.state === "suspended") c.resume();
-    master.gain.cancelScheduledValues(c.currentTime);
-    master.gain.linearRampToValueAtTime(on ? 0.9 : 0, c.currentTime + 0.6);
-  };
+  // Sound: the site's one sound ("Hear the mountain", top right). These games add their tones to it. Root 136.1 Hz for the point.
+  const out = () => (window.Flow && window.Flow.Sound.out ? window.Flow.Sound.out() : null);
+  P.sound = { get on() { return !!out(); } };
+  P.ensureAudio = () => { const o = out(); return o ? o.ac : null; };
+  P.setSound = (on) => { if (window.Flow) window.Flow.Sound.setOn(on); };
   P.tone = (f, dur = 1.8, vol = 0.12, type = "sine") => {
-    if (!P.sound.on || !ctx) return;
-    const o = ctx.createOscillator(), g = ctx.createGain(); o.type = type; o.frequency.value = f;
+    const o = out(); if (!o) return; const ctx = o.ac;
+    const osc = ctx.createOscillator(), g = ctx.createGain(); osc.type = type; osc.frequency.value = f;
     g.gain.setValueAtTime(0, ctx.currentTime); g.gain.linearRampToValueAtTime(vol, ctx.currentTime + 0.03);
     g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur);
-    o.connect(g); g.connect(master); o.start(); o.stop(ctx.currentTime + dur + 0.05);
+    osc.connect(g); g.connect(o.master); osc.start(); osc.stop(ctx.currentTime + dur + 0.05);
   };
+  let drone = null, droneCtx = null;
   P.drone = (level) => { // a held 136.1 Hz with its octave, its loudness answering the game
-    if (!ctx) return;
-    if (!drone) {
-      drone = ctx.createGain(); drone.gain.value = 0; drone.connect(master);
-      [136.1, 272.2, 68.05].forEach((f, i) => { const o = ctx.createOscillator(); o.frequency.value = f; const g = ctx.createGain(); g.gain.value = [1, 0.35, 0.5][i]; o.connect(g); g.connect(drone); o.start(); });
+    const o = out(); if (!o) { if (drone) drone.gain.setTargetAtTime(0, droneCtx.currentTime, 0.3); return; }
+    if (!drone || droneCtx !== o.ac) {
+      droneCtx = o.ac; drone = droneCtx.createGain(); drone.gain.value = 0; drone.connect(o.master);
+      [136.1, 272.2, 68.05].forEach((f, i) => { const osc = droneCtx.createOscillator(); osc.frequency.value = f; const g = droneCtx.createGain(); g.gain.value = [1, 0.35, 0.5][i]; osc.connect(g); g.connect(drone); osc.start(); });
     }
-    drone.gain.setTargetAtTime(Math.max(0, level) * 0.06, ctx.currentTime, 0.4);
+    drone.gain.setTargetAtTime(Math.max(0, level) * 0.06, droneCtx.currentTime, 0.4);
   };
 
   P.bar = (opts = {}) => {
     const root = document.body.dataset.root || "../";
     const b = document.createElement("header"); b.className = "pbar";
     b.innerHTML = `<span class="brand"><button class="pt" type="button" data-portal aria-label="The point: the dome's own story and games"></button><a href="${root}index.html">Catskill Mountain Domes</a></span>
-      <span class="tools">${opts.sound ? '<button class="tool" type="button" data-sound aria-pressed="false">Sound off</button>' : ""}${(opts.tools || []).join("")}</span>`;
+      <span class="tools">${(opts.tools || []).join("")}</span>`;
     document.body.prepend(b);
-    const sb = b.querySelector("[data-sound]");
-    if (sb) sb.addEventListener("click", () => { const on = !P.sound.on; P.setSound(on); sb.setAttribute("aria-pressed", String(on)); sb.textContent = on ? "Sound on" : "Sound off"; if (opts.onSound) opts.onSound(on); });
+    // the site's sound button (top right) tells the game when it changes
+    if (opts.onSound) document.addEventListener("dome:sound", (e) => opts.onSound(e.detail));
     return b;
   };
   window.Play = P;

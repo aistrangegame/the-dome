@@ -20,11 +20,16 @@
   const when = (iso) => { try { return new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }); } catch (e) { return ""; } };
 
   /* ---------- The bar ---------- */
-  const bar = document.createElement("div"); bar.className = "k-bar";
-  bar.innerHTML = `<button class="k-btn act" type="button" id="kAdd">＋ Add a note</button><button class="k-btn" type="button" id="kMine">My notes <span class="n" id="kCount">0</span></button>`;
-  document.body.append(bar); document.body.classList.add("k-on");
+  // Top right with everything else: "Note" beside the menu button; "My notes" inside the menu
+  const bar = document.createElement("span"); bar.className = "k-bar";
+  bar.innerHTML = `<button class="k-btn act" type="button" id="kAdd" aria-label="Add a note"><span aria-hidden="true">＋</span><span class="kt">Note</span></button>`;
+  const slot = document.querySelector(".hd-keep") || (Dome.rightSlot ? Dome.rightSlot() : document.body);
+  slot.append(bar); document.body.classList.add("k-on");
+  const mine = document.createElement("button"); mine.type = "button"; mine.className = "notes-btn k-mine"; mine.id = "kMine";
+  mine.innerHTML = `My notes <span class="n" id="kCount">0</span>`;
+  (Dome.menuTools ? Dome.menuTools() : bar).append(mine);
   bar.querySelector("#kAdd").addEventListener("click", () => pick());
-  bar.querySelector("#kMine").addEventListener("click", () => panel());
+  mine.addEventListener("click", () => panel());
 
   /* ---------- Where on the page: a path back to the same element next time ---------- */
   const CAND = ".slot, .voice-card, .card, .placecard, figure, .passage, .map, form, .pane, section, header.top, footer.foot";
@@ -55,11 +60,11 @@
     banner.innerHTML = `<span>Touch the part of the page your note is about (or Tab to it and press Enter).</span><span style="display:flex;gap:6px"><button class="k-btn act" type="button" data-w>The whole page</button><button class="k-btn" type="button" data-c>Cancel</button></span>`;
     document.body.append(banner);
     let hover = null;
-    const mark = (el) => { if (hover && hover !== el) hover.classList.remove("k-hover"); if (el && !el.closest(".k-banner, .k-bar, .dock")) { el.classList.add("k-hover"); hover = el; } };
+    const mark = (el) => { if (hover && hover !== el) hover.classList.remove("k-hover"); if (el && !el.closest(".k-banner, .k-bar, .hd-right, .pbar, .hd-float")) { el.classList.add("k-hover"); hover = el; } };
     const over = (e) => mark(e.target.closest && e.target.closest(CAND));
     const focusIn = (e) => mark(e.target.closest && e.target.closest(CAND));
     // Keyboard: every part becomes reachable with Tab while choosing
-    const added = [...document.querySelectorAll(CAND)].filter((el) => !el.closest(".k-banner, .k-bar, .dock") && !el.hasAttribute("tabindex"));
+    const added = [...document.querySelectorAll(CAND)].filter((el) => !el.closest(".k-banner, .k-bar, .hd-right, .pbar, .hd-float, header.top") && !el.hasAttribute("tabindex"));
     added.forEach((el) => { el.setAttribute("tabindex", "0"); el.dataset.kt = "1"; });
     const done = () => {
       document.body.classList.remove("k-pick"); if (hover) hover.classList.remove("k-hover"); banner.remove();
@@ -69,7 +74,7 @@
     const choose = (el) => { done(); if (el) sheet({ kind: "Note", section: labelOf(el), anchor: anchorOf(el) }); else sheet({ kind: "Note", section: "Whole page" }); };
     const click = (e) => {
       if (e.target.closest(".k-banner")) return;
-      if (e.target.closest(".k-bar, .dock")) { done(); return; }
+      if (e.target.closest(".k-bar, .hd-right, .pbar, .hd-float, .site-menu")) { done(); return; }
       e.preventDefault(); e.stopPropagation();
       choose(e.target.closest(CAND));
     };
@@ -208,7 +213,7 @@
       if (focusId) { const a = list.querySelector(`[data-id="${CSS.escape(focusId)}"]`); if (a) { a.scrollIntoView({ block: "center" }); a.classList.add("flash"); } focusId = null; }
     };
     p.querySelectorAll(".k-tabs button").forEach((b) => b.addEventListener("click", () => { scope = b.dataset.s; draw(); }));
-    const shut = () => { p.remove(); openPanel = null; (opener && document.contains(opener) ? opener : document.getElementById("kMine"))?.focus(); };
+    const shut = () => { p.remove(); openPanel = null; (opener && document.contains(opener) ? opener : document.querySelector("[data-menu]"))?.focus(); };
     p.querySelector(".k-x").addEventListener("click", shut);
     p.addEventListener("keydown", (e) => { if (e.key === "Escape") shut(); });
     openPanel = { opener, el: p, draw, scope: () => scope };
@@ -326,8 +331,8 @@
   /* ---------- Load and draw ---------- */
   async function refresh() {
     try { [{ notes }, { words }] = await Promise.all([api("/notes"), api("/words")]); }
-    catch (e) { if (e.status === 401) { bar.remove(); return; } }
-    document.getElementById("kCount").textContent = String(notes.length);
+    catch (e) { if (e.status === 401) { bar.remove(); mine.remove(); return; } }
+    mine.querySelector(".n").textContent = String(notes.length);
     pins(); slots(); mapTools();
     if (openPanel && document.contains(openPanel.el)) panel(null, openPanel.scope());
   }

@@ -53,25 +53,87 @@
   }
 
   /* ---------- Header and footer ---------- */
-  const NAV = [["index.html", "Home"], ["places/index.html", "Places"], ["stories.html", "Stories"], ["timeline.html", "Timeline"], ["ideas.html", "Ideas"], ["around.html", "Around"], ["the-new-chapter.html", "Our story"]];
   function header() {
-    const here = document.body.dataset.page || "";
     const h = document.createElement("header");
     h.className = "top" + (document.body.dataset.solid ? " solid" : "");
     h.innerHTML = `<span class="brand"><button class="pt" type="button" data-portal aria-label="The point: the dome's own story and games"></button><a href="${R("index.html")}">Catskill Mountain Domes</a></span>
-      <div style="display:flex;gap:10px;align-items:center">${seasonSwitch()}
-      <button class="menu-btn" type="button" aria-expanded="false">Menu</button>
-      <nav>${NAV.map(([href, t]) => `<a href="${R(href)}"${here === href ? ' aria-current="page"' : ""}>${t}</a>`).join("")}<a class="stay-btn" href="${R("stay.html")}">Stay</a></nav></div>`;
+      <div class="hd-right"><span class="hd-sound"></span><span class="hd-keep"></span><a class="stay-btn" href="${R("stay.html")}">Stay</a>${menuButton()}</div>`;
     document.body.prepend(h);
-    const btn = h.querySelector(".menu-btn"), nav = h.querySelector("nav");
-    btn.addEventListener("click", () => { const o = nav.classList.toggle("open"); btn.setAttribute("aria-expanded", String(o)); });
-    h.querySelectorAll(".seasons button").forEach((b) => b.addEventListener("click", (e) => seasonWipe(b.dataset.s, e)));
-    h.querySelector(".season-select").addEventListener("change", (e) => seasonWipe(e.target.value));
     if (!document.body.dataset.solid) {
       const onScroll = () => h.classList.toggle("solid", window.scrollY > window.innerHeight * 0.7);
       window.addEventListener("scroll", onScroll, { passive: true }); onScroll();
     }
   }
+  /* ---------- One menu, top right, on every page ---------- */
+  // Everything that used to sit in corners (notes, the guide, the words toggle, Eric's notes) lives in here.
+  const menuButton = () => `<button class="menu-btn" type="button" aria-expanded="false" aria-controls="siteMenu" data-menu><span class="mb-ic" aria-hidden="true"><i></i><i></i></span><span class="mb-t">Menu</span></button>`;
+  const MENU_MAIN = [["index.html", "Home", "The dome, its guests, the sky"], ["places/index.html", "Places", "Thirteen places, each with its game"], ["stories.html", "Stories", "Told only in guests’ words"], ["timeline.html", "Timeline", "2023 to now"], ["ideas.html", "Ideas", "What guests asked for"], ["around.html", "Around", "The mountain and the valley"], ["the-new-chapter.html", "Our story", "The new chapter"], ["stay.html", "Stay", "Dates and booking"]];
+  let menuEl = null, menuFrom = null;
+  const toolsBox = document.createElement("div"); toolsBox.className = "sm-tools";
+  function rightSlot() {
+    // where the top-right controls go: the header, the games' bar, or (on pages without either) a small floating cluster
+    return document.querySelector("header.top .hd-right") || document.querySelector(".pbar .tools") || (() => {
+      let f = document.querySelector(".hd-float"); if (!f) { f = document.createElement("div"); f.className = "hd-float"; f.innerHTML = `<span class="hd-sound"></span><span class="hd-keep"></span>`; document.body.append(f); }
+      return f;
+    })();
+  }
+  function ensureMenuButton() {
+    if (document.querySelector("[data-menu]")) return;
+    const slot = rightSlot(); slot.insertAdjacentHTML("beforeend", menuButton());
+    if (!slot.querySelector(".hd-sound")) slot.insertAdjacentHTML("afterbegin", `<span class="hd-sound"></span><span class="hd-keep"></span>`);
+  }
+  function buildMenu() {
+    const here = document.body.dataset.page || "";
+    const el = document.createElement("div"); el.className = "site-menu"; el.id = "siteMenu"; el.setAttribute("role", "dialog"); el.setAttribute("aria-modal", "true"); el.setAttribute("aria-label", "Menu");
+    el.innerHTML = `<div class="sm-in"><div class="sm-bar"><span class="brand"><span class="sm-pt" aria-hidden="true"></span>Catskill Mountain Domes</span><button class="sm-close" type="button"><span>Close</span><i aria-hidden="true"></i></button></div>
+      <div class="sm-grid">
+        <nav class="sm-main" aria-label="Pages">${MENU_MAIN.map(([href, t, line], i) => `<a href="${R(href)}" style="--i:${i}"${here === href ? ' aria-current="page"' : ""}><span class="n">${String(i + 1).padStart(2, "0")}</span><span class="t">${t}</span><small>${line}</small></a>`).join("")}</nav>
+        <div class="sm-side">
+          <section style="--i:2"><h3>Season</h3>${seasonSwitch()}</section>
+          <section style="--i:3"><h3>Behind the point</h3>${DOORS.map(([k, href, t]) => `<a class="sm-link" href="${R(href)}">${icon(k, { size: 18 })}<span>${t}</span></a>`).join("")}</section>
+          <section style="--i:4"><h3>On the mountain</h3><a class="sm-link" href="${R("house/index.html")}"><span class="sm-dot"></span><span>The places, as a guest standing in them</span></a><a class="sm-link" href="${R("house/index.html")}#your-dome"><span class="sm-dot"></span><span>The Remembering</span></a><a class="sm-link" href="${R("house/choose/index.html")}"><span class="sm-dot"></span><span>What would you have built?</span></a></section>
+          <section style="--i:5" class="sm-toolsec"><h3>Your tools</h3></section>
+          <section style="--i:6"><h3>For Eric and Mona</h3><a class="sm-link" href="${R("dashboard/index.html")}"><span class="sm-dot"></span><span>Dashboard</span></a><a class="sm-link" href="${R("how-it-began.html")}"><span class="sm-dot"></span><span>How it began</span></a><a class="sm-link" href="${R("your-stays.html")}"><span class="sm-dot"></span><span>Your stays</span></a></section>
+        </div>
+      </div></div>`;
+    el.querySelector(".sm-toolsec").append(toolsBox);
+    el.querySelectorAll(".seasons button").forEach((b) => b.addEventListener("click", (e) => { closeMenu(); seasonWipe(b.dataset.s, e); }));
+    el.querySelector(".season-select").addEventListener("change", (e) => { closeMenu(); seasonWipe(e.target.value); });
+    el.querySelector(".sm-close").addEventListener("click", () => closeMenu());
+    // a tool that opens something (the guide, Eric's notes) or turns something on closes the menu first
+    toolsBox.addEventListener("click", (e) => { if (e.target.closest("button, a")) setTimeout(() => closeMenu(true), 0); });
+    el.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") { e.preventDefault(); closeMenu(); }
+      if (e.key === "Tab") { const f = [...el.querySelectorAll("a[href], button:not([hidden]), select")].filter((x) => x.offsetParent !== null); const i = f.indexOf(document.activeElement);
+        if (e.shiftKey && i <= 0) { e.preventDefault(); f[f.length - 1].focus(); } else if (!e.shiftKey && i === f.length - 1) { e.preventDefault(); f[0].focus(); } }
+    });
+    el.addEventListener("click", (e) => { if (e.target === el) closeMenu(); });
+    return el;
+  }
+  function openMenu(btn) {
+    if (menuEl) return;
+    menuFrom = btn || document.querySelector("[data-menu]");
+    const r = menuFrom ? menuFrom.getBoundingClientRect() : { left: innerWidth - 40, top: 20, width: 0, height: 0 };
+    menuEl = buildMenu(); document.body.append(menuEl);
+    menuEl.style.setProperty("--mx", (r.left + r.width / 2) + "px"); menuEl.style.setProperty("--my", (r.top + r.height / 2) + "px");
+    menuEl.querySelectorAll(".seasons button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.s === season)));
+    menuEl.querySelector(".season-select").value = season;
+    document.querySelectorAll("[data-menu]").forEach((b) => b.setAttribute("aria-expanded", "true"));
+    document.documentElement.classList.add("menu-open");
+    requestAnimationFrame(() => requestAnimationFrame(() => menuEl && menuEl.classList.add("open")));
+    if (window.Flow) window.Flow.burst(r.left + r.width / 2, r.top + r.height / 2, .6);
+    setTimeout(() => { const c = menuEl && menuEl.querySelector(".sm-main a"); if (c) c.focus({ preventScroll: true }); }, 60);
+  }
+  function closeMenu(quiet) {
+    const el = menuEl; if (!el) return; menuEl = null;
+    el.classList.remove("open"); el.classList.add("closing");
+    document.querySelectorAll("[data-menu]").forEach((b) => b.setAttribute("aria-expanded", "false"));
+    document.documentElement.classList.remove("menu-open");
+    const quick = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setTimeout(() => { toolsBox.remove(); el.remove(); }, quick ? 0 : 560);
+    if (!quiet && menuFrom && document.contains(menuFrom)) menuFrom.focus({ preventScroll: true });
+  }
+  document.addEventListener("click", (e) => { const b = e.target.closest && e.target.closest("[data-menu]"); if (b) { e.preventDefault(); menuEl ? closeMenu() : openMenu(b); } });
   function footer() {
     const f = document.createElement("footer");
     f.className = "foot";
@@ -98,7 +160,7 @@
     b.addEventListener("click", () => { const c = document.documentElement.classList.toggle("clean"); store.set("dome-clean", c); label(); });
     dock().append(b);
   }
-  function dock() { let d = document.querySelector(".dock"); if (!d) { d = document.createElement("div"); d.className = "dock"; document.body.append(d); } return d; }
+  function dock() { return toolsBox; }   // the old corner dock: its buttons now live in the menu
 
   /* ---------- The notes: a behind-the-scenes guide on every page (Eric and Mona's walk-through) ---------- */
   function noteKey() {
@@ -431,7 +493,7 @@
   }
   function markWalked(k) { const w = store.get("dome-play-walked", {}); w[k] = true; store.set("dome-play-walked", w); }
   document.addEventListener("click", (e) => { const t = e.target.closest && e.target.closest("[data-portal]"); if (t) { e.preventDefault(); openPortal(t); } });
-  const api = { D, R, M, esc, store, icon, videoHTML, vsrc, wireVideos, irisSize, irisSet, onFlow, openPortal, closePortal, markWalked, setSeason, seasonWipe, get season() { return season; }, seasonImage, slotHTML, voiceHTML, paintSeasonImages, rescan: null };
+  const api = { D, R, M, esc, store, icon, videoHTML, vsrc, wireVideos, irisSize, irisSet, onFlow, openMenu, closeMenu, menuTools: dock, rightSlot, openPortal, closePortal, markWalked, setSeason, seasonWipe, get season() { return season; }, seasonImage, slotHTML, voiceHTML, paintSeasonImages, rescan: null };
   window.Dome = api;
 
   document.addEventListener("DOMContentLoaded", () => {
@@ -446,6 +508,7 @@
     wireVideos();
     api.rescan = rise();
     setSeason(season);
+    ensureMenuButton();   // pages without the header (the games, the acts) still get the same top-right menu
     markerToggle();
     notesInit();
     keepersInit();

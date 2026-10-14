@@ -156,6 +156,7 @@
       on = v; try { localStorage.setItem(KEY, v ? "on" : "off"); } catch (e) {}
       if (v) { ac.resume(); startBed(passageBed || bed); master.gain.setTargetAtTime(.9, ac.currentTime, .5); }
       else if (ac) { master.gain.setTargetAtTime(0, ac.currentTime, .3); setTimeout(() => { if (!on) { stopBed(); curBed = null; } }, 1200); }
+      document.dispatchEvent(new CustomEvent("dome:sound", { detail: on }));
       document.querySelectorAll(".flow-sound").forEach((b) => { b.setAttribute("aria-pressed", String(on)); b.querySelector(".t").textContent = on ? "Sound on" : "Hear the mountain"; });
     }
     let passageBed = null;
@@ -185,7 +186,8 @@
 
   /* The quiet control, in the dock beside Notes */
   function soundButton() {
-    const d = document.querySelector(".dock") || (() => { const x = document.createElement("div"); x.className = "dock"; document.body.append(x); return x; })();
+    // top right, outside the menu: the header's sound slot (every page has one; dome.js makes it)
+    const d = document.querySelector(".hd-sound") || (window.Dome && window.Dome.rightSlot && window.Dome.rightSlot()) || document.body;
     const b = document.createElement("button"); b.type = "button"; b.className = "flow-sound"; b.setAttribute("aria-pressed", "false"); b.setAttribute("aria-label", "Hear the mountain");
     b.innerHTML = `<span class="wave" aria-hidden="true"><i></i><i></i><i></i></span><span class="t">Hear the mountain</span>`;
     b.addEventListener("click", () => Sound.setOn(!Sound.on));

@@ -1,10 +1,12 @@
 /* The keeper layer: only loaded for Eric, once he has signed in at /guide. */
-.k-bar { position: fixed; right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); z-index: 70; display: flex; gap: 8px; align-items: center; }
+.k-bar { display: inline-flex; gap: 8px; align-items: center; }
+.k-bar .k-btn { min-height: 40px; height: 40px; padding: 0 14px; box-shadow: none; }
+@media (max-width: 600px) { .k-bar .kt { display: none; } .k-bar .k-btn { width: 40px; padding: 0; justify-content: center; } }
 .k-btn { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 0 16px; border-radius: 99px; font: 600 .86rem/1 "DM Sans"; background: #1A2218; color: #F5F0E8; box-shadow: 0 10px 28px rgba(0,0,0,.28), 0 0 0 1px rgba(245,240,232,.08); }
 .k-btn.act { background: #C9A96E; color: #1A2218; }
 .k-btn .n { min-width: 20px; height: 20px; border-radius: 99px; background: #C9A96E; color: #1A2218; display: inline-grid; place-items: center; font-size: .72rem; padding: 0 5px; }
 .k-btn:focus-visible { outline: 2px solid #C9A96E; outline-offset: 2px; }
-body.play .k-bar { z-index: 210; bottom: auto; top: max(54px, calc(env(safe-area-inset-top) + 46px)); right: 60px; }
+
 @media (max-width: 600px) { .k-btn { min-height: 38px; padding: 0 13px; font-size: .8rem; } }
 
 /* choosing the part of the page a note is about */
@@ -82,6 +84,5 @@ html body.k-pick .k-hover { outline: 3px solid #C9A96E; outline-offset: -3px; bo
 @media (prefers-reduced-motion: reduce) { .k-sheet, .k-panel, .k-toast, .k-note.flash { animation: none; } .k-rec.on .dot { animation: none; } }
 @media (max-width: 600px) {
   .k-panel header .k-tabs { order: 3; width: 100%; justify-content: center; }
-  body.k-on .dock { bottom: calc(max(12px, env(safe-area-inset-bottom)) + 52px); }
   .k-banner { top: auto; bottom: calc(max(12px, env(safe-area-inset-bottom)) + 56px); }
 }
