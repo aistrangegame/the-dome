@@ -5,7 +5,9 @@
 <title>Stories · Catskill Mountain Domes</title>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="assets/css/dome.css">
-<style>@media (min-width: 800px) { .story-side { position: sticky; top: 90px; } }</style>
+<style>@media (min-width: 800px) { .story-side { position: sticky; top: 90px; } }  .hero.waiting .inner { opacity: 0; transform: translateY(14px); }
+  .hero .inner { transition: opacity 1.6s ease, transform 1.6s ease; }
+</style>
 </head>
 <body data-root="./" data-page="stories.html">
 <section class="hero page-hero" data-season-img='{"summer":"dome_lace","winter":"listing-23"}'><div class="bg"><img alt="The dome above a hillside of wildflowers."><span class="imagined-tag">Imagined season</span></div><div class="veil"></div>
@@ -14,6 +16,29 @@
 <script>
 window.page = function (Dome) {
   const { D, M, esc, voiceHTML } = Dome;
+  // A guest in the cedar pool waves goodbye and the drone rises out to the whole property (Aug 1 2026, clip 0293,
+  // in its true direction from 3 s). It plays once and holds on the wide view; the title surfaces as it widens.
+  (function goodbye() {
+    const hero = document.querySelector(".hero"), bg = hero.querySelector(".bg"), inner = hero.querySelector(".inner");
+    const tall = innerHeight > innerWidth * 1.05, o = tall ? "p" : "l";
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      bg.insertAdjacentHTML("beforeend", `<img class="film-still" src="assets/video/goodbye-${o}-end.webp" alt="The whole property from high above: the dome, the meadow paths, the road and the woods." style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`);
+      return;
+    }
+    const v = document.createElement("video");
+    v.className = "film-once"; v.muted = true; v.playsInline = true; v.setAttribute("playsinline", ""); v.preload = "auto"; v.setAttribute("aria-hidden", "true");
+    v.poster = Dome.vsrc("goodbye", "webp"); v.src = Dome.vsrc("goodbye");
+    v.style.cssText = "position:absolute;inset:0;width:100%;height:100%;object-fit:cover";
+    bg.append(v);
+    hero.classList.add("waiting");
+    const show = () => hero.classList.remove("waiting");
+    v.playbackRate = 1.3;
+    v.addEventListener("loadeddata", () => { v.playbackRate = 1.3; v.play().catch(show); }, { once: true });
+    v.addEventListener("timeupdate", () => { if (v.duration && v.currentTime > v.duration * 0.5) show(); });
+    v.addEventListener("ended", () => { show(); if (window.Flow) window.Flow.burst(innerWidth / 2, innerHeight / 2, .6, "water"); });
+    setTimeout(show, 12000);          // never keep the words waiting longer than this
+    addEventListener("scroll", show, { once: true, passive: true });
+  })();
   const pass = (s) => `<section class="passage" data-mode="open" data-h="170" data-alt="" data-season-img='${JSON.stringify({ summer: s.img })}' data-lines='${JSON.stringify([[s.title]]).replace(/'/g, "&#39;")}'></section>`;
   document.getElementById("main").innerHTML = D.stories.map((s, i) => (i ? pass(s) : "") + `
     <section class="band ${i % 2 ? "soft" : ""}" id="${s.slug}"><div class="wrap" style="display:grid;gap:36px;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));align-items:start">

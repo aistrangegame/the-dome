@@ -11,24 +11,28 @@
   .sky button { all: unset; position: absolute; width: 6px; height: 6px; margin: -3px; border-radius: 50%; background: #fff; cursor: pointer; opacity: .55; transition: transform .3s, opacity .3s; }
   .sky button:hover, .sky button:focus-visible, .sky button.on { opacity: 1; transform: scale(2.2); box-shadow: 0 0 12px 3px rgba(255,255,255,.6); }
   .sky button.em { background: var(--accent-soft); }
-  .sky .card-q { position: absolute; left: 16px; right: 16px; bottom: 16px; max-width: 520px; margin: 0 auto; background: rgba(8,12,10,.82); color: #F5F0E8; border-radius: 14px; padding: 16px 18px; backdrop-filter: blur(6px); }
-  .sky .card-q .voice { font-size: 1.05rem; }
-  .sky .card-q .voice-by { color: rgba(245,240,232,.7); }
+  .sky-wrap .card-q { position: absolute; left: 16px; right: 16px; bottom: 16px; max-width: 520px; margin: 0 auto; background: rgba(8,12,10,.86); color: #F5F0E8; border-radius: 14px; padding: 16px 46px 16px 18px; backdrop-filter: blur(6px); z-index: 3; }
+  .sky-wrap .card-q .x { all: unset; box-sizing: border-box; cursor: pointer; position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: #F5F0E8; font: 400 1.1rem/1 "DM Sans"; background: rgba(245,240,232,.1); }
+  .sky-wrap .card-q .x:hover { background: rgba(245,240,232,.2); } .sky-wrap .card-q .x:focus-visible { outline: 2px solid #C9A96E; outline-offset: 2px; }
+  /* on a wide screen the card sits beside the sky, so no star is ever hidden under it */
+  @media (min-width: 980px) { .sky-wrap { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; align-items: end; } .sky-wrap .card-q { position: static; margin: 0; max-width: none; } .sky-wrap .card-q[hidden] { display: block; visibility: hidden; } }
+  .sky-wrap .card-q .voice { font-size: 1.05rem; }
+  .sky-wrap .card-q .voice-by { color: rgba(245,240,232,.7); }
   .season-cards .card .media { aspect-ratio: 3/2; }
   .season-cards button.card { all: unset; cursor: pointer; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
   .season-cards button.card[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 2px; }
   .split { display: grid; gap: 28px; align-items: center; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); }
   .split .media { border-radius: 18px; overflow: hidden; position: relative; aspect-ratio: 4/3; }
   .split .media img { width: 100%; height: 100%; object-fit: cover; }
-  .bloom .descent { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 1.2s ease; }
-  .bloom .descent.ready { opacity: 1; }
+  .bloom .film { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 1.6s ease; }
+  .bloom .film.ready { opacity: 1; }
 </style>
 </head>
 <body data-root="./" data-page="index.html">
 
 <section class="bloom" aria-label="The white point">
   <div class="stage">
-    <div class="layer aperture" id="aperture"><img src="assets/media/11-DJI_20260731173421_0224_D-1600.webp" alt="The dome from directly above: a white disc in a green clearing, mown paths looping through the meadow."><video id="descent" class="descent" muted playsinline preload="auto" aria-hidden="true"></video></div>
+    <div class="iris" id="aperture"><div class="iris-in"><img src="assets/media/11-DJI_20260731173421_0224_D-1600.webp" alt="The dome from directly above: a white disc in a green clearing, mown paths looping through the meadow." style="width:100%;height:100%;object-fit:cover"><video id="film" class="film" muted playsinline loop preload="auto" aria-hidden="true"></video></div></div>
     <div class="point" id="point"></div>
     <div class="words" id="words"><span class="hint">Scroll</span></div>
   </div>
@@ -63,7 +67,7 @@
   </div>
 </section>
 
-<section class="passage" data-mode="open" data-h="220" data-video="night" data-alt="The dome at night from the air, lit warm from inside, string lights around the backyard." data-season-img='{"summer":"aerial_valley"}'
+<section class="passage" data-mode="open" data-h="220" data-video="night" data-sound="night" data-alt="The dome at night from the air, lit warm from inside, string lights around the backyard." data-season-img='{"summer":"aerial_valley"}'
   data-lines='[["Because the location is remote, we could see lots of stars, the Milky Way and even a few shooting stars.","Vivian Elizabeth · guest #82"]]'></section>
 
 <section class="band deep">
@@ -122,28 +126,30 @@ window.page = function (Dome) {
   // The point blooms
   const ap = document.getElementById("aperture"), words = document.getElementById("words"), point = document.getElementById("point");
   const bloom = document.querySelector(".bloom");
+  // The point blooms open onto the dome, seen straight down; the same slow-turning clearing that closes every page
+  // takes over inside the circle, so the page opens and closes on one view. Transform only: nothing repaints per frame.
+  const stage = bloom.querySelector(".stage"), inner = ap.querySelector(".iris-in");
+  Dome.irisSize(stage); addEventListener("resize", () => { Dome.irisSize(stage); onScroll(); });
+  let state = "";
   function onScroll() {
     const r = bloom.getBoundingClientRect(); const span = bloom.offsetHeight - innerHeight;
     const p = Math.min(1, Math.max(0, -r.top / span));
-    const max = Math.hypot(innerWidth, innerHeight) / 2;
-    ap.style.setProperty("--r", (6 + p * p * max) + "px");
+    const e = Math.min(1, p / 0.8), eased = e * e * (3 - 2 * e);
+    Dome.irisSet(stage, ap, inner, eased, window.Flow && !window.Flow.reduce ? 1 + Math.min(1, window.Flow.speed / 40) * 0.03 : 1);
     point.style.opacity = String(Math.max(0, 1 - p * 4));
-    words.innerHTML = p < 0.1 ? '<span class="hint">Scroll</span>' : p < 0.85 ? "" : '<h1 class="serif">Under the same sky.</h1>';
+    const st = p < 0.1 ? "hint" : p < 0.85 ? "" : "title";
+    if (st !== state) { state = st; words.innerHTML = st === "hint" ? '<span class="hint">Scroll</span>' : st === "title" ? '<h1 class="serif">Under the same sky.</h1>' : ""; }
+    if (window.Flow && r.top <= 1 && eased > 0.001 && eased < 0.995) window.Flow.zoom(true, innerWidth / 2, innerHeight / 2, true);
   }
-  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  let tick = false;
+  addEventListener("scroll", () => { if (!tick) { tick = true; requestAnimationFrame(() => { onScroll(); tick = false; }); } }, { passive: true }); onScroll();
+  (function settle() { if (window.Flow && window.Flow.speed > 0) onScroll(); requestAnimationFrame(settle); })();
 
-  // The descent: as the circle opens, the camera comes down from the whole property onto the dome.
-  // (Drone clip, Aug 1 2026, played in reverse and driven by the scroll. A still stays in place for reduced motion.)
-  const v = document.getElementById("descent");
+  const v = document.getElementById("film");
   if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    v.poster = Dome.vsrc("rise", "webp"); v.src = Dome.vsrc("rise");
-    let want = 0, seeking = false;
-    const progress = () => { const r = bloom.getBoundingClientRect(); return Math.min(1, Math.max(0, -r.top / (bloom.offsetHeight - innerHeight))); };
-    const seek = () => { if (!v.duration) return; want = Math.min(v.duration - 0.05, progress() * 1.15 * v.duration);
-      if (!seeking && Math.abs(v.currentTime - want) > 0.04) { seeking = true; v.currentTime = want; } };
-    v.addEventListener("seeked", () => { seeking = false; if (Math.abs(v.currentTime - want) > 0.04) seek(); });
-    v.addEventListener("loadeddata", () => { v.classList.add("ready"); seek(); }, { once: true });
-    addEventListener("scroll", () => requestAnimationFrame(seek), { passive: true });
+    v.src = Dome.vsrc("open");
+    v.addEventListener("loadeddata", () => { v.classList.add("ready"); v.play().catch(() => {}); }, { once: true });
+    new IntersectionObserver(([x]) => (x.isIntersecting ? v.play().catch(() => {}) : v.pause())).observe(bloom);
   }
 
   // Six place cards
@@ -157,7 +163,13 @@ window.page = function (Dome) {
   // The sky of guests
   const sky = document.getElementById("sky");
   let seed = 7; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
-  const card = document.createElement("div"); card.className = "card-q"; card.hidden = true; sky.append(card);
+  const card = document.createElement("div"); card.className = "card-q"; card.hidden = true; card.setAttribute("role", "status");
+  const wrap = document.createElement("div"); wrap.className = "sky-wrap"; sky.before(wrap); wrap.append(sky);
+  (matchMedia("(min-width: 980px)").matches ? wrap : sky).append(card);
+  matchMedia("(min-width: 980px)").addEventListener("change", (m) => (m.matches ? wrap : sky).append(card));
+  const closeCard = () => { card.hidden = true; sky.querySelectorAll("button.on").forEach((x) => x.classList.remove("on")); };
+  sky.addEventListener("click", (e) => { if (e.target === sky) closeCard(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !card.hidden) closeCard(); });
   window.DOME_REVIEWS.forEach((r) => {
     const b = document.createElement("button"); b.type = "button";
     b.style.left = (3 + rnd() * 94) + "%"; b.style.top = (4 + rnd() * 76) + "%";
@@ -168,14 +180,15 @@ window.page = function (Dome) {
       sky.querySelectorAll("button.on").forEach((x) => x.classList.remove("on")); b.classList.add("on");
       const t = r.text.length > 220 ? r.text.slice(0, 220).replace(/\s\S*$/, "") + "…" : r.text;
       card.hidden = false;
-      card.innerHTML = `<blockquote class="voice">${esc(t)}</blockquote><span class="voice-by">${esc(r.name)} · ${esc(mo)} · guest #${r.n}</span>`;
+      card.innerHTML = `<button class="x" type="button" aria-label="Close">×</button><blockquote class="voice">${esc(t)}</blockquote><span class="voice-by">${esc(r.name)} · ${esc(mo)} · guest #${r.n}</span>`;
+      card.querySelector(".x").addEventListener("click", () => { closeCard(); b.focus({ preventScroll: true }); });
     });
-    b.tabIndex = sky.querySelector("button") ? -1 : 0;
+    b.tabIndex = sky.querySelector(":scope > button") ? -1 : 0;
     sky.append(b);
   });
   // one tab stop for the whole sky; the arrow keys move from star to star, Enter reads one
   sky.addEventListener("keydown", (e) => {
-    const all = [...sky.querySelectorAll("button")], i = all.indexOf(document.activeElement); if (i < 0) return;
+    const all = [...sky.querySelectorAll(":scope > button")], i = all.indexOf(document.activeElement); if (i < 0) return;
     const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1, Home: -i, End: all.length - 1 - i }[e.key]; if (step === undefined) return;
     e.preventDefault(); const n = all[Math.max(0, Math.min(all.length - 1, i + step))]; all[i].tabIndex = -1; n.tabIndex = 0; n.focus(); n.click();
   });

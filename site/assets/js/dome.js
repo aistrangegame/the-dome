@@ -116,6 +116,11 @@
     if (window.DOME_NOTES) return cb();
     const sc = document.createElement("script"); sc.src = R("assets/js/notes.js"); sc.onload = cb; document.head.append(sc);
   }
+  /* ---------- Flow: ripples, swell and sound (assets/js/flow.js), loaded on every page ---------- */
+  function flowInit() {
+    if (window.Flow || document.body.dataset.noflow) return;
+    const sc = document.createElement("script"); sc.src = R("assets/js/flow.js"); document.body.append(sc);
+  }
   /* ---------- The keeper layer: only where the Worker runs, only once Eric has signed in ---------- */
   function keepersInit() {
     if (location.protocol === "file:") return;   // the server's answer below decides; a plain file has none
@@ -251,6 +256,22 @@
   }), { rootMargin: "120px" }) : null;
   function wireVideos(root) { (root || document).querySelectorAll("video.dvid:not([data-wired])").forEach((v) => { v.dataset.wired = "1"; if (vio) vio.observe(v); }); }
 
+  /* The iris: open a circle by transform only. stage gets --W/--H/--R; e = 0 (a point) … 1 (the whole screen). */
+  function irisSize(stage) {
+    const w = stage.clientWidth || innerWidth, h = stage.clientHeight || innerHeight, R = Math.ceil(Math.hypot(w, h) / 2 + 12);
+    stage.style.setProperty("--W", w + "px"); stage.style.setProperty("--H", h + "px"); stage.style.setProperty("--R", R);
+    stage._R = R; return R;
+  }
+  function irisSet(stage, iris, inner, e, extra = 1) {
+    const R = stage._R || irisSize(stage), rad = 6 + e * (R - 6), s = Math.max(rad / R, 0.004);
+    iris.style.transform = `scale(${s.toFixed(5)})`;
+    // the picture inside keeps its size: counter-scaled, and hidden while the circle is still only a point
+    inner.style.transform = `scale(${((1 / s) * extra).toFixed(4)})`;
+    inner.style.opacity = s < 0.02 ? "0" : "1";
+    return rad;
+  }
+  const swell = () => (window.Flow && !window.Flow.reduce ? 1 + Math.min(1, window.Flow.speed / 40) * 0.03 : 1);
+
   function passages() {
     const list = [...document.querySelectorAll(".passage")];
     list.forEach((sec) => {
@@ -258,44 +279,55 @@
       const lines = JSON.parse(sec.dataset.lines || "[]");
       sec.style.height = (sec.dataset.h || 220) + "svh";
       const vid = sec.dataset.video ? videoHTML(sec.dataset.video) : "";
-      sec.innerHTML = `<div class="p-stage"><div class="p-layer${vid ? " has-video" : ""}" data-season-img='${sec.dataset.seasonImg}'><img alt="${esc(sec.dataset.alt || "")}">${vid}<span class="imagined-tag">Imagined season</span></div>
+      sec.innerHTML = `<div class="p-stage"><div class="iris"><div class="iris-in"><div class="p-layer${vid ? " has-video" : ""}" data-season-img='${sec.dataset.seasonImg}'><img alt="${esc(sec.dataset.alt || "")}">${vid}<span class="imagined-tag">Imagined season</span></div></div></div>
         ${sec.dataset.ring ? `<svg class="p-ring" viewBox="0 0 200 200" aria-hidden="true"><circle cx="100" cy="100" r="96"/><circle class="t" cx="100" cy="100" r="88"/></svg>` : ""}
         <div class="p-point"></div><div class="p-words">${lines.map(([t, by], i) => `<p class="p-line" data-i="${i}">${by ? `<span class="voice">${esc(t)}</span><span class="voice-by">${esc(by)}</span>` : `<span class="serif">${esc(t)}</span>`}</p>`).join("")}</div></div>`;
     });
     if (!list.length) return;
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const sized = () => list.forEach((sec) => irisSize(sec.querySelector(".p-stage")));
+    sized();
+    const last = new Map();
     function frame() {
+      let pinnedSound = null;
       list.forEach((sec) => {
         const r = sec.getBoundingClientRect(); const span = sec.offsetHeight - innerHeight;
         if (r.bottom < -50 || r.top > innerHeight + 50) return;
         const p = Math.min(1, Math.max(0, -r.top / span));
-        const layer = sec.querySelector(".p-layer"), point = sec.querySelector(".p-point"), mode = sec.dataset.mode;
-        const max = Math.hypot(innerWidth, innerHeight) / 2 + 10;
+        const stage = sec.querySelector(".p-stage"), iris = stage.querySelector(".iris"), inner = stage.querySelector(".iris-in"), point = sec.querySelector(".p-point"), mode = sec.dataset.mode;
         let open = 1, scale = 1;
         if (reduce) { open = 1; }
         else if (mode === "open") open = Math.min(1, p / 0.55);
-        else if (mode === "close") open = 1 - Math.min(1, Math.max(0, (p - 0.35) / 0.55));
+        else if (mode === "close") open = 1 - Math.min(1, Math.max(0, (p - 0.3) / 0.6));
         else if (mode === "descend") { open = 1; scale = 1 + 2.2 * Math.pow(1 - Math.min(1, p / 0.7), 2); }
         const e = open * open * (3 - 2 * open);
-        layer.style.clipPath = mode === "descend" ? "none" : `circle(${6 + e * max}px at 50% 50%)`;
-        layer.style.transform = `scale(${scale})`;
+        const rad = irisSet(stage, iris, inner, e, scale * swell());
         const ring = sec.querySelector(".p-ring");
-        if (ring) { const rad = 6 + e * max; ring.style.width = ring.style.height = (rad * 2 + 28) + "px"; ring.style.opacity = String(Math.min(1, e * 2) * (1 - Math.max(0, (e - 0.85) / 0.15))); ring.style.transform = `rotate(${-p * 140}deg)`; }
-        point.style.opacity = String(mode === "descend" ? Math.max(0, 1 - p * 3) * 0 : Math.max(0, 1 - e * 3));
+        if (ring) { const R = stage._R; ring.style.transform = `scale(${((rad + 14) / (R + 14)).toFixed(4)}) rotate(${(-p * 140).toFixed(1)}deg)`; ring.style.opacity = String(Math.min(1, e * 2) * (1 - Math.max(0, (e - 0.85) / 0.15))); }
+        point.style.opacity = String(mode === "descend" ? 0 : Math.max(0, 1 - e * 3));
         const ls = sec.querySelectorAll(".p-line"), n = ls.length;
-        ls.forEach((l, i) => { const a = 0.25 + (i / Math.max(1, n)) * 0.55, b = a + 0.55 / Math.max(1, n) + 0.12; l.classList.toggle("on", p > a && (i === n - 1 ? p < 0.97 : p < b)); });
+        ls.forEach((l, i) => { const a = 0.25 + (i / Math.max(1, n)) * 0.55, b = a + 0.55 / Math.max(1, n) + 0.12; const on = p > a && (i === n - 1 ? p < 0.97 : p < b); if (l._on !== on) { l._on = on; l.classList.toggle("on", on); } });
+        // the point is pinned in the middle of the screen while its section scrolls past: ripples leave from it
+        const pinned = r.top <= 1 && r.bottom >= innerHeight - 1;
+        if (window.Flow && pinned && mode !== "descend" && e > 0.001 && e < 0.995) window.Flow.zoom(true, innerWidth / 2, innerHeight / 2, mode === "open");
+        if (pinned && sec.dataset.sound) pinnedSound = sec.dataset.sound;
+        last.set(sec, p);
       });
+      if (window.Flow) window.Flow.passageSound(pinnedSound);
     }
     let ticking = false;
-    addEventListener("scroll", () => { if (!ticking) { ticking = true; requestAnimationFrame(() => { frame(); ticking = false; }); } }, { passive: true });
-    addEventListener("resize", frame); frame();
+    const ask = () => { if (!ticking) { ticking = true; requestAnimationFrame(() => { frame(); ticking = false; }); } };
+    addEventListener("scroll", ask, { passive: true });
+    addEventListener("resize", () => { sized(); frame(); }); frame();
+    // keep drawing while the glide fades, so the swell settles smoothly
+    (function settle() { if (window.Flow && window.Flow.speed > 0) ask(); requestAnimationFrame(settle); })();
   }
   function closingPassage() {
     if (document.body.dataset.noclose || document.body.dataset.bare) return;
     const f = document.querySelector("footer.foot"); if (!f) return;
     const s = document.createElement("section"); s.className = "passage"; s.dataset.mode = "close"; s.dataset.h = "170";
     s.dataset.seasonImg = JSON.stringify({ summer: "disc" }); s.dataset.alt = "The dome from directly above, turning slowly in the evening light, closing back into a single point.";
-    s.dataset.video = "turn"; s.dataset.ring = "1";
+    s.dataset.video = "turn"; s.dataset.ring = "1"; s.dataset.h = "200";
     s.dataset.lines = JSON.stringify([["Under the same sky."]]);
     f.before(s);
   }
@@ -398,7 +430,7 @@
   }
   function markWalked(k) { const w = store.get("dome-play-walked", {}); w[k] = true; store.set("dome-play-walked", w); }
   document.addEventListener("click", (e) => { const t = e.target.closest && e.target.closest("[data-portal]"); if (t) { e.preventDefault(); openPortal(t); } });
-  const api = { D, R, M, esc, store, icon, videoHTML, vsrc, wireVideos, openPortal, closePortal, markWalked, setSeason, seasonWipe, get season() { return season; }, seasonImage, slotHTML, voiceHTML, paintSeasonImages, rescan: null };
+  const api = { D, R, M, esc, store, icon, videoHTML, vsrc, wireVideos, irisSize, irisSet, openPortal, closePortal, markWalked, setSeason, seasonWipe, get season() { return season; }, seasonImage, slotHTML, voiceHTML, paintSeasonImages, rescan: null };
   window.Dome = api;
 
   document.addEventListener("DOMContentLoaded", () => {
@@ -407,6 +439,7 @@
     renderSlots();
     document.querySelectorAll("[data-icon]").forEach((el) => el.insertAdjacentHTML("afterbegin", icon(el.dataset.icon, { live: el.hasAttribute("data-icon-live"), size: +el.dataset.iconSize || 20 })));
     buttonRows();
+    flowInit();
     closingPassage();
     passages();
     wireVideos();
