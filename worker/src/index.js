@@ -43,7 +43,7 @@ export default {
 /* ---------------- The notes API ---------------- */
 async function api(request, env, url) {
   const path = url.pathname, method = request.method;
-  if (path === "/api/keep/health") return json({ ok: true, stored: env.AIRTABLE_TOKEN ? "airtable" : "local", ready: !!(env.ERIC_CODE && env.SESSION_SECRET) });
+  if (path === "/api/keep/health") return json({ ok: true, stored: env.AIRTABLE_TOKEN ? "airtable" : "local", ready: String(env.ERIC_CODE || "").replace(/\D/g, "").length >= 6 && !!env.SESSION_SECRET });
 
   // Every write must come from this site's own pages (SameSite=Lax still lets sibling subdomains through)
   if (method !== "GET" && method !== "HEAD" && request.headers.get("origin") !== url.origin) return json({ error: "Not from here." }, 403);
@@ -107,7 +107,10 @@ async function api(request, env, url) {
 
 /* ---------------- The code, the cookie, the lock ---------------- */
 async function signin(request, env) {
-  if (!env.ERIC_CODE || !env.SESSION_SECRET) return json({ error: "The door isn't set up yet. Ashrey needs to add the code." }, 503);
+  // The stored code is read as digits only (a stray space or newline in the secret can't lock Eric out),
+  // and anything shorter than six digits counts as not set, so a placeholder can never open the door.
+  const want = String(env.ERIC_CODE || "").replace(/\D/g, "");
+  if (want.length < 6 || !env.SESSION_SECRET) return json({ error: "The door isn't set up yet. Ashrey needs to add the code." }, 503);
   const ip = netOf(request.headers.get("cf-connecting-ip") || "local");
   const gate = env.GATE.get(env.GATE.idFromName("door"));
   // The try is counted before the code is compared, in one step, so a burst can't slip past the lock
@@ -115,7 +118,7 @@ async function signin(request, env) {
   if (!state.ok) return json({ error: `Too many tries. Try again in ${Math.max(1, Math.ceil(state.wait / 60))} minutes.` }, 429);
   const b = await readJson(request);
   const code = String(b.code || "").replace(/\D/g, "");
-  if (!(await sameText(code, String(env.ERIC_CODE)))) return json({ error: state.last ? "That isn't the code. That was the last try for now: wait 15 minutes." : "That isn't the code." }, 401);
+  if (!(await sameText(code, want))) return json({ error: state.last ? "That isn't the code. That was the last try for now: wait 15 minutes." : "That isn't the code." }, 401);
   await gate.fetch("https://gate/clear?ip=" + encodeURIComponent(ip), { method: "POST" });
   const exp = Math.floor(Date.now() / 1000) + DAYS_30;
   const token = `eric.${exp}.${await sign(`eric.${exp}`, env.SESSION_SECRET)}`;
