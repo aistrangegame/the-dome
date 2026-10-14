@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en" data-season="summer">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Guide · Catskill Mountain Domes</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="../assets/css/dome.css">
+<style>
+  body { background: #070B09; color: #F5F0E8; }
+  .g-hero { position: relative; min-height: 92svh; display: grid; place-items: center; overflow: hidden; text-align: center; }
+  .g-hero img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .55; }
+  .g-hero::after { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(7,11,9,.2), rgba(7,11,9,.9)); }
+  .g-hero .in { position: relative; z-index: 1; padding: 80px 20px; max-width: 720px; }
+  .g-hero .pt { width: 12px; height: 12px; border-radius: 50%; background: #fff; box-shadow: 0 0 30px 8px rgba(255,255,255,.4); margin: 0 auto 28px; animation: breathe 5s ease-in-out infinite; }
+  .g-hero h1 { font: italic 400 clamp(2.2rem, 7vw, 3.8rem)/1.1 Lora, serif; margin: 0 0 1rem; color: #fff; }
+  .g-hero p { color: rgba(245,240,232,.86); font-size: clamp(1.02rem, 2.6vw, 1.18rem); max-width: 560px; margin: 0 auto 1.6rem; }
+  .eyebrow.gold { color: #E2C48A; }
+  .g { max-width: 780px; margin: 0 auto; padding: 64px 20px; }
+  .g h2 { font: 500 clamp(1.6rem, 4.6vw, 2.2rem)/1.2 Lora, serif; color: #F5F0E8; margin: .4rem 0 1rem; }
+  .g p, .g li { color: rgba(245,240,232,.84); }
+  .layers { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr)); margin-top: 20px; }
+  .layer { border: 1px solid rgba(226,196,138,.25); border-radius: 16px; padding: 18px; background: rgba(245,240,232,.03); }
+  .layer b { display: block; font: 500 1.15rem/1.3 Lora, serif; color: #F5F0E8; margin-bottom: 4px; }
+  .layer span { font-size: .95rem; color: rgba(245,240,232,.75); }
+  .route { counter-reset: r; list-style: none; padding: 0; margin: 20px 0 0; display: grid; gap: 10px; }
+  .route li { counter-increment: r; display: grid; grid-template-columns: 34px 1fr; gap: 12px; align-items: start; }
+  .route li::before { content: counter(r); width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: #E2C48A; color: #1A2218; font: 600 .82rem/1 "DM Sans"; }
+  .route b { color: #F5F0E8; font-weight: 600; }
+  .tools { display: grid; gap: 12px; margin-top: 20px; }
+  .tool { display: grid; grid-template-columns: 44px 1fr; gap: 14px; align-items: start; padding: 14px 0; border-top: 1px solid rgba(245,240,232,.1); }
+  .tool i { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: rgba(226,196,138,.14); color: #E2C48A; font-style: normal; font: 600 1rem/1 "DM Sans"; }
+  .tool b { display: block; color: #F5F0E8; font-weight: 600; margin-bottom: 2px; }
+  .real { display: grid; gap: 8px; margin-top: 16px; padding: 0; list-style: none; }
+  .real li { padding-left: 18px; border-left: 2px solid #E2C48A; }
+  .door { background: #F5F0E8; color: #1A2218; border-radius: 22px; padding: clamp(22px, 5vw, 38px); margin: 10px auto 80px; max-width: 520px; text-align: center; box-shadow: 0 30px 80px rgba(0,0,0,.4); }
+  .door h2 { color: #1A2218; margin-top: 0; }
+  .door p { color: #3B4637; }
+  .door form { display: grid; gap: 12px; margin-top: 16px; }
+  .door input { font: 600 1.6rem/1 "DM Sans"; letter-spacing: .4em; text-align: center; padding: 14px; border-radius: 14px; border: 1.5px solid #CFC5B3; background: #fff; color: #1A2218; width: 100%; box-sizing: border-box; }
+  .door input:focus-visible { outline: 2px solid #C9A96E; outline-offset: 2px; }
+  .door .msg { min-height: 1.4em; font-size: .92rem; color: #9A4A2A; margin: 0; }
+  .door .btn.act { justify-content: center; }
+  .sig { text-align: center; color: rgba(245,240,232,.5); font-size: .88rem; padding-bottom: 40px; }
+  @media (prefers-reduced-motion: reduce) { .g-hero .pt { animation: none; } }
+</style>
+</head>
+<body>
+<section class="g-hero">
+  <img src="../assets/media/51-DJI_20260802173407_0329_D-1600.webp" alt="">
+  <div class="in">
+    <div class="pt" aria-hidden="true"></div>
+    <span class="eyebrow gold">Catskill Mountain Domes · a first look</span>
+    <h1>Eric, this is for you.</h1>
+    <p>The dome’s own home on the web, built from what it already is: 252 guests’ own words, the summer drone shoot, and the thirteen places on the property. It’s a starting point, made to be walked and marked up by you.</p>
+    <a class="btn act" href="#door">I’m ready to walk it</a>
+  </div>
+</section>
+
+<section class="g">
+  <span class="eyebrow gold">What’s here</span>
+  <h2>One house, four layers.</h2>
+  <div class="layers">
+    <div class="layer"><b>The site</b><span>What guests will see: the dome, the thirteen places, guests’ stories, the timeline, booking.</span></div>
+    <div class="layer"><b>On the mountain</b><span>What a guest sees after scanning the QR card at each place. Here the dome speaks, and there’s the Awakening.</span></div>
+    <div class="layer"><b>Behind the point</b><span>Tap the white dot in the top-left corner of any page: the dome’s own story, and three small games.</span></div>
+    <div class="layer"><b>Your dashboard</b><span>Prices by the day, bookings, guests’ words to approve, ideas, photos by season. Yours alone.</span></div>
+  </div>
+</section>
+
+<section class="g">
+  <span class="eyebrow gold">How to walk it</span>
+  <h2>About forty minutes, on your phone or computer.</h2>
+  <ol class="route">
+    <li><span><b>Home.</b> Scroll slowly from the top: the camera comes down out of the sky to the pool.</span></li>
+    <li><span><b>The places.</b> Touch the dome on the map to see the seven places inside. Open one or two.</span></li>
+    <li><span><b>Stories and the timeline.</b> Told only in guests’ own words.</span></li>
+    <li><span><b>Stay.</b> Book two pretend nights: nothing is charged.</span></li>
+    <li><span><b>Your dashboard and the mountain.</b> Turn on <b>Notes</b> (bottom left) to find them in the footer, and see a place as a guest standing in it would.</span></li>
+    <li><span><b>The point.</b> The white dot in the top-left corner.</span></li>
+  </ol>
+</section>
+
+<section class="g">
+  <span class="eyebrow gold">Your tools</span>
+  <h2>Leave your thoughts anywhere. They come straight to us.</h2>
+  <div class="tools">
+    <div class="tool"><i>＋</i><span><b>Add a note</b>Bottom right of every page. Tap it, touch the part of the page you mean (or choose the whole page), then type or just talk. Speaking is easiest: your words are written out as you go, and the recording is kept too.</span></div>
+    <div class="tool"><i>✓</i><span><b>My notes</b>Everything you’ve left, with where it stands (heard, changing, changed) and a reply from Claude · Ashrey Intelligence.</span></div>
+    <div class="tool"><i>“”</i><span><b>Your own words</b>The dashed boxes are where your own words belong; for now they hold our stand-in and a few questions. Press <b>Say it in your own words</b>, answer out loud, and approve it when it sounds like you. It then replaces the stand-in.</span></div>
+    <div class="tool"><i>≡</i><span><b>Notes</b>Bottom left. Turns on a short explanation of every part of every page: what it’s for and where its words come from.</span></div>
+    <div class="tool"><i>⌖</i><span><b>Move the pins</b>On the places map, drag any pin that sits in the wrong spot, then save.</span></div>
+  </div>
+</section>
+
+<section class="g">
+  <span class="eyebrow gold">What’s real, and what isn’t yet</span>
+  <h2>So nothing surprises you.</h2>
+  <ul class="real">
+    <li>Every guest quote is word for word, with their first name.</li>
+    <li>The dashed boxes hold our stand-ins until your words arrive. Nothing in them is yours until you say it.</li>
+    <li>Prices are samples, and no card is ever charged. Real bookings and payments come next.</li>
+    <li>Where a season has no real photo yet, the picture says <i>Imagined</i>.</li>
+    <li>The films use five of the 91 drone clips so far; the rest are on their way.</li>
+  </ul>
+</section>
+
+<section class="g" id="door">
+  <div class="door" id="doorBox">
+    <h2>Your code</h2>
+    <p>The six digits we gave you. You’ll stay signed in on this device for 30 days.</p>
+    <form id="f" autocomplete="off">
+      <label class="sr" for="code">Your code</label>
+      <input id="code" inputmode="numeric" pattern="[0-9 ]*" maxlength="8" autocomplete="one-time-code" required>
+      <button class="btn act" type="submit">Enter</button>
+      <p class="msg" id="msg" role="status" aria-live="polite"></p>
+    </form>
+  </div>
+</section>
+<p class="sig">Built by Ashrey, with Claude. What you leave goes to Ashrey and Claude only.</p>
+
+<script>
+(function () {
+  const params = new URLSearchParams(location.search);
+  const next = (params.get("next") || "/").replace(/^(?!\/)/, "/").replace(/^\/\/+/, "/");
+  const box = document.getElementById("doorBox"), msg = document.getElementById("msg");
+  const go = () => (location.href = next.startsWith("/guide") ? "/" : next);
+  fetch("/api/keep/me", { credentials: "same-origin" }).then((r) => r.json()).then((j) => {
+    if (j && j.who) box.innerHTML = `<h2>You’re in.</h2><p>Signed in on this device.</p><p><a class="btn act" href="${next.startsWith("/guide") ? "/" : next.replace(/"/g, "")}">Start walking</a></p>`;
+  }).catch(() => {});
+  document.getElementById("f").addEventListener("submit", async (e) => {
+    e.preventDefault(); msg.textContent = "";
+    const code = document.getElementById("code").value;
+    try {
+      const r = await fetch("/api/keep/signin", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ code }) });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok) { msg.style.color = "#2E6B3A"; msg.textContent = "Welcome, Eric."; setTimeout(go, 500); }
+      else msg.textContent = j.error || "That didn’t work. Try again.";
+    } catch (err) { msg.textContent = "The connection dropped. Try again."; }
+  });
+})();
+</script>
+</body>
+</html>

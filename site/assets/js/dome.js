@@ -116,6 +116,16 @@
     if (window.DOME_NOTES) return cb();
     const sc = document.createElement("script"); sc.src = R("assets/js/notes.js"); sc.onload = cb; document.head.append(sc);
   }
+  /* ---------- The keeper layer: only where the Worker runs, only once Eric has signed in ---------- */
+  function keepersInit() {
+    if (!(location.hostname === "dome.aistrangegame.com" || location.port === "8787")) return;
+    fetch("/api/keep/me", { credentials: "same-origin" }).then((r) => r.json()).then((j) => {
+      if (!j || !j.who) return;
+      const css = document.createElement("link"); css.rel = "stylesheet"; css.href = "/assets/css/keepers.css"; document.head.append(css);
+      const js = document.createElement("script"); js.src = "/assets/js/keepers.js"; document.body.append(js);
+    }).catch(() => {});
+  }
+
   function notesInit() {
     const d = dock();
     notesBtn = document.createElement("button"); notesBtn.type = "button"; notesBtn.className = "notes-btn"; notesBtn.setAttribute("aria-pressed", "false");
@@ -404,5 +414,6 @@
     setSeason(season);
     markerToggle();
     notesInit();
+    keepersInit();
   });
 })();

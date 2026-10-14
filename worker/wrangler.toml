@@ -2,19 +2,35 @@ name = "the-dome"
 main = "src/index.js"
 compatibility_date = "2026-10-01"
 
-# Static site served alongside the API
+# The site lives at its own address for Eric's walk-through
+routes = [{ pattern = "dome.aistrangegame.com", custom_domain = true }]
+
+# Static site served by the Worker; the Worker runs first so it can keep pages behind the code
 [assets]
 directory = "../site"
+binding = "ASSETS"
+run_worker_first = true
 
 [[durable_objects.bindings]]
 name = "PROPERTY"
 class_name = "Property"
 
+[[durable_objects.bindings]]
+name = "GATE"
+class_name = "Gate"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["Property"]
 
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["Gate"]
+
 [vars]
 AIRTABLE_BASE_ID = "appQRdLbtZBzRsb7i"
+NOTES_TABLE = "tbl81FKZ5uNHm5V6j"        # Eric's Notes
+VOICE_FIELD = "fldJ8AZfs3cPdOuJy"        # its Voice attachment field
 
-# Secrets (never in this file): AIRTABLE_TOKEN, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
+# Secrets (never in this file): ERIC_CODE, SESSION_SECRET, AIRTABLE_TOKEN
+# Later, with bookings: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
