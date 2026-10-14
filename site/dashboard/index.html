@@ -23,7 +23,9 @@
   .row { display: grid; gap: 18px; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); align-items: start; }
   @media (max-width: 900px) { .row { grid-template-columns: 1fr; } }
   table.t { width: 100%; border-collapse: collapse; font-size: .9rem; } table.t th, table.t td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; } table.t th { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-  .mgrid { display: grid; grid-template-columns: 1.4fr repeat(4, 1fr); gap: 6px; font-size: .82rem; }
+  .mgrid { display: grid; grid-template-columns: minmax(0, 1.4fr) repeat(4, minmax(0, 1fr)); gap: 6px; font-size: .82rem; }
+  .mgrid div { min-width: 0; overflow-wrap: anywhere; }
+  @media (max-width: 600px) { .pane { padding: 14px; } .mgrid { font-size: .7rem; gap: 3px; } .mgrid div { padding: 5px; } .cal button { min-height: 52px; padding: 4px; font-size: .68rem; } .cal { gap: 3px; } }
   .mgrid div { padding: 8px; border-radius: 8px; background: var(--ground-2); } .mgrid .h { background: none; font-weight: 600; } .mgrid .real { background: color-mix(in srgb, var(--leaf) 26%, transparent); } .mgrid .imag { background: color-mix(in srgb, var(--accent) 18%, transparent); }
   .legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: .78rem; color: var(--muted); margin: 10px 0; }
   .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 5px; border: 1px solid var(--line); }

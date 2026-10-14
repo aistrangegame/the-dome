@@ -39,7 +39,7 @@ window.page = function (Dome) {
     } catch (e) {}
   }
   /* The house answers (Phase 3): the Worker turns this into lights and sound through the home hub. Silent if absent. */
-  function houseCue(stage) { try { fetch(R("house-cue"), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ act: n, stage }) }).catch(() => {}); } catch (e) {} }
+  function houseCue(stage) { if (!window.DOME || !window.DOME.live) return; try { fetch(R("house-cue"), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ act: n, stage }) }).catch(() => {}); } catch (e) {} }
 
   function frame(inner, lum) {
     el.innerHTML = `<div class="aw" style="--hue:${act.hue};--lum:${lum ?? act.light}"><div class="glow"></div>
@@ -77,7 +77,7 @@ window.page = function (Dome) {
     const start = (e) => { e.preventDefault(); t0 = performance.now(); raf = requestAnimationFrame(tick); };
     const cancel = () => { cancelAnimationFrame(raf); c.style.strokeDashoffset = "314"; };
     b.addEventListener("pointerdown", start); ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => b.addEventListener(ev, cancel));
-    b.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { tone(act.tone, 2); next(); } });
+    b.addEventListener("keydown", (e) => { if ((e.key === "Enter" || e.key === " ") && !e.repeat) { e.preventDefault(); tone(act.tone, 2); next(); } });
   }
 
   /* The question, answered by writing, speaking, or silence */

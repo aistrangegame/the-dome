@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Catskill Mountain Domes</title>
-<meta name="description" content="A hand-built geodesic dome on a Catskills mountain. 252 guests have stayed under the same sky.">
+<meta name="description" content="A hand-built geodesic dome on a Catskills mountain. 252 guests have written about their nights under the same sky.">
 <link rel="stylesheet" href="assets/css/dome.css">
 <style>
   .sky { position: relative; height: min(70svh, 560px); border-radius: 22px; overflow: hidden; background: radial-gradient(ellipse at 50% 120%, #1c2f24 0%, #070b09 60%); }
@@ -37,7 +37,7 @@
   <div class="reading center rise">
     <span class="eyebrow">Catskill Mountain Domes · Delaware County, New York</span>
     <h1>Under the same sky.</h1>
-    <p class="lede">A white dome on a mountain in the Catskills, built by hand, kept with care, and loved by everyone who has stayed. 252 of them so far.</p>
+    <p class="lede">A white dome on a mountain in the Catskills, built by hand, kept with care, and loved by the people who have stayed. 252 of them have written about it so far.</p>
     <hr class="rule">
     <div data-slot-key="em_welcome"></div>
     <p><a class="btn act" href="stay.html">Find your dates</a> <a class="btn" href="places/index.html">Walk the places</a></p>
@@ -70,16 +70,16 @@
     <div class="center rise" style="margin-bottom:28px">
       <span class="eyebrow">The sky of guests</span>
       <h2>Every star is someone who stayed.</h2>
-      <p class="lede">252 guests, 2023 to now. Touch a star to read what they wrote. The warmer stars are the guests of the new chapter.</p>
+      <p class="lede">252 guests who wrote about their stay, 2023 to now. Touch a star to read what they wrote. The warmer stars are the guests of the new chapter.</p>
     </div>
-    <div class="sky rise" id="sky" role="group" aria-label="252 guests as stars"></div>
+    <div class="sky rise" id="sky" role="group" aria-label="252 guests who wrote, as stars. Use the arrow keys to move between them."></div>
   </div>
 </section>
 
 <section class="band">
   <div class="wrap">
     <div class="center rise" style="margin-bottom:28px">
-      <span class="eyebrow">Four domes</span>
+      <span class="eyebrow">Four seasons, one dome</span>
       <h2>Guests come in every season.</h2>
       <p class="lede">Choose one and the whole site changes with it. Where we don’t yet have a photo from that season, the picture is marked as imagined.</p>
     </div>
@@ -150,7 +150,7 @@ window.page = function (Dome) {
   document.getElementById("placeCards").innerHTML = pick.map((slug) => {
     const p = D.places.find((x) => x.slug === slug);
     return `<a class="card rise" href="places/${p.slug}.html"><div class="media" data-season-img='${JSON.stringify(p.img)}' data-w="800"><img alt="${esc(p.name)}"><span class="imagined-tag">Imagined season</span></div>
-      <div class="body"><span class="num">${Dome.icon(p.slug, { size: 22 })}${String(p.n).padStart(2, "0")}</span><h3>${esc(p.name)}</h3><p>${esc(p.dome)}</p></div></a>`;
+      <div class="body"><span class="num">${Dome.icon(p.slug, { size: 22 })}${String(p.n).padStart(2, "0")}</span><h3>${esc(p.name)}</h3><p>“${esc(p.voices[0][2])}” · ${esc(p.voices[0][1])}</p></div></a>`;
   }).join("");
 
   // The sky of guests
@@ -161,14 +161,22 @@ window.page = function (Dome) {
     const b = document.createElement("button"); b.type = "button";
     b.style.left = (3 + rnd() * 94) + "%"; b.style.top = (4 + rnd() * 76) + "%";
     if (r.era === "em") b.className = "em";
-    b.setAttribute("aria-label", `${r.name}, ${r.when}`);
+    const mo = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][r.month] + " " + r.year;
+    b.setAttribute("aria-label", `${r.name}, ${mo}`);
     b.addEventListener("click", () => {
       sky.querySelectorAll("button.on").forEach((x) => x.classList.remove("on")); b.classList.add("on");
       const t = r.text.length > 220 ? r.text.slice(0, 220).replace(/\s\S*$/, "") + "…" : r.text;
       card.hidden = false;
-      card.innerHTML = `<blockquote class="voice">${esc(t)}</blockquote><span class="voice-by">${esc(r.name)} · ${esc(r.when)} · guest #${r.n}</span>`;
+      card.innerHTML = `<blockquote class="voice">${esc(t)}</blockquote><span class="voice-by">${esc(r.name)} · ${esc(mo)} · guest #${r.n}</span>`;
     });
+    b.tabIndex = sky.querySelector("button") ? -1 : 0;
     sky.append(b);
+  });
+  // one tab stop for the whole sky; the arrow keys move from star to star, Enter reads one
+  sky.addEventListener("keydown", (e) => {
+    const all = [...sky.querySelectorAll("button")], i = all.indexOf(document.activeElement); if (i < 0) return;
+    const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1, Home: -i, End: all.length - 1 - i }[e.key]; if (step === undefined) return;
+    e.preventDefault(); const n = all[Math.max(0, Math.min(all.length - 1, i + step))]; all[i].tabIndex = -1; n.tabIndex = 0; n.focus(); n.click();
   });
 
   // Season cards

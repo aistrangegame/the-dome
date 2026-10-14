@@ -148,7 +148,7 @@ window.DOME = (function () {
     { slug: "celebrate", title: "The ones who came to celebrate", lead: "Anniversaries, engagements, a proposal, a birthday surprise.",
       img: "listing-34", lines: [[49, "Cheryl", "My husband and I were celebrating our 30th anniversary."], [101, "Kaitlyn", "I chose this location for a proposal, and it did not disappoint."], [92, "Corinne", "My fiancé and I needed a place to get away for a few days to celebrate our engagement…this little dome in the middle of nowhere was perfect."], [12, "Ernesto", "they fulfilled a personal request to celebrate our 34th wedding anniversary."], [101, "Kaitlyn", "the magic it brings is better than Disney."]] ,
       close: "Some of them came back to say it again." },
-    { slug: "dogs", title: "The ones who brought their dogs", lead: "67 stays came with a dog. The trails were theirs first.",
+    { slug: "dogs", title: "The ones who brought their dogs", lead: "67 stays came with a pet. The trails were theirs first.",
       img: "dog_meadow", lines: [[16, "Laval", "What a beautiful escape with my husband and our dog Nitro!"], [106, "Anaïs", "My pup loved the walking trails around the property, and we felt completely at ease having him with us."], [130, "Joel", "My wife, two dogs and I really enjoyed our stay."], [198, "Rhiannon", "our dog was SO upset when it was time to leave."]],
       close: "The couch remembers them most." },
     { slug: "snow", title: "The ones who came in the snow", lead: "Winter on the mountain: the hearth, the steam, the four-wheel drive.",
@@ -207,5 +207,8 @@ window.DOME = (function () {
   const sample = { base: 325, weekend: 60, cleaning: 95, minNights: 2, salesTax: 0.08, occupancy: 0.02,
     seasonUplift: { summer: 40, fall: 60, winter: 20, spring: 0 } };
 
-  return { SHOOT, img, seasons, places, slots, stories, timeline, ideas, around, sample };
+  // false until the Worker answers /words, /tally and /house-cue; until then nothing leaves the device
+  const live = false;
+
+  return { SHOOT, img, seasons, places, slots, stories, timeline, ideas, around, sample, live };
 })();

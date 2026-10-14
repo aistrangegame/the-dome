@@ -212,8 +212,8 @@ a.card:hover { transform: translateY(-3px); box-shadow: 0 14px 40px rgba(0,0,0,.
 .slot .prompts li::before { content: "?"; position: absolute; left: 0; color: var(--accent); font-weight: 600; }
 .band.deep .slot { background: rgba(255,255,255,.04); }
 .band.deep .slot .prompts { color: color-mix(in srgb, var(--on-deep) 70%, transparent); }
-html.clean .slot { border: 0; padding: 0; background: none; }
-html.clean .slot .slot-tag, html.clean .slot .prompts { display: none; }
+/* With markers hidden, a slot leaves the page: a stand-in is never shown as if it were their own words */
+html.clean .slot { display: none; }
 .marker-toggle { position: static; font: 500 .75rem/1 "DM Sans"; background: var(--deep); color: var(--on-deep); border: 0; border-radius: 99px; padding: 10px 14px; cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
 .marker-toggle .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); margin-right: 8px; vertical-align: 1px; }
 
@@ -386,3 +386,21 @@ html.notes .passage.dn-target { outline-offset: -10px; }
 @media (prefers-reduced-motion: reduce) { .dnote, .constel .ln, .guide { animation: none !important; transition: none !important; } .constel .ln { stroke-dashoffset: 0; } }
 .notes-btn[hidden] { display: none; }
 .passage .p-layer.has-video::after { content: ""; position: absolute; inset: 40% 0 0 0; background: linear-gradient(to bottom, transparent, rgba(4,7,5,.62)); pointer-events: none; }
+
+/* ---------- Audit, Oct 14 ---------- */
+/* a visible focus ring wherever a control was reset to plain */
+:root body :is(button, a, input, select, textarea, summary, [tabindex]):focus-visible { outline: 2px solid #C9A96E; outline-offset: 2px; }
+/* the owners' column in the footer appears with their notes on */
+.foot .owner-only { display: none; } html.notes .foot .owner-only { display: block; }
+/* phones: the header fits, the dock gets small */
+@media (max-width: 420px) {
+  .top { gap: 6px; padding: 10px 10px; } .brand { font-size: .82rem; } .brand .pt { margin-left: -8px; }
+  .season-select { padding: 7px 6px; max-width: 86px; } .menu-btn { padding: 7px 11px; }
+}
+@media (max-width: 600px) {
+  .dock { gap: 6px; left: 8px; }
+  .dock .notes-btn .nb-t { display: none; } .dock .notes-btn { padding: 0; width: 38px; height: 38px; justify-content: center; }
+  .dock .notes-btn.gbtn { width: auto; padding: 0 12px; height: 34px; }
+  .dock .marker-toggle { padding: 8px 10px; font-size: .7rem; }
+}
+body.play .dock { left: auto; right: 10px; top: max(54px, calc(env(safe-area-inset-top) + 46px)); bottom: auto; align-items: flex-end; }

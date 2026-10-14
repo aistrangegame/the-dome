@@ -54,7 +54,7 @@ window.page = function (Dome) {
     const entry = { place: slug, kind: f.kind.value, text: f.w.value.trim(), name: f.nm.value.trim(), at: new Date().toISOString(), status: "waiting" };
     if (!entry.text) return;
     const q = store.get("dome-words", []); q.push(entry); store.set("dome-words", q);
-    try { await fetch(R("words"), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(entry) }); } catch (err) {}
+    if (D.live) try { await fetch(R("words"), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(entry) }); } catch (err) {}
     f.hidden = true; const done = document.getElementById("left"); done.hidden = false;
     done.textContent = entry.kind === "idea" ? "Thank you. Your idea is with Eric and Mona. If they build it, your name goes on it." : "Thank you. Your words are with Eric and Mona, and will wait here for the next guest.";
   });

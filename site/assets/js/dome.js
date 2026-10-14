@@ -81,7 +81,7 @@
         <div><b>The people</b><br><a href="${R("how-it-began.html")}">How it began</a><br><a href="${R("the-new-chapter.html")}">The new chapter</a><br><a href="${R("your-stays.html")}">Your stays</a></div>
         <div><b>Stay</b><br><a href="${R("stay.html")}">Dates and booking</a><br><a href="${R("around.html")}">Around the mountain</a><br><a href="https://www.instagram.com/catskillmountaindomes/">@catskillmountaindomes</a></div>
         <div class="foot-play"><b>Behind the point</b><br><a href="${R("play/story.html")}">${icon("story", { size: 16 })}The dome’s own story</a><br><a href="${R("play/find.html")}">${icon("find", { size: 16 })}Find the point</a><br><a href="${R("play/build.html")}">${icon("build", { size: 16 })}One triangle at a time</a><br><a href="${R("play/still.html")}">${icon("still", { size: 16 })}Be still</a></div>
-        <div><b>For Eric and Mona</b><br><a href="${R("dashboard/index.html")}">Dashboard</a><br><a href="${R("house/index.html")}">On the property</a><br><a href="${R("house/awakening/index.html")}">The Awakening</a></div>
+        <div class="owner-only"><b>For Eric and Mona</b><br><a href="${R("dashboard/index.html")}">Dashboard</a><br><a href="${R("house/index.html")}">On the property</a><br><a href="${R("house/awakening/index.html")}">The Awakening</a></div>
       </div><p style="margin-top:2rem"><small>Catskill Mountain Domes · Delaware County, New York · Guest words are quoted as written, with first names.</small></p></div>`;
     document.body.append(f);
   }
@@ -93,7 +93,7 @@
     document.documentElement.classList.toggle("clean", clean);
     const b = document.createElement("button");
     b.className = "marker-toggle"; b.type = "button";
-    const label = () => (b.innerHTML = `<span class="dot"></span>${document.documentElement.classList.contains("clean") ? "Show where your words go" : "Hide the markers"}`);
+    const label = () => (b.innerHTML = `<span class="dot"></span>${document.documentElement.classList.contains("clean") ? "Show where your words go" : "Hide where your words go"}`);
     label();
     b.addEventListener("click", () => { const c = document.documentElement.classList.toggle("clean"); store.set("dome-clean", c); label(); });
     dock().append(b);
@@ -121,6 +121,7 @@
     notesBtn = document.createElement("button"); notesBtn.type = "button"; notesBtn.className = "notes-btn"; notesBtn.setAttribute("aria-pressed", "false");
     notesBtn.innerHTML = `<span class="nb-ic" aria-hidden="true"><i></i><i></i><i></i></span><span class="nb-t">Notes</span>`;
     guideBtn = document.createElement("button"); guideBtn.type = "button"; guideBtn.className = "notes-btn gbtn"; guideBtn.hidden = true; guideBtn.textContent = "This page’s guide";
+    notesBtn.setAttribute("aria-label", "Notes: show the behind-the-scenes notes");
     d.prepend(guideBtn); d.prepend(notesBtn);
     notesBtn.addEventListener("click", () => setNotes(!notesOn, true));
     guideBtn.addEventListener("click", () => openGuide());
@@ -133,6 +134,7 @@
   function setNotes(on, user) {
     notesOn = on; store.set("dome-notes", on);
     notesBtn.setAttribute("aria-pressed", String(on)); notesBtn.querySelector(".nb-t").textContent = on ? "Notes on" : "Notes";
+    notesBtn.setAttribute("aria-label", on ? "Notes are on: hide the behind-the-scenes notes" : "Notes: show the behind-the-scenes notes");
     guideBtn.hidden = !on;
     document.documentElement.classList.toggle("notes", on);
     if (!on) { document.querySelectorAll(".dnote").forEach((n) => n.remove()); document.querySelectorAll(".dn-target").forEach((t) => t.classList.remove("dn-target")); closeGuide(); return; }
@@ -183,7 +185,7 @@
     const houseTab = `<div class="g-pane" data-pane="house" hidden>
         <p class="g-purpose">Everything that has been built, in four layers. This page is lit.</p>
         ${N.LAYERS.map((l) => `<section class="g-l"><h3>${esc(l.name)}</h3><p>${esc(l.line)}</p><ul>${l.pages.map((k) => `<li${k === here ? ' class="here"' : ""}><a href="${R(k)}">${esc(N.NAMES[k] || k)}</a></li>`).join("")}</ul></section>`).join("")}
-        <section class="g-l"><h3>Underneath</h3><p>Airtable holds the places, the 252 guests’ words, ideas, people and photos. A Cloudflare Worker will hold the calendar, take payment through Stripe and keep everything in step. Until then, everything here runs on this device.</p></section>
+        <section class="g-l"><h3>Underneath</h3><p>Airtable holds the places, the words of the 252 guests who wrote, ideas, people and photos. A Cloudflare Worker will hold the calendar, take payment through Stripe and keep everything in step. Until then, everything here runs on this device.</p></section>
       </div>`;
     g.innerHTML = `<div class="g-bar"><div class="g-tabs" role="tablist"><button role="tab" aria-selected="true" data-t="page">This page</button><button role="tab" aria-selected="false" data-t="house">The whole house</button></div><button class="g-x" type="button" aria-label="Close the guide">Close</button></div><div class="g-body">${pageTab}${houseTab}</div>`;
     document.body.append(g); guideEl = g;
@@ -343,7 +345,7 @@
   /* ---------- Behind the point: the dome's own room ---------- */
   // The header point opens a dark room from exactly where it sits. The dome speaks here, about its own life.
   const DOORS = [
-    ["story", "play/story.html", "My story", "Nine stages of a life, from an empty hillside to 252 guests.", "Read"],
+    ["story", "play/story.html", "My story", "Nine stages of a life, from an empty hillside to 252 guests who wrote.", "Read"],
     ["find", "play/find.html", "Find the point", "Look for me from the sky, from high to close.", "Look"],
     ["build", "play/build.html", "One triangle at a time", "Build me again, one guest in every triangle.", "Build"],
     ["still", "play/still.html", "Be still", "Stay without moving, and the stars come out.", "Stay"]

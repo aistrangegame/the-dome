@@ -16,6 +16,8 @@
   .bar.mine { outline: 2px solid var(--accent); }
   .bar.real b::after { content: " · what they built"; color: var(--accent); font-weight: 500; }
   .chosen { font: italic 1.3rem/1.4 Lora, serif; }
+  .optin { display: flex; gap: 10px; align-items: flex-start; margin: 1rem 0 1.4rem; font-size: .95rem; color: var(--muted); }
+  .optin input { margin-top: 4px; width: 18px; height: 18px; accent-color: var(--accent); }
 </style>
 </head>
 <body data-root="../../" data-solid="1">
@@ -38,7 +40,9 @@ window.page = function (Dome) {
   function intro() {
     g.innerHTML = `<div class="q rise in"><span class="eyebrow">A game for everyone in the dome</span><h1>What would you have built?</h1>
       <p class="lede">Before there was a dome, there was a hillside and two people deciding what to make of it. Make the six choices they faced. After each one, see what they really built, and what everyone else chose.</p>
+      <label class="optin"><input type="checkbox" id="optin" ${store.get("dome-tally-optin", false) ? "checked" : ""}> Add my choices to what everyone sees. Anonymous: no name, nothing else about you.</label>
       <p><button class="btn act" type="button" id="go">Start</button></p></div>`;
+    document.getElementById("optin").onchange = (e) => store.set("dome-tally-optin", e.target.checked);
     document.getElementById("go").onclick = ask;
   }
   function ask() {
@@ -48,14 +52,15 @@ window.page = function (Dome) {
   }
   async function choose(k) {
     const Q = QUESTIONS[i]; mine.push(k);
-    const t = local(); t[i] = t[i] || Q.o.map(() => 0); t[i][k]++; store.set("dome-tally", t);
+    const optin = store.get("dome-tally-optin", false);
+    const t = local(); t[i] = t[i] || Q.o.map(() => 0); if (optin) { t[i][k]++; store.set("dome-tally", t); }
     let counts = t[i], shared = false;
-    try { const r = await fetch(R("tally"), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ game: "built", q: i, choice: k }) }); if (r.ok) { const j = await r.json(); if (Array.isArray(j.counts)) { counts = j.counts; shared = true; } } } catch (e) {}
+    if (optin && Dome.D.live) try { const r = await fetch(R("tally"), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ game: "built", q: i, choice: k }) }); if (r.ok) { const j = await r.json(); if (Array.isArray(j.counts)) { counts = j.counts; shared = true; } } } catch (e) {}
     const total = counts.reduce((a, b) => a + b, 0) || 1;
     g.innerHTML = `<div class="q"><span class="num">${i + 1} of ${QUESTIONS.length}</span><h2>${esc(Q.q)}</h2>
       <p class="chosen">${k === Q.real ? "You chose what they built." : "They chose differently."}</p>
-      <div class="bars">${Q.o.map((o, j) => `<div class="bar ${j === k ? "mine" : ""} ${j === Q.real ? "real" : ""}"><i style="width:${Math.round(counts[j] / total * 100)}%"></i><span><b>${esc(o)}</b><em>${Math.round(counts[j] / total * 100)}%</em></span></div>`).join("")}</div>
-      <p class="season-note">${shared ? "Everyone who has played on the mountain so far." : "Choices made on this device so far. Once the site is live, this shows everyone who has played."}</p>
+      ${counts.reduce((a, b) => a + b, 0) >= 3 ? `<div class="bars">${Q.o.map((o, j) => `<div class="bar ${j === k ? "mine" : ""} ${j === Q.real ? "real" : ""}"><i style="width:${Math.round(counts[j] / total * 100)}%"></i><span><b>${esc(o)}</b><em>${Math.round(counts[j] / total * 100)}%</em></span></div>`).join("")}</div>
+      <p class="season-note">${shared ? "Everyone who has said yes to being counted, so far." : "Choices counted on this device so far. Once the site is live, this shows everyone who said yes to being counted."}</p>` : `<p class="season-note">They built: <b>${esc(Q.o[Q.real])}</b>.${optin ? "" : " To see what everyone chose, say yes to being counted at the start."}</p>`}
       ${slotHTML("cn_choice")}
       <p><button class="btn act" type="button" id="nx">${i + 1 < QUESTIONS.length ? "Next" : "See what you built"}</button></p></div>`;
     document.getElementById("nx").onclick = () => { i++; i < QUESTIONS.length ? ask() : end(); };

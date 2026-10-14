@@ -35,7 +35,7 @@
     <p class="test">Showcase mode: sample prices, and no card is ever charged. Eric and Mona set the real prices, seasons and policy in their dashboard.</p>
     <div class="layout">
       <div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><button class="btn" id="prev" type="button">←</button><span class="season-note">Prices shown per night</span><button class="btn" id="next" type="button">→</button></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><button class="btn" id="prev" type="button" aria-label="Earlier months">←</button><span class="season-note">Prices shown per night</span><button class="btn" id="next" type="button" aria-label="Later months">→</button></div>
         <div class="months" id="months"></div>
       </div>
       <aside class="panel" id="panel"></aside>
@@ -46,6 +46,7 @@
 <script src="assets/js/booking.js"></script>
 <script>
 window.page = function (Dome) {
+  const nice = (d) => new Date(d + "T12:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
   const B = window.DomeBooking, { esc } = Dome;
   const money = (n) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 });
   let offset = 0, a = null, z = null, step = "dates", heldQuote = null, holdInfo = null;
@@ -60,7 +61,7 @@ window.page = function (Dome) {
       const edge = s === a || s === z;
       const canDepart = a && !z && s > a;
       const dis = st !== "open" && !(canDepart && st !== "past");
-      h += `<button type="button" data-d="${s}" class="${st === "past" ? "past" : ""} ${sel ? "in" : ""} ${edge ? "edge" : ""}" ${dis ? "disabled" : ""} aria-label="${s} ${st}"><span class="d">${d}</span><span class="p">${st === "open" ? money(B.nightPrice(s)) : st === "past" ? "" : st}</span></button>`;
+      h += `<button type="button" data-d="${s}" class="${st === "past" ? "past" : ""} ${sel ? "in" : ""} ${edge ? "edge" : ""}" ${dis ? "disabled" : ""} aria-label="${new Date(s + "T12:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}, ${st === "open" ? "open" : st}"><span class="d">${d}</span><span class="p">${st === "open" ? money(B.nightPrice(s)) : st === "past" ? "" : st}</span></button>`;
     }
     return h + "</div></div>";
   }
@@ -84,7 +85,7 @@ window.page = function (Dome) {
       if (!a) { P.innerHTML = `<h3>Your stay</h3><p style="color:var(--muted)">Pick your arrival date on the calendar.</p><p class="notice">Most stays are at least ${B.rates().minNights} nights.</p>`; return; }
       if (!z) { P.innerHTML = `<h3>Arriving ${a}</h3><p style="color:var(--muted)">Now pick the morning you leave.</p>`; return; }
       const q = B.quote(a, z, 2);
-      P.innerHTML = `<h3>${a} → ${z}</h3>${q.problems.length ? `<p class="notice">${q.problems.map(esc).join("<br>")}</p>` : quoteHTML(q)}
+      P.innerHTML = `<h3>${nice(a)} → ${nice(z)}</h3>${q.problems.length ? `<p class="notice">${q.problems.map(esc).join("<br>")}</p>` : quoteHTML(q)}
         <div class="field"><label for="g">Guests</label><select id="g">${[1, 2, 3, 4, 5, 6].map((n) => `<option ${n === 2 ? "selected" : ""}>${n}</option>`).join("")}</select></div>
         <button class="btn act" id="go" ${q.ok ? "" : "disabled"} style="width:100%">Hold these nights</button>`;
       const go = document.getElementById("go");
@@ -93,7 +94,7 @@ window.page = function (Dome) {
     }
     if (step === "details") {
       const mins = Math.round((holdInfo.expires - Date.now()) / 60000);
-      P.innerHTML = `<h3>Held for you · ${mins} min</h3><p style="color:var(--muted)">${heldQuote.checkin} → ${heldQuote.checkout} · ${heldQuote.guests} guests</p>${quoteHTML(heldQuote)}
+      P.innerHTML = `<h3>Held for you · ${mins} min</h3><p style="color:var(--muted)">${nice(heldQuote.checkin)} → ${nice(heldQuote.checkout)} · ${heldQuote.guests} guests</p>${quoteHTML(heldQuote)}
         <form id="who"><div class="field"><label for="fn">First name</label><input id="fn" required autocomplete="given-name"></div>
         <div class="field"><label for="ln">Last name</label><input id="ln" required autocomplete="family-name"></div>
         <div class="field"><label for="em">Email</label><input id="em" type="email" required autocomplete="email"></div>
@@ -117,7 +118,7 @@ window.page = function (Dome) {
     const P = document.getElementById("panel");
     const url = URL.createObjectURL(new Blob([B.ics(b)], { type: "text/calendar" }));
     P.innerHTML = `<span class="eyebrow">Confirmed</span><h3>See you on the mountain, ${esc(b.guest.first)}.</h3>
-      <p>Booking <b>${b.code}</b> · ${b.checkin} → ${b.checkout}</p>
+      <p>Booking <b>${b.code}</b> · ${nice(b.checkin)} → ${nice(b.checkout)}</p>
       <p style="color:var(--muted)">Your door code and the wifi details arrive by email 24 to 48 hours before you do, so you have them before the signal drops on the drive up.</p>
       <p><a class="btn" href="${url}" download="catskill-dome-${b.code}.ics">Add to your calendar</a></p>
       <p><a href="your-stays.html">Find this stay later</a> with your first name and the last four digits of your phone.</p>`;
