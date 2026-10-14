@@ -1,52 +1,43 @@
-# Eric's walk-through: game plan, version 2 (draft, Oct 14, 2026)
+# Eric's walk-through: game plan, version 3 (Oct 14, 2026)
 
-**Status:** proposed, not yet agreed. Nothing is built until Ashrey confirms the open decisions below.
+**Status:** agreed in shape with Ashrey; waiting on one answer (the code: 1187 or 11187) before the build starts.
 
-## The goal
-Eric opens one link, reads a short guidebook, signs in with a 4-digit code, walks the real site at dome.aistrangegame.com, and leaves his thoughts wherever he has them. Everything lands in **one Airtable table** that Claude reads and answers. Nothing changes for guests.
+## Done looks like
+Eric opens **dome.aistrangegame.com/guide**, reads the guide, enters his code, walks the whole site, leaves a typed or spoken note on any part of it, and records his own words into the boxes waiting for them. Each lands as a row in **Eric's Notes** in Airtable. Claude reads the rows, makes the changes or replies, and sets the status; Eric sees it all under **My notes**.
 
-## What Eric does
-1. Opens **dome.aistrangegame.com/keep**: a one-page guidebook (what this is, how to walk it), then his code.
-2. Walks the site. A small bar at the bottom: **Note · Ask · My notes**.
-3. **Note:** tap a section (or the whole page), type or speak; speech is written out as he talks.
-4. **Own words:** each dashed box shows its questions and a record button; he answers in his own voice and presses Approve when it's right.
-5. **Ask:** a question about the page he's on, answered on the spot.
-6. **Fix:** on the places map, drag any pin that's in the wrong spot.
-7. **My notes:** everything he left, with its status and the reply.
-
-## The one table: Eric's Notes
-
-| Field | Holds |
+## Now (this round)
+| Piece | What it is |
 |---|---|
-| Note | A short title, filled in automatically (page · section) |
-| Kind (single select) | Note · Own words · Question · Fix |
-| Page | Which page |
-| Section | Which part of the page, or which dashed box |
-| Text | What he typed, or the transcript of what he said |
-| Voice | The recording (attachment) |
-| Reply | Claude's answer, or the guide's answer to a Question |
-| Status (single select) | New · Heard · Changing · Changed · Answered · Approved · OLD |
-| Created | When |
+| Film | The night flight (night sky place, the home sky passage) and the full backyard rise (home opening, down to the pool; the pool at the cedar pool place). |
+| The guide, `/guide` | The way in: what this is, the four layers, how to walk it, what Notes / Add a note / My notes / Own words do; then the code. |
+| The code | One code, Eric's; the only door. The whole site sits behind it for now (`/guide` excepted). Checked on the server, locks for 15 minutes after 5 wrong tries, keeps him signed in for 30 days. Stored as a Worker secret, never in the repo. |
+| Add a note | Tap a section (or the whole page), type or speak; speech is written out as he talks; the recording goes with it. |
+| Own words | Each dashed box: its questions, a record button, Approve. Approved words replace the stand-in. |
+| Fix | Drag a map pin to the right spot; saved as a note of kind Fix. |
+| My notes | Everything he has left, with status and reply (signed Claude · Ashrey Intelligence). |
+| The page notes | The existing behind-the-scenes notes, on and off, unchanged. |
 
-The page only ever adds rows. Nothing is deleted; finished notes are marked OLD.
+**Eric's Notes** (one table): Note (auto title) · Kind (Note / Own words / Fix) · Page · Section · Text · Voice · Reply · Status (New / Heard / Changing / Changed / Answered / Approved / OLD) · Created.
 
-## How it flows
-Eric leaves something, a row appears, Claude reads new rows when Ashrey asks, makes the change or replies, sets the status, and Eric sees it in My notes. Replies are signed **Claude · Ashrey Intelligence**.
+## Later (held, not dropped)
+- **Who's on the site, live**: built with the booking engine. The same Durable Object that guards the calendar can show Eric, in his dashboard, who is browsing and booking right now. It belongs with guest accounts and bookings, not with a one-person walk-through.
+- Opening the public pages to everyone, with the dashboard and keeper pages staying behind the code.
+- The remaining 86 drone clips (proxies can run on the Mac whenever), the Awakening as played scenes, Worker booking + Stripe, R2 for video.
+- Dropped for this project: Ask, walk together, Mona, the morning summary.
 
-## Build order
-1. Film: the night flight and the full backyard clip into the site.
-2. The table.
-3. The Worker: code check (locked after 5 wrong tries), add rows, upload voice, the guide (Claude via Ashrey's API key), list Eric's notes.
-4. The site: /keep guidebook, bottom bar, notes, own words, ask, map pins, approved own words shown on the live site.
-5. Test end to end, then an independent audit.
-6. Deploy prompt for Claude Code on the Mac: four secrets (Airtable token, Anthropic key, codes, signing key), deploy to dome.aistrangegame.com; verify live.
-7. The message to Eric with his link and code.
+## Steps
+**Ashrey**
+1. Confirm the code: 1187 or 11187.
+2. Create an Airtable token: scopes `data.records:read`, `data.records:write`; base The Dome only.
+3. Run the deploy prompt in Claude Code on the Mac: sign in to Cloudflare, add three secrets (Airtable token, Eric's code, a signing key the prompt generates), deploy to dome.aistrangegame.com.
+4. Walk it once as Eric; leave one test note.
+5. Send Eric the message (Claude drafts it).
 
-## Left out on purpose
-Mona; the morning summary; separate tables; R2 (voice goes into Airtable, about 4 minutes per recording at most).
-
-## Open decisions
-1. Walk together in this round, or after Eric's first pass?
-2. A code for Ashrey too?
-3. An Anthropic API key for the guide, or Ask waits?
-4. Table name: "Eric's Notes"?
+**Claude**
+1. Film into the site.
+2. Create Eric's Notes in Airtable.
+3. The Worker: the code gate, add a note, upload voice into Airtable, list his notes, approved own words.
+4. `/guide`, Add a note, My notes, Own words, map pin fix.
+5. Test every path end to end here, then an independent audit, then fix.
+6. Write the deploy prompt; after Ashrey deploys, check the live site and the first test row.
+7. Draft the message to Eric; update the handoff and the project doc.
