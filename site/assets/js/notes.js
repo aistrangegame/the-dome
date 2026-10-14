@@ -35,7 +35,7 @@ window.DOME_NOTES = (function () {
       data: [SRC.data, SRC.reviews, SRC.slots], links: ["places/index.html", "stories.html", "stay.html", "play/index.html"],
       later: "The season the site opens in follows today’s date. Eric and Mona’s welcome replaces the marked slot.",
       sections: [
-        { sel: "section.bloom", t: "The opening", x: "A single point opens into a circle as you scroll, and inside it the drone comes down from the whole property onto the dome. Your scrolling drives the film: scroll back up and it rises again.", d: "Drone clip DJI_20260801165035_0293, Aug 1 2026, from 8.5 seconds on (the earlier seconds show a guest in the pool and are never used)." },
+        { sel: "section.bloom", t: "The opening", x: "A single point opens into a circle as you scroll, and inside it the drone comes down from the whole property, past the dome, all the way to a guest waving up from the cedar pool. Your scrolling drives the film: scroll back up and it rises again.", d: "Drone clip DJI_20260801165035_0293, Aug 1 2026, the whole clip played in reverse." },
         { sel: "section.band:has([data-slot-key='em_welcome']), section.band:has(.slot)", t: "Welcome", x: "The seed line, Under the same sky, then Eric and Mona’s welcome in a marked slot and the two main ways in: dates, or the places." },
         { sel: "section.passage[data-mode='open']", t: "Passages", x: "Between parts of the page a photo opens in a circle and guests’ words appear over it. Every page uses these to move from one thing to the next." },
         { sel: "section.band:has(#placeCards)", t: "Six of the thirteen places", x: "Each card opens a place page. The little moving icon on each card acts out the place.", d: "Places from dome-data.js." },
