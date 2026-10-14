@@ -96,7 +96,111 @@
     const label = () => (b.innerHTML = `<span class="dot"></span>${document.documentElement.classList.contains("clean") ? "Show where your words go" : "Hide the markers"}`);
     label();
     b.addEventListener("click", () => { const c = document.documentElement.classList.toggle("clean"); store.set("dome-clean", c); label(); });
-    document.body.append(b);
+    dock().append(b);
+  }
+  function dock() { let d = document.querySelector(".dock"); if (!d) { d = document.createElement("div"); d.className = "dock"; document.body.append(d); } return d; }
+
+  /* ---------- The notes: a behind-the-scenes guide on every page (Eric and Mona's walk-through) ---------- */
+  function noteKey() {
+    const b = document.body.dataset, path = location.pathname;
+    if (b.place) return b.mode === "house" ? "house-place" : "place";
+    if (document.getElementById("act") && b.act !== undefined) return "act";
+    if (b.act !== undefined) return "awakening";
+    if (/house\/choose\/(index\.html)?$/.test(path)) return "house/choose/index.html";
+    if (/dashboard\/(index\.html)?$/.test(path)) return "dashboard/index.html";
+    if (/house\/(index\.html)?$/.test(path)) return "house/index.html";
+    return b.page || "index.html";
+  }
+  let notesOn = false, notesBtn = null, guideBtn = null;
+  function loadNotes(cb) {
+    if (window.DOME_NOTES) return cb();
+    const sc = document.createElement("script"); sc.src = R("assets/js/notes.js"); sc.onload = cb; document.head.append(sc);
+  }
+  function notesInit() {
+    const d = dock();
+    notesBtn = document.createElement("button"); notesBtn.type = "button"; notesBtn.className = "notes-btn"; notesBtn.setAttribute("aria-pressed", "false");
+    notesBtn.innerHTML = `<span class="nb-ic" aria-hidden="true"><i></i><i></i><i></i></span><span class="nb-t">Notes</span>`;
+    guideBtn = document.createElement("button"); guideBtn.type = "button"; guideBtn.className = "notes-btn gbtn"; guideBtn.hidden = true; guideBtn.textContent = "This page’s guide";
+    d.prepend(guideBtn); d.prepend(notesBtn);
+    notesBtn.addEventListener("click", () => setNotes(!notesOn, true));
+    guideBtn.addEventListener("click", () => openGuide());
+    addEventListener("keydown", (e) => { if (e.key === "N" && e.shiftKey && !/input|textarea|select/i.test(e.target.tagName)) setNotes(!notesOn, true); });
+    const q = new URLSearchParams(location.search).get("notes");
+    if (q === "1") store.set("dome-notes", true);
+    if (q === "0") store.set("dome-notes", false);
+    if (store.get("dome-notes", false)) setNotes(true, false);
+  }
+  function setNotes(on, user) {
+    notesOn = on; store.set("dome-notes", on);
+    notesBtn.setAttribute("aria-pressed", String(on)); notesBtn.querySelector(".nb-t").textContent = on ? "Notes on" : "Notes";
+    guideBtn.hidden = !on;
+    document.documentElement.classList.toggle("notes", on);
+    if (!on) { document.querySelectorAll(".dnote").forEach((n) => n.remove()); document.querySelectorAll(".dn-target").forEach((t) => t.classList.remove("dn-target")); closeGuide(); return; }
+    loadNotes(() => { placeNotes(); if (user) openGuide(); });
+  }
+  function pageNotes() { const N = window.DOME_NOTES; return N && N.P[noteKey()]; }
+  function placeNotes() {
+    const P = pageNotes(); if (!P) return;
+    document.querySelectorAll(".dnote").forEach((n) => n.remove());
+    (P.sections || []).forEach((sec, i) => {
+      let t = null; try { t = document.querySelector(sec.sel); } catch (e) {}
+      if (!t || t.closest(".portal")) return;
+      t.classList.add("dn-target"); t.dataset.dn = i + 1;
+      const n = document.createElement("aside"); n.className = "dnote"; n.id = "dnote-" + (i + 1); n.style.animationDelay = (i * 0.08) + "s";
+      n.innerHTML = `<span class="dn-n">${i + 1}</span><div><b>${esc(sec.t)}</b><p>${esc(sec.x)}</p>${sec.d ? `<small>${esc(sec.d)}</small>` : ""}</div>`;
+      t.before(n);
+    });
+  }
+  let guideEl = null;
+  function closeGuide() { if (!guideEl) return; const g = guideEl; guideEl = null; g.classList.remove("open"); setTimeout(() => g.remove(), 500); }
+  function openGuide(tab) {
+    const N = window.DOME_NOTES, P = pageNotes(); if (!N) return loadNotes(() => openGuide(tab));
+    if (guideEl) guideEl.remove();
+    const key = noteKey(), here = (P && P.one) || key;
+    const layer = P ? N.LAYERS.find((l) => l.k === P.layer) : null;
+    const short = (s) => s.split(/[:(]/)[0].replace(/^Airtable · /, "").trim();
+    const g = document.createElement("aside"); g.className = "guide"; g.setAttribute("aria-label", "Notes for this page");
+    const secs = P ? (P.sections || []).map((sec, i) => `<li><a href="#dnote-${i + 1}" data-dn="${i + 1}"><span class="dn-n">${i + 1}</span>${esc(sec.t)}</a></li>`).join("") : "";
+    // the page among its connections: where its words come from (left), where it leads (right)
+    const L = P ? P.data.slice(0, 4) : [], Rt = P ? P.links.slice(0, 5) : [];
+    const node = (x, y, label, href, cls) => `<g class="${cls}">${href ? `<a href="${href}">` : ""}<circle cx="${x}" cy="${y}" r="${cls === "me" ? 9 : 4.5}"/><text x="${x + (cls === "src" ? -9 : cls === "me" ? 0 : 9)}" y="${y + (cls === "me" ? 24 : 4)}" text-anchor="${cls === "src" ? "end" : cls === "me" ? "middle" : "start"}">${esc(label)}</text>${href ? "</a>" : ""}</g>`;
+    const ys = (n, i) => n === 1 ? 90 : 26 + (i * 128) / (n - 1);
+    const svg = P ? `<svg class="constel" viewBox="0 0 360 190" role="img" aria-label="Where this page's content comes from, and where it leads">
+      ${L.map((d, i) => `<path class="ln" style="animation-delay:${i * 0.12}s" d="M100 ${ys(L.length, i)} C130 ${ys(L.length, i)} 135 90 165 90"/>`).join("")}
+      ${Rt.map((k, i) => `<path class="ln out" style="animation-delay:${0.3 + i * 0.12}s" d="M165 90 C195 90 200 ${ys(Rt.length, i)} 222 ${ys(Rt.length, i)}"/>`).join("")}
+      ${L.map((d, i) => node(100, ys(L.length, i), short(d), null, "src")).join("")}
+      ${node(165, 90, P.title, null, "me")}
+      ${Rt.map((k, i) => node(222, ys(Rt.length, i), N.NAMES[k] || k, R(k), "dst")).join("")}</svg>` : "";
+    const pageTab = P ? `<div class="g-pane" data-pane="page">
+        <span class="g-layer">${esc(layer ? layer.name : "")}</span><h2>${esc(P.title)}</h2>
+        <p class="g-purpose">${esc(P.purpose)}</p>
+        <p class="g-who"><b>For</b> ${esc(P.who)}</p>
+        ${svg}
+        ${secs ? `<h3>On this page</h3><ol class="g-secs">${secs}</ol>` : ""}
+        <h3>Where its words come from</h3><ul class="g-data">${P.data.map((d) => `<li>${esc(d)}</li>`).join("")}</ul>
+        ${P.later ? `<h3>When it goes live</h3><p>${esc(P.later)}</p>` : ""}
+      </div>` : `<div class="g-pane" data-pane="page"><p>No notes for this page yet.</p></div>`;
+    const houseTab = `<div class="g-pane" data-pane="house" hidden>
+        <p class="g-purpose">Everything that has been built, in four layers. This page is lit.</p>
+        ${N.LAYERS.map((l) => `<section class="g-l"><h3>${esc(l.name)}</h3><p>${esc(l.line)}</p><ul>${l.pages.map((k) => `<li${k === here ? ' class="here"' : ""}><a href="${R(k)}">${esc(N.NAMES[k] || k)}</a></li>`).join("")}</ul></section>`).join("")}
+        <section class="g-l"><h3>Underneath</h3><p>Airtable holds the places, the 252 guests’ words, ideas, people and photos. A Cloudflare Worker will hold the calendar, take payment through Stripe and keep everything in step. Until then, everything here runs on this device.</p></section>
+      </div>`;
+    g.innerHTML = `<div class="g-bar"><div class="g-tabs" role="tablist"><button role="tab" aria-selected="true" data-t="page">This page</button><button role="tab" aria-selected="false" data-t="house">The whole house</button></div><button class="g-x" type="button" aria-label="Close the guide">Close</button></div><div class="g-body">${pageTab}${houseTab}</div>`;
+    document.body.append(g); guideEl = g;
+    requestAnimationFrame(() => requestAnimationFrame(() => g.classList.add("open")));
+    g.querySelector(".g-x").addEventListener("click", closeGuide);
+    g.addEventListener("keydown", (e) => { if (e.key === "Escape") closeGuide(); });
+    g.querySelectorAll(".g-tabs button").forEach((b) => b.addEventListener("click", () => {
+      g.querySelectorAll(".g-tabs button").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
+      g.querySelectorAll(".g-pane").forEach((p) => (p.hidden = p.dataset.pane !== b.dataset.t));
+    }));
+    if (tab === "house") g.querySelector('[data-t="house"]').click();
+    g.querySelectorAll(".g-secs a").forEach((a) => a.addEventListener("click", (e) => {
+      e.preventDefault(); const n = document.getElementById("dnote-" + a.dataset.dn); if (!n) return;
+      if (innerWidth < 900) closeGuide();
+      n.scrollIntoView({ behavior: "smooth", block: "center" }); n.classList.remove("flash"); void n.offsetWidth; n.classList.add("flash");
+    }));
+    g.querySelector(".g-x").focus({ preventScroll: true });
   }
   function slotHTML(key, opts = {}) {
     const s = D.slots[key];
@@ -273,5 +377,6 @@
     api.rescan = rise();
     setSeason(season);
     markerToggle();
+    notesInit();
   });
 })();

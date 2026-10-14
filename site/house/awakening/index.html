@@ -24,5 +24,7 @@
 try { const m = JSON.parse(localStorage.getItem("dome-aw-memory") || '{"acts":{}}'); const k = Object.keys(m.acts).map(Number).sort((a,b)=>a-b);
   if (k.length) document.getElementById("progress").innerHTML = `You have walked ${k.length} of 7 acts. <a href="act-${Math.min(7, Math.max(...k) + 1)}.html" style="color:#E2C48A">Continue</a>`; } catch (e) {}
 </script>
+<script src="../../assets/js/dome-data.js"></script>
+<script src="../../assets/js/dome.js"></script>
 </body>
 </html>
