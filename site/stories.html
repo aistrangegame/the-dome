@@ -13,7 +13,8 @@
 <script>
 window.page = function (Dome) {
   const { D, M, esc, voiceHTML } = Dome;
-  document.getElementById("main").innerHTML = D.stories.map((s, i) => `
+  const pass = (s) => `<section class="passage" data-mode="open" data-h="170" data-alt="" data-season-img='${JSON.stringify({ summer: s.img })}' data-lines='${JSON.stringify([[s.title]]).replace(/'/g, "&#39;")}'></section>`;
+  document.getElementById("main").innerHTML = D.stories.map((s, i) => (i ? pass(s) : "") + `
     <section class="band ${i % 2 ? "soft" : ""}" id="${s.slug}"><div class="wrap" style="display:grid;gap:36px;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));align-items:start">
       <div class="rise story-side"><span class="num">${String(i + 1).padStart(2, "0")}</span><h2>${esc(s.title)}</h2><p class="lede">${esc(s.lead)}</p>
         <div style="border-radius:18px;overflow:hidden;aspect-ratio:4/3;margin-top:18px"><img src="${M(s.img, 800)}" alt="" style="width:100%;height:100%;object-fit:cover"></div></div>

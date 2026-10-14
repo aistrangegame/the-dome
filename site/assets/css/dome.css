@@ -90,10 +90,34 @@ img.seasonal.real { filter: none; }
 .imagined-tag { position: absolute; right: 10px; bottom: 10px; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; background: rgba(0,0,0,.5); color: #fff; padding: 4px 8px; border-radius: 99px; display: none; }
 .has-imagined .imagined-tag { display: inline-block; }
 
-/* ---------- The white point that drifts with you ---------- */
-.drift-dot { position: fixed; z-index: 40; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: #fff; pointer-events: none;
-  box-shadow: 0 0 0 6px rgba(255,255,255,.12), 0 0 24px rgba(255,255,255,.55); mix-blend-mode: difference; opacity: .9; transition: opacity .6s; }
-@media (prefers-reduced-motion: reduce) { .drift-dot { display: none; } }
+/* ---------- Passages: the point opens, descends, closes ---------- */
+.passage { position: relative; background: #060A06; }
+.passage .p-stage { position: sticky; top: 0; height: 100svh; overflow: hidden; display: grid; place-items: center; }
+.passage .p-layer { position: absolute; inset: 0; will-change: clip-path, transform; }
+.passage .p-layer img { width: 100%; height: 100%; object-fit: cover; }
+.passage .p-point { position: absolute; width: 12px; height: 12px; border-radius: 50%; background: #fff; box-shadow: 0 0 30px 6px rgba(255,255,255,.5); animation: breathe 4.6s ease-in-out infinite; pointer-events: none; }
+.passage .p-words { position: absolute; inset: auto 0 14svh 0; display: grid; place-items: center; padding: 0 16px; pointer-events: none; }
+.passage .p-line { grid-area: 1 / 1; max-width: 760px; text-align: center; color: #fff; margin: 0; opacity: 0; transform: translateY(10px); transition: opacity 1s ease, transform 1s ease; text-shadow: 0 2px 24px rgba(0,0,0,.55); }
+.passage .p-line.on { opacity: 1; transform: none; }
+.passage .p-line .serif { font: 500 clamp(2rem, 6vw, 3.8rem)/1.15 Lora, serif; }
+.passage .p-line .voice { display: block; font-size: clamp(1.25rem, 3.2vw, 1.9rem); }
+.passage .p-line .voice-by { color: rgba(255,255,255,.8); }
+.passage::after { content: ""; position: absolute; inset: auto 0 0 0; height: 18svh; background: linear-gradient(to bottom, transparent, rgba(6,10,6,.35)); pointer-events: none; }
+
+/* Every hero blooms open from a point when the page arrives */
+.hero .bg { animation: heroBloom 2.2s cubic-bezier(.6,.05,.25,1) both; }
+.hero::before { content: ""; position: absolute; left: 50%; top: 50%; width: 12px; height: 12px; margin: -6px; border-radius: 50%; background: #fff; box-shadow: 0 0 30px 6px rgba(255,255,255,.5); z-index: 1; animation: heroPoint 2.2s ease both; pointer-events: none; }
+@keyframes heroBloom { 0% { clip-path: circle(6px at 50% 50%); } 30% { clip-path: circle(6px at 50% 50%); } 100% { clip-path: circle(150% at 50% 50%); } }
+@keyframes heroPoint { 0%, 30% { opacity: 1; } 60%, 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .hero .bg, .hero::before { animation: none; } .hero::before { display: none; } }
+
+/* Season change: a circle opens from the switch */
+::view-transition-old(root) { animation: none; }
+::view-transition-new(root) { animation: seasonWipe .9s cubic-bezier(.6,.05,.25,1); }
+@keyframes seasonWipe { from { clip-path: circle(0 at var(--wx, 50%) var(--wy, 50%)); } to { clip-path: circle(150% at var(--wx, 50%) var(--wy, 50%)); } }
+
+/* Moving between pages: the next page opens from the centre */
+@view-transition { navigation: auto; }
 
 /* ---------- Hero ---------- */
 .hero { position: relative; min-height: 100svh; display: grid; place-items: center; overflow: hidden; background: #060A06; color: #fff; }

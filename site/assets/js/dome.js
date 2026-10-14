@@ -65,8 +65,8 @@
     document.body.prepend(h);
     const btn = h.querySelector(".menu-btn"), nav = h.querySelector("nav");
     btn.addEventListener("click", () => { const o = nav.classList.toggle("open"); btn.setAttribute("aria-expanded", String(o)); });
-    h.querySelectorAll(".seasons button").forEach((b) => b.addEventListener("click", () => setSeason(b.dataset.s)));
-    h.querySelector(".season-select").addEventListener("change", (e) => setSeason(e.target.value));
+    h.querySelectorAll(".seasons button").forEach((b) => b.addEventListener("click", (e) => seasonWipe(b.dataset.s, e)));
+    h.querySelector(".season-select").addEventListener("change", (e) => seasonWipe(e.target.value));
     if (!document.body.dataset.solid) {
       const onScroll = () => h.classList.toggle("solid", window.scrollY > window.innerHeight * 0.7);
       window.addEventListener("scroll", onScroll, { passive: true }); onScroll();
@@ -114,20 +114,58 @@
     return `<figure class="voice-card rise"><blockquote class="voice">${esc(text)}</blockquote><figcaption class="voice-by">${esc(name)} · guest #${n}</figcaption></figure>`;
   }
 
-  /* ---------- The point that drifts with you ---------- */
-  function driftDot() {
-    if (document.body.dataset.nodot) return;
-    const dot = document.createElement("div"); dot.className = "drift-dot"; document.body.append(dot);
-    let t = 0;
-    function place() {
-      const h = document.documentElement.scrollHeight - innerHeight || 1;
-      const p = Math.min(1, Math.max(0, scrollY / h));
-      const x = innerWidth * (0.5 + 0.38 * Math.sin(p * Math.PI * 3 + t * 0.0004));
-      const y = innerHeight * (0.18 + 0.64 * p);
-      dot.style.left = x + "px"; dot.style.top = y + "px";
+  /* ---------- Passages: the point that opens, descends and closes ---------- */
+  // <section class="passage" data-mode="open|descend|close" data-season-img='{"summer":"key"}' data-lines='[["text","who #n"],...]'>
+  function passages() {
+    const list = [...document.querySelectorAll(".passage")];
+    list.forEach((sec) => {
+      if (sec.dataset.built) return; sec.dataset.built = "1";
+      const lines = JSON.parse(sec.dataset.lines || "[]");
+      sec.style.height = (sec.dataset.h || 220) + "svh";
+      sec.innerHTML = `<div class="p-stage"><div class="p-layer" data-season-img='${sec.dataset.seasonImg}'><img alt="${esc(sec.dataset.alt || "")}"><span class="imagined-tag">Imagined season</span></div>
+        <div class="p-point"></div><div class="p-words">${lines.map(([t, by], i) => `<p class="p-line" data-i="${i}">${by ? `<span class="voice">${esc(t)}</span><span class="voice-by">${esc(by)}</span>` : `<span class="serif">${esc(t)}</span>`}</p>`).join("")}</div></div>`;
+    });
+    if (!list.length) return;
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    function frame() {
+      list.forEach((sec) => {
+        const r = sec.getBoundingClientRect(); const span = sec.offsetHeight - innerHeight;
+        if (r.bottom < -50 || r.top > innerHeight + 50) return;
+        const p = Math.min(1, Math.max(0, -r.top / span));
+        const layer = sec.querySelector(".p-layer"), point = sec.querySelector(".p-point"), mode = sec.dataset.mode;
+        const max = Math.hypot(innerWidth, innerHeight) / 2 + 10;
+        let open = 1, scale = 1;
+        if (reduce) { open = 1; }
+        else if (mode === "open") open = Math.min(1, p / 0.55);
+        else if (mode === "close") open = 1 - Math.min(1, Math.max(0, (p - 0.35) / 0.55));
+        else if (mode === "descend") { open = 1; scale = 1 + 2.2 * Math.pow(1 - Math.min(1, p / 0.7), 2); }
+        const e = open * open * (3 - 2 * open);
+        layer.style.clipPath = mode === "descend" ? "none" : `circle(${6 + e * max}px at 50% 50%)`;
+        layer.style.transform = `scale(${scale})`;
+        point.style.opacity = String(mode === "descend" ? Math.max(0, 1 - p * 3) * 0 : Math.max(0, 1 - e * 3));
+        const ls = sec.querySelectorAll(".p-line"), n = ls.length;
+        ls.forEach((l, i) => { const a = 0.25 + (i / Math.max(1, n)) * 0.55, b = a + 0.55 / Math.max(1, n) + 0.12; l.classList.toggle("on", p > a && (i === n - 1 ? p < 0.97 : p < b)); });
+      });
     }
-    function loop(now) { t = now; place(); requestAnimationFrame(loop); }
-    requestAnimationFrame(loop);
+    let ticking = false;
+    addEventListener("scroll", () => { if (!ticking) { ticking = true; requestAnimationFrame(() => { frame(); ticking = false; }); } }, { passive: true });
+    addEventListener("resize", frame); frame();
+  }
+  function closingPassage() {
+    if (document.body.dataset.noclose || document.body.dataset.bare) return;
+    const f = document.querySelector("footer.foot"); if (!f) return;
+    const s = document.createElement("section"); s.className = "passage"; s.dataset.mode = "close"; s.dataset.h = "170";
+    s.dataset.seasonImg = JSON.stringify({ summer: "disc" }); s.dataset.alt = "The dome from directly above, closing back into a single point.";
+    s.dataset.lines = JSON.stringify([["Under the same sky."]]);
+    f.before(s);
+  }
+
+  /* ---------- Season change: a circle opens from where you chose ---------- */
+  function seasonWipe(s, ev) {
+    if (!document.startViewTransition || matchMedia("(prefers-reduced-motion: reduce)").matches) return setSeason(s);
+    const x = ev && ev.clientX ? ev.clientX : innerWidth - 120, y = ev && ev.clientY ? ev.clientY : 30;
+    document.documentElement.style.setProperty("--wx", x + "px"); document.documentElement.style.setProperty("--wy", y + "px");
+    document.startViewTransition(() => setSeason(s));
   }
 
   /* ---------- Rise on view ---------- */
@@ -137,16 +175,17 @@
     scan(); return scan;
   }
 
-  const api = { D, R, M, esc, store, setSeason, get season() { return season; }, seasonImage, slotHTML, voiceHTML, paintSeasonImages, rescan: null };
+  const api = { D, R, M, esc, store, setSeason, seasonWipe, get season() { return season; }, seasonImage, slotHTML, voiceHTML, paintSeasonImages, rescan: null };
   window.Dome = api;
 
   document.addEventListener("DOMContentLoaded", () => {
     if (!document.body.dataset.bare) { header(); footer(); }
     if (typeof window.page === "function") window.page(api);
     renderSlots();
+    closingPassage();
+    passages();
     api.rescan = rise();
     setSeason(season);
     markerToggle();
-    if (!document.body.dataset.bare) driftDot();
   });
 })();
