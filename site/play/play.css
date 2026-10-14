@@ -22,3 +22,4 @@ body.play { background: #070B09; color: #F5F0E8; min-height: 100svh; overflow: h
 @keyframes pfade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 @media (prefers-reduced-motion: reduce) { .fade-in { animation: none; } }
+.intro .intro-ic { display: block; color: #E2C48A; margin: 0 auto 1.4rem; width: max-content; }

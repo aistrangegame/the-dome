@@ -22,6 +22,7 @@
   .stage-band .btn.act { background: #C9A96E; border-color: #C9A96E; color: #1A2218; }
   .stage-band .note { font-size: .85rem; color: rgba(245,240,232,.55); margin-top: 2.4rem; }
   .opening { min-height: 100svh; display: grid; place-items: center; text-align: center; background: #070B09; color: #F5F0E8; padding: 24px; }
+  .intro-ic { display: block; color: #E2C48A; margin: 0 auto 1.6rem; width: max-content; }
   .opening .pt-big { width: 12px; height: 12px; border-radius: 50%; background: #fff; box-shadow: 0 0 30px 10px rgba(255,255,255,.35); margin: 0 auto 2rem; animation: breathe 5.2s ease-in-out infinite; }
   .opening h1 { font: italic 400 clamp(2rem, 7vw, 3.4rem)/1.15 Lora, serif; margin: 0 0 1rem; }
   .opening p { color: rgba(245,240,232,.72); max-width: 420px; margin: 0 auto; }
@@ -35,7 +36,7 @@
 <body class="storyroom" data-root="../" data-page="play/story.html" data-solid="1">
 
 <section class="opening"><div>
-  <div class="pt-big" aria-hidden="true"></div>
+  <span class="intro-ic" data-icon="story" data-icon-live data-icon-size="64"></span>
   <span class="eyebrow" style="color:#E2C48A">Behind the point</span>
   <h1>My own story.</h1>
   <p>Everywhere else on this site, other people speak for me. Here I tell it myself, in nine stages. Scroll slowly; I’m a slow building.</p>
@@ -75,7 +76,7 @@
   <div class="count" id="count" aria-label="252 guests">0</div>
   <h2>Two hundred and fifty-two of them.</h2>
   <p class="dome">They came in every season. Seventy-six in fall, sixty-six in summer, fifty-eight in winter, fifty-two in spring. They brought anniversaries and a proposal and a blizzard and their dogs. I held every bit of it, and kept none of it. That’s the job.</p>
-  <p><a class="btn" href="build.html">Build me again, one guest at a time</a></p>
+  <p><a class="btn" href="build.html" data-icon="build">Build me again, one guest at a time</a></p>
 </div></section>
 
 <section class="passage" data-mode="open" data-h="200" data-alt="The cedar pool and the outdoor area in summer, wildflowers in front." data-season-img='{"summer":"backyard","winter":"listing-23"}' data-lines='[["Every one of them brought a whole world."]]'></section>
@@ -106,7 +107,7 @@
 <section class="stage-band" id="s9" data-stage style="padding-bottom:40px"><div class="reading rise" style="text-align:center">
   <span class="k">IX · Whole</span><h2>A small sky, under a large one.</h2>
   <p class="dome">I am made of triangles and I am made of them, every guest, the way a curve is made of straight lines. I am not finished. A dome never is while people keep coming up the drive.</p>
-  <p style="margin-top:2rem"><a class="btn act" href="../stay.html">Come and add yours</a> <a class="btn" href="find.html">Find my point from the sky</a> <a class="btn" href="still.html">Be still with me</a></p>
+  <p style="margin-top:2rem"><a class="btn act" href="../stay.html">Come and add yours</a> <a class="btn" href="find.html" data-icon="find">Find my point from the sky</a> <a class="btn" href="still.html" data-icon="still">Be still with me</a></p>
   <p class="note">The dome’s voice is written for this page. Every guest’s words are quoted exactly as they wrote them, with their first name.</p>
 </div></section>
 

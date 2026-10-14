@@ -80,7 +80,7 @@
         <div><b>The dome</b><br><a href="${R("places/index.html")}">The places</a><br><a href="${R("stories.html")}">Stories</a><br><a href="${R("timeline.html")}">Timeline</a><br><a href="${R("ideas.html")}">Ideas</a></div>
         <div><b>The people</b><br><a href="${R("how-it-began.html")}">How it began</a><br><a href="${R("the-new-chapter.html")}">The new chapter</a><br><a href="${R("your-stays.html")}">Your stays</a></div>
         <div><b>Stay</b><br><a href="${R("stay.html")}">Dates and booking</a><br><a href="${R("around.html")}">Around the mountain</a><br><a href="https://www.instagram.com/catskillmountaindomes/">@catskillmountaindomes</a></div>
-        <div><b>Behind the point</b><br><a href="${R("play/story.html")}">The dome’s own story</a><br><a href="${R("play/find.html")}">Find the point</a><br><a href="${R("play/build.html")}">One triangle at a time</a><br><a href="${R("play/still.html")}">Be still</a></div>
+        <div class="foot-play"><b>Behind the point</b><br><a href="${R("play/story.html")}">${icon("story", { size: 16 })}The dome’s own story</a><br><a href="${R("play/find.html")}">${icon("find", { size: 16 })}Find the point</a><br><a href="${R("play/build.html")}">${icon("build", { size: 16 })}One triangle at a time</a><br><a href="${R("play/still.html")}">${icon("still", { size: 16 })}Be still</a></div>
         <div><b>For Eric and Mona</b><br><a href="${R("dashboard/index.html")}">Dashboard</a><br><a href="${R("house/index.html")}">On the property</a><br><a href="${R("house/awakening/index.html")}">The Awakening</a></div>
       </div><p style="margin-top:2rem"><small>Catskill Mountain Domes · Delaware County, New York · Guest words are quoted as written, with first names.</small></p></div>`;
     document.body.append(f);
@@ -177,6 +177,28 @@
   }
 
 
+
+  /* ---------- Animated icons: one figure per game, quiet until touched (live ones breathe on their own) ---------- */
+  const ICONS = {
+    story: () => { const d = [...Array(9)].map((_, i) => { const a = Math.PI - (i / 8) * Math.PI; return `<circle class="ic-dot" style="animation-delay:${(i * 0.28).toFixed(2)}s" cx="${(16 + 12 * Math.cos(a)).toFixed(2)}" cy="${(24 - 12 * Math.sin(a)).toFixed(2)}" r="1.7"/>`; }).join("");
+      return `<path d="M3 27h26" class="ic-line"/>${d}<circle cx="16" cy="24" r="2.2" class="ic-core"/>`; },
+    find: () => `<path class="ic-line" d="M4 10V5h5M23 5h5v5M28 22v5h-5M9 27H4v-5"/><circle class="ic-ring" cx="16" cy="16" r="6"/><circle class="ic-seek" cx="16" cy="16" r="2.4"/>`,
+    build: () => { const T = ["4,26 12,26 8,18", "12,26 20,26 16,18", "20,26 28,26 24,18", "8,18 16,18 12,26", "16,18 24,18 20,26", "8,18 16,18 12,10", "16,18 24,18 20,10", "12,10 20,10 16,18", "12,10 20,10 16,3"];
+      return T.map((t, i) => `<polygon class="ic-tri" style="animation-delay:${(i * 0.13).toFixed(2)}s" points="${t}"/>`).join(""); },
+    still: () => `<circle class="ic-wait" cx="16" cy="16" r="12"/><path class="ic-star" d="M16 8.5 L17.6 14.4 L23.5 16 L17.6 17.6 L16 23.5 L14.4 17.6 L8.5 16 L14.4 14.4 Z"/>`
+  };
+  function icon(name, opts = {}) {
+    const f = ICONS[name]; if (!f) return "";
+    return `<svg class="ic ic-${name}${opts.live ? " live" : ""}" viewBox="0 0 32 32" width="${opts.size || 22}" height="${opts.size || 22}" aria-hidden="true" focusable="false">${f()}</svg>`;
+  }
+  // Rows of two or more buttons get breathing room, wrapped or not
+  function buttonRows() {
+    document.querySelectorAll("p, div").forEach((el) => {
+      if ([...el.children].filter((c) => c.classList.contains("btn")).length < 2) return;
+      el.classList.add("btns");
+      if (getComputedStyle(el).textAlign === "center") el.classList.add("center");
+    });
+  }
   /* ---------- Behind the point: the dome's own room ---------- */
   // The header point opens a dark room from exactly where it sits. The dome speaks here, about its own life.
   const DOORS = [
@@ -200,7 +222,7 @@
         <p class="p-line">You found my point.</p>
         <p class="p-sub">Out there, Eric and Mona and the guests do the talking. In here it’s me, the dome. I keep my own story, and three games.</p>
         <nav class="doors" aria-label="The dome's story and games">${DOORS.map(([k, href, t, line, verb], i) =>
-          `<a class="door${walked[k] ? " walked" : ""}" href="${R(href)}" data-k="${k}" style="transition-delay:${0.9 + i * 0.55}s"${here === href ? ' aria-current="page"' : ""}><span class="slit" aria-hidden="true"></span><span><b>${t}</b><small>${line}</small></span><span class="k">${walked[k] ? "Again" : verb}</span></a>`).join("")}</nav>
+          `<a class="door${walked[k] ? " walked" : ""}" href="${R(href)}" data-k="${k}" style="transition-delay:${0.9 + i * 0.55}s"${here === href ? ' aria-current="page"' : ""}><span class="door-ic">${icon(k, { live: true, size: 34 })}</span><span><b>${t}</b><small>${line}</small></span><span class="k">${walked[k] ? "Again" : verb}</span></a>`).join("")}</nav>
       </div><p class="p-foot">Press Escape, or touch the point again, to come back out.</p></div>`;
     document.body.append(el); portalEl = el;
     document.documentElement.style.overflow = "hidden";
@@ -223,13 +245,15 @@
   }
   function markWalked(k) { const w = store.get("dome-play-walked", {}); w[k] = true; store.set("dome-play-walked", w); }
   document.addEventListener("click", (e) => { const t = e.target.closest && e.target.closest("[data-portal]"); if (t) { e.preventDefault(); openPortal(t); } });
-  const api = { D, R, M, esc, store, openPortal, closePortal, markWalked, setSeason, seasonWipe, get season() { return season; }, seasonImage, slotHTML, voiceHTML, paintSeasonImages, rescan: null };
+  const api = { D, R, M, esc, store, icon, openPortal, closePortal, markWalked, setSeason, seasonWipe, get season() { return season; }, seasonImage, slotHTML, voiceHTML, paintSeasonImages, rescan: null };
   window.Dome = api;
 
   document.addEventListener("DOMContentLoaded", () => {
     if (!document.body.dataset.bare) { header(); footer(); }
     if (typeof window.page === "function") window.page(api);
     renderSlots();
+    document.querySelectorAll("[data-icon]").forEach((el) => el.insertAdjacentHTML("afterbegin", icon(el.dataset.icon, { live: el.hasAttribute("data-icon-live"), size: +el.dataset.iconSize || 20 })));
+    buttonRows();
     closingPassage();
     passages();
     api.rescan = rise();

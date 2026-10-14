@@ -10,15 +10,15 @@
   canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair; }
   .say { bottom: max(18px, env(safe-area-inset-bottom)); }
   .say .guest { pointer-events: auto; margin-bottom: 12px; }
+  .say .guest q { font-size: clamp(.95rem, 3.6vw, 1.05rem); }
   .holdbtn { position: relative; overflow: hidden; }
   .holdbtn i { position: absolute; inset: 0; background: rgba(226,196,138,.28); transform-origin: left; transform: scaleX(0); }
   .holdbtn span { position: relative; }
-  .legend { position: fixed; left: 16px; top: 64px; z-index: 20; display: grid; gap: 6px; font: 500 .66rem/1 "DM Sans"; letter-spacing: .14em; text-transform: uppercase; color: rgba(245,240,232,.66); }
+  .legend { position: fixed; left: 0; right: 0; top: max(62px, calc(env(safe-area-inset-top) + 52px)); z-index: 20; display: flex; justify-content: center; flex-wrap: wrap; gap: 6px 16px; font: 500 .66rem/1 "DM Sans"; letter-spacing: .14em; text-transform: uppercase; color: rgba(245,240,232,.66); pointer-events: none; }
   .legend b { display: inline-block; width: 10px; height: 10px; margin-right: 8px; vertical-align: -1px; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
   .intro { position: fixed; inset: 0; z-index: 25; display: grid; place-items: center; text-align: center; padding: 24px; background: rgba(7,11,9,.86); transition: opacity 1s ease; }
   .intro h1 { font: italic 400 clamp(1.8rem, 6vw, 2.8rem)/1.2 Lora, serif; margin: 0 0 .8rem; }
   .intro p { max-width: 440px; margin: 0 auto 1.4rem; color: rgba(245,240,232,.8); }
-  @media (max-height: 640px) { .legend { display: none; } }
 </style>
 </head>
 <body class="play" data-root="../" data-page="play/build.html" data-bare="1" data-noclose="1">
@@ -26,6 +26,7 @@
 <div class="legend" aria-hidden="true"><span><b style="background:#9CC48A"></b>Spring</span><span><b style="background:#E2C48A"></b>Summer</span><span><b style="background:#D9864E"></b>Fall</span><span><b style="background:#B9CFE4"></b>Winter</span></div>
 <div class="say"><div id="card" aria-live="polite"></div><p class="dome" id="line"></p><p class="hint" id="hint"></p><div class="actions" id="actions"></div></div>
 <div class="intro" id="intro"><div>
+  <span class="intro-ic" data-icon="build" data-icon-live data-icon-size="58"></span>
   <h1>One triangle at a time.</h1>
   <p>I was raised from the ground up, one triangle at a time. Build me again. Every triangle you set is a guest, in the order they came, coloured by the season they stayed. Drag to turn me.</p>
   <button class="pbtn act" type="button" id="begin">Begin at the ground</button>
@@ -74,7 +75,14 @@ window.page = function (Dome) {
 
   /* ---- Drawing: a pure function of time and state ---- */
   let W = 0, H = 0, S = 0, Cx = 0, Cy = 0, dpr = 1, proj = [];
-  function size() { dpr = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight; canvas.width = W * dpr; canvas.height = H * dpr; S = Math.min(W * 0.42, H * 0.36); Cx = W / 2; Cy = H * (W < 700 ? 0.44 : 0.5) + S * 0.18; }
+  // The dome lives in the space between the legend and the words below, and eases when that space changes
+  const sayEl = document.querySelector(".say"); let tS = 0, tCy = 0;
+  function target() {
+    const top = 104, bottom = H - (sayEl ? sayEl.offsetHeight : 0) - 22, room = Math.max(120, bottom - top);
+    tS = Math.max(70, Math.min(W * 0.42, room / 1.42, 340)); tCy = top + room / 2 + tS * 0.42;
+  }
+  function size() { dpr = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight; canvas.width = W * dpr; canvas.height = H * dpr; Cx = W / 2; target(); S = tS; Cy = tCy; }
+  if ("ResizeObserver" in window && sayEl) new ResizeObserver(target).observe(sayEl);
   function project(p) {
     const [x, y, z] = p, cY = Math.cos(yaw), sY = Math.sin(yaw);
     const x1 = x * cY + z * sY, z1 = -x * sY + z * cY;
@@ -84,6 +92,7 @@ window.page = function (Dome) {
   }
   function draw(now) {
     if (!dragging) { yaw += yawV + (done ? 0.0016 : 0.0009); yawV *= 0.92; }
+    S += (tS - S) * 0.08; Cy += (tCy - Cy) * 0.08;
     glow += ((done ? 1 : 0) - glow) * 0.02;
     g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
     // ground and halo
