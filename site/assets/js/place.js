@@ -32,8 +32,8 @@ window.page = function (Dome) {
       <div class="field"><label for="nm">First name (shown with your words)</label><input id="nm" maxlength="40" autocomplete="given-name"></div>
       <button class="btn act" type="submit">Leave it</button></form><p id="left" class="notice" hidden></p></div></section>` : "";
 
-  const act = p.act && mode === "house" ? `<section class="band soft"><div class="reading center rise"><span class="eyebrow">The Awakening</span>
-      <h2>Act ${p.act} begins here.</h2><p class="lede">If you are walking the Awakening, this place holds its ${["", "first", "second", "third", "fourth", "fifth", "sixth", "last"][p.act]} act.</p>
+  const act = p.act && mode === "house" ? `<section class="band soft"><div class="reading center rise"><span class="eyebrow">The Remembering</span>
+      <h2>Act ${p.act} begins here.</h2><p class="lede">If you are walking the Remembering, this place holds its ${["", "first", "second", "third", "fourth", "fifth", "sixth", "last"][p.act]} act.</p>
       <p><a class="btn act" href="${R("house/awakening/act-" + p.act + ".html")}">Open Act ${p.act}</a></p></div></section>` : "";
 
   const ideas = D.ideas.filter((x) => x.place === slug);

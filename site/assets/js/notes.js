@@ -35,7 +35,7 @@ window.DOME_NOTES = (function () {
       data: [SRC.data, SRC.reviews, SRC.slots], links: ["places/index.html", "stories.html", "stay.html", "play/index.html"],
       later: "The season the site opens in follows today’s date. Eric and Mona’s welcome replaces the marked slot.",
       sections: [
-        { sel: "section.bloom", t: "The opening", x: "A single point opens into a circle as you scroll, and inside it the drone comes down from the whole property and lands looking straight down on the dome. Your scrolling drives the film: scroll back up and it rises again.", d: "Drone clip DJI_20260801165035_0293, Aug 1 2026, from 8.5 s, played in reverse." },
+        { sel: "section.bloom", t: "The opening", x: "A single point opens into a circle as you scroll, onto the dome seen straight down. Inside the circle the slow-turning clearing plays: the same film that closes every page, so the page opens and closes on one view. Scroll quickly and rings leave the point.", d: "Drone clip 0227 (the turning clearing), its bright middle played forward then back so it loops without a jump. Ripples and sound: assets/js/flow.js." },
         { sel: "section.band:has([data-slot-key='em_welcome']), section.band:has(.slot)", t: "Welcome", x: "The seed line, Under the same sky, then Eric and Mona’s welcome in a marked slot and the two main ways in: dates, or the places." },
         { sel: "section.passage[data-mode='open']", t: "Passages", x: "Between parts of the page a photo opens in a circle and guests’ words appear over it. Every page uses these to move from one thing to the next." },
         { sel: "section.band:has(#placeCards)", t: "Six of the thirteen places", x: "Each card opens a place page. The little moving icon on each card acts out the place.", d: "Places from dome-data.js." },
@@ -66,18 +66,19 @@ window.DOME_NOTES = (function () {
         { sel: "#main > section.hero", t: "The place", x: "Its photo, number, name and its own moving icon. The photo changes with the season; Imagined means no real photo from that season yet." },
         { sel: "#main > section.band:has(.voices)", t: "What guests said here", x: "Three guests, quoted exactly, chosen because they wrote about this place.", d: SRC.reviews },
         { sel: "#main > section.band.soft:has(.slot)", t: "Eric and Mona’s line", x: "A marked slot for what they want to say about this place.", d: SRC.slots },
-        { sel: "#main > section.band.deep", t: "One thing to do here", x: "One small act for this place. On the mountain this becomes the start of the place’s game." }
+        { sel: "#main > section.band.deep", t: "One thing to do here", x: "One small act for this place. On the mountain this becomes the start of the place’s game." },
+        { sel: "#play", t: "Play it here", x: "A short version of this place’s game, to play from anywhere: mouse, finger or keyboard. Playing it reveals the three guests’ words, one by one, and it ends by saying the full version waits at the place itself. On the mountain the same game ends by lighting one triangle of the guest’s own dome.", d: "assets/js/scenes/ (one file per place, a shared kit). Plan: docs/remembering-plan.md §4." }
       ] },
 
     "house-place": { layer: "house", title: "A place (on the mountain)", one: "house/places/window.html",
       purpose: "What a guest sees after scanning the QR card at a place. The same place as the public page, but here the dome speaks, and the guest can leave something.",
       who: "Guests standing at the place, during their stay.",
       data: [SRC.places, SRC.reviews, "Words left here go to the dashboard (Guests’ words) and wait for Eric and Mona to approve them."], links: ["house/index.html", "house/awakening/index.html", "dashboard/index.html"],
-      later: "Next step: each place becomes a played scene, with a story from guests who were here, a short film, and a game that fits the place.",
+      later: "Next: the full version of every game (seven use the phone’s sensors now: gate, couch, table, hearth, cedar pool, meadow, night sky), the house lights and sound answering on arrival, and the location check once the cards are printed.",
       sections: [
         { sel: "#main > section.hero", t: "The dome speaks", x: "Same place, but the dome’s own line sits under the name. The dome only speaks on the mountain and behind the point." },
         { sel: "#main > section.band:has(#leave)", t: "Leave something", x: "A line, a memory or an idea for the next guest. Nothing appears publicly until Eric and Mona approve it in the dashboard.", d: "Sent to the Worker (/words), mirrored to Airtable." },
-        { sel: "#main > section.band.soft:has(a[href*='awakening'])", t: "The Awakening", x: "If this place holds an act of the Awakening, the door to it is here. Acts open in order." }
+        { sel: "#main > section.band.soft:has(a[href*='awakening'])", t: "The Remembering", x: "If this place holds an act of the Remembering, the door to it is here. Acts open in order." }
       ] },
 
     "stories.html": { layer: "door", title: "Stories",
@@ -85,7 +86,7 @@ window.DOME_NOTES = (function () {
       who: "Future guests who want to picture themselves here.",
       data: [SRC.reviews, SRC.data], links: ["index.html", "timeline.html"],
       sections: [
-        { sel: "section.hero", t: "Stories", x: "No marketing voice here. Each story is a thread of guests, each quoted exactly." },
+        { sel: "section.hero", t: "Stories", x: "No marketing voice here. Each story is a thread of guests, each quoted exactly. At the top, a guest waves goodbye from the cedar pool and the drone rises out to the whole property; it plays once and holds on the wide view, then the title appears.", d: "Drone clip DJI_20260801165035_0293, Aug 1 2026, in its true direction from 3 s. Cleared in full (Ashrey, Oct 14)." },
         { sel: "#main > section.passage", t: "Between stories", x: "A photo opens between each story, the same passage move used across the site." }
       ] },
 
@@ -182,21 +183,22 @@ window.DOME_NOTES = (function () {
       who: "Anyone, best at night.", data: [SRC.reviews], links: ["play/index.html", "places/night-sky.html"], sections: [] },
 
     "house/index.html": { layer: "house", title: "On the mountain",
-      purpose: "The guest’s home screen during their stay: the thirteen places, the Awakening, and the choice game.",
+      purpose: "The guest’s home screen during their stay: the thirteen places, the Remembering, and the choice game.",
       who: "Guests staying now. Reached from the QR card by the door.",
       data: [SRC.places], links: ["house/places/window.html", "house/awakening/index.html", "house/choose/index.html"],
       later: "Printed QR cards point here and to each place.",
       sections: [
         { sel: "section.band.deep", t: "You’re here", x: "The welcome on the mountain." },
+        { sel: "#your-dome", t: "Your dome", x: "The Remembering: thirteen triangles, one for each place. Playing a place’s game where it is, and keeping one line from it, lights its triangle in the colour of that season. Kept on the guest’s phone only.", d: "assets/js/remembering.js (stored on the device as dome-remembering)." },
         { sel: "section.band.soft:has(#list)", t: "The thirteen places", x: "Each opens the on-the-mountain version of the place." }
       ] },
-    awakening: { layer: "house", title: "The Awakening", one: "house/awakening/index.html",
+    awakening: { layer: "house", title: "The Remembering", one: "house/awakening/index.html",
       purpose: "Seven acts walked across the property. The dome wakes as a mirror of the guest’s own life: light, sound, a question at each place, and at the end their first answer comes back to them.",
       who: "Guests staying now, on their own phone.",
       data: [SRC.device, "House lights and sound are cued through /house-cue (planned)."], links: ["house/awakening/act-1.html", "house/index.html"],
       later: "Next step: each act becomes a played scene at its place, with a story from guests who were there, a short film from the drone clips, and a game that fits.",
       sections: [] },
-    act: { layer: "house", title: "An act of the Awakening", one: "house/awakening/act-1.html",
+    act: { layer: "house", title: "An act of the Remembering", one: "house/awakening/act-1.html",
       purpose: "One act at one place. Hold to begin, the house answers with light and sound, a question is asked, and the answer stays on the phone.",
       who: "A guest at that place.", data: [SRC.device], links: ["house/awakening/index.html"], sections: [] },
     "house/choose/index.html": { layer: "house", title: "What would you have built?",

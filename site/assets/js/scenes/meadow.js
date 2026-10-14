@@ -28,7 +28,7 @@ Scene.register("meadow", {
     // many fingers at once: our own pointer listeners
     k.stage.style.touchAction = "none";
     const local = (e) => { const r = k.stage.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
-    scene.addEventListener("pointerdown", (e) => { if (e.target.closest("button")) return; const p = local(e); touches.set(e.pointerId, { ...p, held: 0 }); try { scene.setPointerCapture(e.pointerId); } catch (_) {} cursor = null; });
+    scene.addEventListener("pointerdown", (e) => { if (e.target.closest("button, a, input, textarea, .sc-end, .sc-begin")) return; const p = local(e); touches.set(e.pointerId, { ...p, held: 0 }); try { scene.setPointerCapture(e.pointerId); } catch (_) {} cursor = null; });
     scene.addEventListener("pointermove", (e) => { const q = touches.get(e.pointerId); if (q) { const p = local(e); q.x = p.x; q.y = p.y; } });
     const lift = (e) => touches.delete(e.pointerId);
     scene.addEventListener("pointerup", lift); scene.addEventListener("pointercancel", lift); scene.addEventListener("lostpointercapture", lift);

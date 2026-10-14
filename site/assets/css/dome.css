@@ -452,3 +452,19 @@ body.play .dock { left: auto; right: 10px; top: max(54px, calc(env(safe-area-ins
 @media (prefers-reduced-motion: reduce) { .sc-voice, .sc-edge i, .sc-begin { transition: none; } }
 /* while a game is being played, a held press on the stage is the game's, not the page's */
 .scene.playing { touch-action: none; }
+
+/* ---------- The Remembering: your dome of thirteen triangles (assets/js/remembering.js) ---------- */
+.rm-dome { width: min(100%, 320px); height: auto; overflow: visible; }
+.rm-dome .t { fill: rgba(245,240,232,.03); stroke: rgba(226,196,138,.55); stroke-width: .7; stroke-linejoin: round; transition: fill 1.2s ease; }
+.rm-dome .t.lit { stroke: #E2C48A; }
+.rm-dome .t.here { animation: rmHere 2.6s ease-in-out 3; }
+.rm-dome .ground { stroke: rgba(226,196,138,.4); stroke-width: .6; }
+@keyframes rmHere { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+.sc-keep { display: grid; gap: 10px; justify-items: center; width: min(100%, 420px); }
+.sc-keep label { font: 500 .78rem/1 "DM Sans"; letter-spacing: .14em; text-transform: uppercase; color: rgba(245,240,232,.7); }
+.sc-keep input { width: 100%; box-sizing: border-box; font: 400 17px/1.4 Lora, serif; padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(226,196,138,.45); background: rgba(245,240,232,.06); color: #F5F0E8; }
+.sc-keep input:focus-visible { outline: 2px solid #C9A96E; outline-offset: 2px; }
+.sc-keep small { color: rgba(245,240,232,.55); font-size: .78rem; }
+.sc-keep-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.sc-end .btn:not(.act) { background: rgba(245,240,232,.1); color: #F5F0E8; border-color: rgba(245,240,232,.25); }
+@media (prefers-reduced-motion: reduce) { .rm-dome .t.here { animation: none; } }

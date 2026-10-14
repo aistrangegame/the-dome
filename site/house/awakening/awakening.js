@@ -1,4 +1,4 @@
-/* The Awakening engine. Everything a guest writes or records stays on their own device.
+/* The Remembering engine. Everything a guest writes or records stays on their own device.
    Pools (a-strange-game): essence = who, memory = what was walked, being = how they arrived each visit. */
 window.page = function (Dome) {
   const { D, R, esc } = Dome;
@@ -24,7 +24,7 @@ window.page = function (Dome) {
   const saveVoice = async (key, blob) => { const db = await idb(); return new Promise((res) => { const t = db.transaction("voice", "readwrite"); t.objectStore("voice").put(blob, key); t.oncomplete = res; }); };
   const loadVoice = async (key) => { try { const db = await idb(); return await new Promise((res) => { const q = db.transaction("voice").objectStore("voice").get(key); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); }); } catch (e) { return null; } };
 
-  /* The awakening tone: a struck bowl, synthesised */
+  /* The remembering tone: a struck bowl, synthesised */
   let ctx;
   function tone(freq, secs = 3.5) {
     if (!freq) return;
@@ -43,7 +43,7 @@ window.page = function (Dome) {
 
   function frame(inner, lum) {
     el.innerHTML = `<div class="aw" style="--hue:${act.hue};--lum:${lum ?? act.light}"><div class="glow"></div>
-      <div class="bar"><span>The Awakening · ${n === 0 ? "Before" : "Act " + n}</span><span class="acts">${ACTS.slice(1).map((a) => `<i class="${done(a.n) ? "done" : ""} ${a.n === n ? "now" : ""}"></i>`).join("")}</span></div>
+      <div class="bar"><span>The Remembering · ${n === 0 ? "Before" : "Act " + n}</span><span class="acts">${ACTS.slice(1).map((a) => `<i class="${done(a.n) ? "done" : ""} ${a.n === n ? "now" : ""}"></i>`).join("")}</span></div>
       <div class="scene"><div class="inner">${inner}</div></div><div class="foot" id="foot"></div></div>`;
   }
 
@@ -146,8 +146,8 @@ window.page = function (Dome) {
     const all = ACTS.filter((a) => a.ask).map((a) => ({ act: a.n, title: a.title, question: a.ask, answer: (memory.acts[a.n] || {}).answer || "", voiceNote: !!(memory.acts[a.n] || {}).voice, at: (memory.acts[a.n] || {}).at || null }));
     const text = window.AWAKENING_PROMPT + "\n\n" + all.map((a) => `Act ${a.act}, ${a.title}\nQ: ${a.question}\nA: ${a.answer || "(silence)"}${a.voiceNote ? " [I also left a voice note]" : ""}`).join("\n\n");
     document.getElementById("dl").onclick = async () => {
-      const blob = new Blob([JSON.stringify({ walked: "The Awakening, Catskill Mountain Domes", essence: get(K.essence, {}), being: get(K.being, {}), answers: all }, null, 2) + "\n\n" + text], { type: "text/plain" });
-      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "my-awakening.txt"; a.click();
+      const blob = new Blob([JSON.stringify({ walked: "The Remembering, Catskill Mountain Domes", essence: get(K.essence, {}), being: get(K.being, {}), answers: all }, null, 2) + "\n\n" + text], { type: "text/plain" });
+      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "my-remembering.txt"; a.click();
       for (const x of all) if (x.voiceNote) { const v = await loadVoice("act-" + x.act); if (v) { const b = document.createElement("a"); b.href = URL.createObjectURL(v); b.download = `act-${x.act}-voice.webm`; b.click(); } }
     };
     document.getElementById("cp").onclick = async () => { try { await navigator.clipboard.writeText(text); document.getElementById("cpn").textContent = "Copied. Paste it into your own AI, and ask it what it notices."; } catch (e) { document.getElementById("cpn").textContent = "Copy isn’t available here; use “Keep everything” instead."; } };

@@ -33,9 +33,9 @@
   function mount(host, slug, mode) {
     const G = games[slug], D = window.DOME, p = D.places.find((x) => x.slug === slug);
     if (!G || !p) return;
-    const full = mode === "full" && !!G.full;
+    const onMountain = mode === "full", full = onMountain && !!G.full;   // on the mountain every game ends in the Remembering; sensors only where the game has them
     host.innerHTML = `<div class="sc-head"><span class="sc-ic">${window.Dome.icon(slug, { live: true, size: 30 })}</span>
-        <div><span class="eyebrow">${full ? "Play it here, where you’re standing" : "Play it here"}</span><h2>${esc(G.title)}</h2></div></div>
+        <div><span class="eyebrow">${onMountain ? "Play it here, where you’re standing" : "Play it here"}</span><h2>${esc(G.title)}</h2></div></div>
       <div class="scene${G.voiceAt === "top" ? " voice-top" : ""}" data-slug="${slug}" tabindex="0" aria-label="${esc(G.title)}: ${esc(G.line)}">
         <div class="sc-stage"></div>
         <div class="sc-edge" aria-hidden="true"><i></i></div>
@@ -44,7 +44,7 @@
         <div class="sc-end" hidden></div>
       </div>
       <p class="sc-say" aria-live="polite"></p>
-      <p class="sc-note">${full ? "The full version, for this place." : `A short version, to play from anywhere. The full version waits at ${esc(lowerFirst(p.name))}, when you’re there.`}</p>`;
+      <p class="sc-note">${onMountain ? "Played here, it lights one triangle of your own dome." : `A short version, to play from anywhere. The full version waits at ${esc(lowerFirst(p.name))}, when you’re there.`}</p>`;
     const scene = host.querySelector(".scene"), stage = host.querySelector(".sc-stage"), edge = host.querySelector(".sc-edge i");
     const voice = host.querySelector(".sc-voice"), say = host.querySelector(".sc-say"), begin = host.querySelector(".sc-begin"), end = host.querySelector(".sc-end");
     let loops = [], running = false, visible = true, prev = 0, ended = false, shown = new Set(), cleanups = [], chain = false;
@@ -54,6 +54,8 @@
     // one drawing chain per game, however many loops it registers
     function kick() { if (!loops.length || chain) return; chain = true; prev = performance.now(); requestAnimationFrame(frame); }
     function frame(t) { if (!running || !visible) { chain = false; return; } const dt = Math.max(0, Math.min(0.05, (t - prev) / 1000)); prev = t; loops.forEach((f) => f(dt, t / 1000)); requestAnimationFrame(frame); }
+    // presses on controls, inputs and the beginning and ending cards belong to them, never to the game
+    const ui = (e) => !!(e.target.closest && e.target.closest("button, a, input, textarea, select, label, .sc-end, .sc-begin"));
     const local = (e) => { const r = stage.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
 
     const k = {
@@ -78,17 +80,16 @@
         const r = stage.getBoundingClientRect(); k.ripple(r.width / 2, r.height / 2, 1);
         setTimeout(() => {
           end.hidden = false; scene.classList.add("ending"); scene.classList.remove("playing");
-          end.innerHTML = full
-            ? `<p>${esc(G.fullEnd || "Done. This one is yours.")}</p><button class="btn act" type="button" data-again>Again</button>`
-            : `<p>That was the short version. The full one waits at ${esc(lowerFirst(p.name))}: scan the card there.</p><button class="btn act" type="button" data-again>Play again</button>`;
-          end.querySelector("[data-again]").addEventListener("click", () => { teardown(); mount(host, slug, mode); host.querySelector(".sc-begin button").click(); });
+          if (onMountain) return keepLine();
+          end.innerHTML = `<p>That was the short version. The full one waits at ${esc(lowerFirst(p.name))}: scan the card there.</p><button class="btn act" type="button" data-again>Play again</button>`;
+          end.querySelector("[data-again]").addEventListener("click", again);
         }, 300 + p.voices.length * 2600);
       },
       loop(fn) { loops.push(fn); if (running) kick(); },
       hold(cb) {
         let on = false; const set = (v) => { if (v !== on) { on = v; cb(v); } };
-        const dn = (e) => { if (e.target.closest("button")) return; set(true); }, up = () => set(false);
-        const kd = (e) => { if ((e.key === " " || e.key === "Enter") && document.activeElement === scene) { e.preventDefault(); set(true); } };
+        const dn = (e) => { if (ui(e)) return; set(true); }, up = () => set(false);
+        const kd = (e) => { if ((e.key === " " || e.key === "Enter") && document.activeElement === scene && !ended) { e.preventDefault(); set(true); } };
         const ku = (e) => { if (e.key === " " || e.key === "Enter") set(false); };
         scene.addEventListener("pointerdown", dn); addEventListener("pointerup", up); addEventListener("pointercancel", up); scene.addEventListener("keydown", kd); addEventListener("keyup", ku);
         cleanups.push(() => { removeEventListener("pointerup", up); removeEventListener("pointercancel", up); removeEventListener("keyup", ku); });
@@ -96,8 +97,8 @@
       drag(cb) {
         let down = false, last = null;
         stage.style.touchAction = "none";
-        scene.addEventListener("pointerdown", (e) => { if (e.target.closest("button")) return; down = true; last = local(e); scene.setPointerCapture(e.pointerId); cb({ ...last, dx: 0, dy: 0, down: true }); });
-        scene.addEventListener("pointermove", (e) => { const q = local(e); cb({ ...q, dx: last ? q.x - last.x : 0, dy: last ? q.y - last.y : 0, down }); last = q; });
+        scene.addEventListener("pointerdown", (e) => { if (ui(e)) return; down = true; last = local(e); scene.setPointerCapture(e.pointerId); cb({ ...last, dx: 0, dy: 0, down: true }); });
+        scene.addEventListener("pointermove", (e) => { if (!down && ui(e)) return; const q = local(e); cb({ ...q, dx: last ? q.x - last.x : 0, dy: last ? q.y - last.y : 0, down }); last = q; });
         scene.addEventListener("pointerup", () => { down = false; cb({ ...(last || { x: 0, y: 0 }), dx: 0, dy: 0, down: false }); });
         scene.addEventListener("keydown", (e) => {
           const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key]; if (!d) return;
@@ -107,7 +108,7 @@
         });
       },
       tap(cb) {
-        scene.addEventListener("click", (e) => { if (e.target.closest("button")) return; cb(local(e)); });
+        scene.addEventListener("click", (e) => { if (ui(e)) return; cb(local(e)); });
         scene.addEventListener("keydown", (e) => { if (e.key === "Enter" && document.activeElement === scene) { e.preventDefault(); cb({ x: stage.clientWidth / 2, y: stage.clientHeight / 2, key: true }); } });
       },
       tone(f, dur = 1.2, vol = 0.08, type = "sine") {
@@ -126,6 +127,29 @@
       sensor: sensors(full, cleanups)
     };
 
+    function again() { teardown(); mount(host, slug, mode); host.querySelector(".sc-begin button").click(); }
+    // The Remembering: one line to keep from this place, then this place's triangle lights in your dome (kept on this phone)
+    function keepLine() {
+      const draw = () => {
+        end.innerHTML = `<p>${esc(G.fullEnd || "This one is yours now.")}</p>
+          <form class="sc-keep"><label for="kl-${slug}">One line to keep from here</label>
+          <input id="kl-${slug}" maxlength="200" autocomplete="off" placeholder="What you want to remember">
+          <span class="sc-keep-row"><button class="btn act" type="submit">Keep it</button><button class="btn" type="button" data-skip>Not now</button></span>
+          <small>Stays on this phone.</small></form>`;
+        const f = end.querySelector("form"), done = (line) => {
+          window.Remembering.mark(slug, line);
+          end.innerHTML = `${window.Remembering.svg({ here: slug })}<p>${line ? "Kept. " : ""}Its triangle is lit in your dome.</p>
+            <span class="sc-keep-row"><a class="btn act" href="${window.Dome.R("house/index.html")}#your-dome">See your dome</a><button class="btn" type="button" data-again>Again</button></span>`;
+          end.querySelector("[data-again]").addEventListener("click", again);
+          k.haptic(25);
+        };
+        f.addEventListener("submit", (e) => { e.preventDefault(); done(f.querySelector("input").value.trim()); });
+        f.querySelector("[data-skip]").addEventListener("click", () => done(""));
+        setTimeout(() => f.querySelector("input").focus({ preventScroll: true }), 100);
+      };
+      if (window.Remembering) draw();
+      else { const sc = document.createElement("script"); sc.src = window.Dome.R("assets/js/remembering.js"); sc.onload = draw; document.body.append(sc); }
+    }
     function teardown() { running = false; scene.classList.remove("playing"); io.disconnect(); cleanups.forEach((f) => { try { f(); } catch (e) {} }); }
     begin.querySelector("button").addEventListener("click", async () => {
       begin.classList.add("gone"); running = true; scene.classList.add("playing"); scene.focus({ preventScroll: true });

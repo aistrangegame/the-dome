@@ -81,7 +81,7 @@
         <div><b>The people</b><br><a href="${R("how-it-began.html")}">How it began</a><br><a href="${R("the-new-chapter.html")}">The new chapter</a><br><a href="${R("your-stays.html")}">Your stays</a></div>
         <div><b>Stay</b><br><a href="${R("stay.html")}">Dates and booking</a><br><a href="${R("around.html")}">Around the mountain</a><br><a href="https://www.instagram.com/catskillmountaindomes/">@catskillmountaindomes</a></div>
         <div class="foot-play"><b>Behind the point</b><br><a href="${R("play/story.html")}">${icon("story", { size: 16 })}The dome’s own story</a><br><a href="${R("play/find.html")}">${icon("find", { size: 16 })}Find the point</a><br><a href="${R("play/build.html")}">${icon("build", { size: 16 })}One triangle at a time</a><br><a href="${R("play/still.html")}">${icon("still", { size: 16 })}Be still</a></div>
-        <div class="owner-only"><b>For Eric and Mona</b><br><a href="${R("dashboard/index.html")}">Dashboard</a><br><a href="${R("house/index.html")}">On the property</a><br><a href="${R("house/awakening/index.html")}">The Awakening</a></div>
+        <div class="owner-only"><b>For Eric and Mona</b><br><a href="${R("dashboard/index.html")}">Dashboard</a><br><a href="${R("house/index.html")}">On the mountain</a><br><a href="${R("house/awakening/index.html")}">The Remembering</a></div>
       </div><p style="margin-top:2rem"><small>Catskill Mountain Domes · Delaware County, New York · Guest words are quoted as written, with first names.</small></p></div>`;
     document.body.append(f);
   }

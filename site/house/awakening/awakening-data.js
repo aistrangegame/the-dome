@@ -1,4 +1,4 @@
-/* The Awakening — seven acts in seven places. The dome is the narrator, never named until the last act.
+/* The Remembering — seven acts in seven places. The dome is the narrator, never named until the last act.
    Its words are drafts written for this showcase (Claude, Oct 2026); Eric and Mona may change any line.
    Tree of Life lineage: one verb per act, an awakening tone per act, the light rising act by act. */
 window.AWAKENING = [
