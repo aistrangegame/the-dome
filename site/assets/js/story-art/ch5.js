@@ -21,15 +21,24 @@
       const sarah = all.find((r) => r.n === 20), guests = sarah ? [sarah, ...all.filter((r) => r !== sarah)] : all;
       const faces = [d.faces[8], ...d.faces.filter((f) => f.i !== 8)];
       const g = ctx.el("fills", `<g class="ch5-tris"></g>`);
-      const tris = guests.map((r, k) => {
-        const f = faces[k]; if (!f) return null;
-        if (k === 0) return { r, f, el: null, path: null };   // Sarah's triangle, the door, already lit in IV
+      // 252 guests fill 252 of the dome's faces — but not simply the first 252 in ring order, which would leave every
+      // unlit face stranded together at the crown (the last rows raised) and read as a hole in the dome rather than
+      // room still to grow. Spread the unlit faces evenly through the fill order instead (a guests still to come" face
+      // every so often, not all of them in one patch), so every ring gets guests and every ring keeps a little room.
+      const restFaces = faces.slice(1), restGuests = guests.slice(1);
+      const total = restFaces.length, want = restGuests.length, gap = total - want;
+      let gi = 0;
+      const tris = [{ r: guests[0], f: faces[0], el: null, path: null }];   // Sarah's triangle, the door, already lit in IV
+      const waiting = [];
+      restFaces.forEach((f, i) => {
+        const skip = gap > 0 && Math.floor((i + 1) * gap / total) !== Math.floor(i * gap / total);
+        if (skip || gi >= want) { waiting.push(f); return; }
+        const r = restGuests[gi++];
         const t = document.createElementNS("http://www.w3.org/2000/svg", "g"); t.setAttribute("class", "lit-tri"); t.dataset.i = f.i; t.dataset.n = r.n;
         t.innerHTML = `<path d="M${f.pts.map((p) => p.join(" ")).join(" L")} Z" fill="${SEASON[r.season] || "#E2C48A"}" opacity="0"/><text x="${f.c[0]}" y="${f.c[1] + 3}" font-family="DM Sans, sans-serif" font-size="8" font-weight="500" text-anchor="middle" fill="#1A2218" opacity="0">${r.n}</text>`;
         g.append(t);
-        return { r, f, el: t, path: t.firstChild, text: t.lastChild };
-      }).filter(Boolean);
-      const waiting = faces.slice(tris.length);
+        tris.push({ r, f, el: t, path: t.firstChild, text: t.lastChild });
+      });
       return { d, tris, waiting, g };
     },
     async play(ctx, b) {

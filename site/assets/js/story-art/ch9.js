@@ -10,7 +10,7 @@
     words: {
       k: "IX · Whole", h: "A small sky, under a large one.",
       p: ["I am made of triangles and I am made of them, every guest, the way a curve is made of straight lines. I am not finished. A dome never is while people keep coming up the drive."],
-      btns: `<a class="btn act" href="../stay.html">Come and add yours</a> <a class="btn" href="find.html">Find my point from the sky</a> <a class="btn" href="still.html">Be still with me</a>`,
+      // the call to action lives on the very last screen only (the close section, right after this one) — not here too
     },
     build(ctx) {
       // the film, in a circle over the dome: an HTML element kept over the canvas (video does not live inside SVG on every phone)
