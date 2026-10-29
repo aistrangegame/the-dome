@@ -1,9 +1,9 @@
 // The Dome Worker: dome.aistrangegame.com
 //
-// For now the whole site is Eric's alone (Oct 14, 2026): every page sits behind one code,
-// except the guide at /guide, which is the way in. What he leaves goes to the Airtable
-// table "Eric's Notes". Without an Airtable token the notes are kept in the Gate's own
-// storage instead, so the site can go live first and be connected after.
+// The site itself is open to browse (Ashrey's ruling, Oct 28 2026): this is a showcase, not a live booking
+// system, and the code was only ever meant to gate Eric's own tools, not keep out the family and friends it
+// was shared with. Eric's seven-digit code still signs him in at /guide, and everything built for him there
+// (Eric's Notes, own-words recording, moving the pins, the keeper layer) still sits behind that sign-in.
 //
 // Secrets (set with `wrangler secret put`, never in this repo): ERIC_CODE, SESSION_SECRET, AIRTABLE_TOKEN.
 // Booking routes stay unbuilt (501) until Phase 1: docs/booking-architecture.md.
@@ -14,8 +14,6 @@ const MAX_VOICE = 5 * 1024 * 1024;                     // Airtable's upload limi
 const KINDS = ["Note", "Own words", "Fix"];
 const BOOKING = [["GET", /^\/availability$/], ["POST", /^\/(quote|hold)$/], ["POST", /^\/stripe\/webhook$/], ["GET", /^\/cal\/[A-Za-z0-9_-]+\.ics$/], ["*", /^\/dash\//]];
 
-// Open without the code: the guide and only what the guide itself draws with. Pages, words, photos and films are not.
-const OPEN = [/^\/guide(\/|\/index\.html)?$/, /^\/assets\/css\/[\w.-]+\.css$/, /^\/assets\/media\/51-DJI_20260802173407_0329_D-1600\.webp$/, /^\/favicon\.svg$/, /^\/robots\.txt$/];
 const MAX_JSON = 64 * 1024;
 
 export default {
@@ -24,13 +22,6 @@ export default {
     try {
       if (path.startsWith("/api/")) return await api(request, env, url);
       if (BOOKING.some(([m, re]) => (m === "*" || m === request.method) && re.test(path))) return json({ error: "not built yet" }, 501);
-      const signed = await session(request, env);
-      if (!signed && !OPEN.some((re) => re.test(path))) {
-        if (path === "/" || path.endsWith(".html") || !path.split("/").pop().includes(".")) {
-          return Response.redirect(new URL("/guide/?next=" + encodeURIComponent(path + url.search), url).toString(), 302);
-        }
-        return new Response("Not here", { status: 404 });
-      }
       // Films: Safari (Mac, iPhone, iPad) only plays a video when the server answers byte ranges
       const range = request.headers.get("range");
       if (range && /\.(mp4|webm|m4a|mp3)$/.test(path)) return secure(await ranged(env, request, range), path);
