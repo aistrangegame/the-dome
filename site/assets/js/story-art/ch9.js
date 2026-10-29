@@ -3,7 +3,7 @@
    and is that dot. Then the 252 lit triangles leave the dome and become the stars over it, keeping their season colours
    faintly: the inner sky becomes the outer one. One triangle, unlit, breathes among them: come and add yours. */
 (function () {
-  const { rnd } = window.SD;
+  const { rnd, STARS } = window.SD;
   const CREAM = "#F5F0E8";
   SD.chapter({
     n: 9, cam: { cx: 0, cy: -60, w: 1500 }, camEnd: { cx: 0, cy: -620, w: 4200 }, bg: "#06080F", k: CREAM, bed: "night", tone: 528,
@@ -21,7 +21,10 @@
       const spots = [];
       for (let i = 0; i < 300; i++) spots.push([-2000 + r() * 4000, -1900 + Math.pow(r(), .7) * 1150]);
       const wait = ctx.el("top", `<g class="ch9-wait" opacity="0"><path class="breathe" d="M0 -1080 L62 -972 L-62 -972 Z" fill="none" stroke="${CREAM}" stroke-width="2" style="filter:drop-shadow(0 0 8px rgba(245,240,232,.7))"/></g>`);
-      return { film, video: film.querySelector("video"), spots, wait };
+      // a large sky, under the small one: a far wider, taller field of faint stars than I's clearing ever needed,
+      // so the pulled-back view this chapter ends on is not just 252 lit triangles in the dark but a true sky around them
+      const wide = ctx.el("sky", `<g class="ch9-wide" opacity="0">${STARS(260, 41, [-2600, -2100, 5200, 1900])}</g>`);
+      return { film, video: film.querySelector("video"), spots, wait, wide };
     },
     placeFilm() {
       const b = this.built, cam = SD.engine.layers.lattice.ownerSVGElement.querySelector("#cam"), m = cam.getScreenCTM();
@@ -38,6 +41,8 @@
       ctx.show(true);
       // the point rises first, and the camera follows it up until the dome is small in its meadow
       const camUp = SD.engine.moveCamera({ cx: 0, cy: -620, w: 4200 }, 4200);
+      b.wide.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 3800, fill: "forwards" });
+      b.wide.querySelectorAll(".star").forEach((s) => s.classList.add("on"));
       await ctx.glide(0, -40, 2600);
       await camUp;
       // the real footage opens over the dome: the white dot in green
@@ -57,6 +62,7 @@
       ctx.ripple(0, -40, 900, "rgba(245,240,232,.35)", 3200);
     },
     settle(ctx, b) {
+      b.wide.getAnimations().forEach((a) => a.cancel()); b.wide.setAttribute("opacity", 1); b.wide.querySelectorAll(".star").forEach((s) => s.classList.add("on"));
       this.placeFilm(); b.film.classList.add("on");
       this.tris().forEach((t, i) => { const s = b.spots[i % b.spots.length]; t.el.getAnimations().forEach((a) => a.cancel()); t.el.style.transformBox = "fill-box"; t.el.style.transformOrigin = "center"; t.el.style.transform = `translate(${(s[0] - t.c[0]).toFixed(0)}px, ${(s[1] - t.c[1]).toFixed(0)}px) scale(.5)`; t.el.style.opacity = .9; });
       b.wait.getAnimations().forEach((a) => a.cancel()); b.wait.setAttribute("opacity", 1);
