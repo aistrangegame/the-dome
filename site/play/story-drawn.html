@@ -46,6 +46,10 @@
   .canvas #L-lattice.grey .strut { stroke: #9AA4B2; } .canvas #L-lattice.grey .hubs circle { fill: #9AA4B2; }
   body.light #point .pt-core { fill: #3B82F6; } body.light #point .pt-halo { fill: url(#ptGlowBlue); }
   body { --trail: rgba(245,240,232,.7); } body.light { --trail: rgba(59,130,246,.55); }
+  /* the real footage, in a circle over the drawn dome (IX) */
+  .film9 { position: fixed; z-index: 1; border-radius: 50%; overflow: hidden; transform: scale(0); transition: transform 1.8s cubic-bezier(.3,.8,.3,1); box-shadow: 0 0 0 1.5px rgba(245,240,232,.7), 0 0 60px rgba(245,240,232,.25); pointer-events: none; }
+  .film9.on { transform: scale(1); }
+  .film9 video { width: 100%; height: 100%; object-fit: cover; display: block; }
   /* the words: one chapter per screen */
   .ch { position: relative; height: 100svh; z-index: 2; display: grid; pointer-events: none; }
   .ch .in { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.25fr); align-items: center; gap: 24px; padding: 80px clamp(20px, 5vw, 80px) 40px clamp(64px, 8vw, 120px); max-width: 1500px; margin: 0 auto; width: 100%; height: 100%; transition: transform .35s cubic-bezier(.2,.8,.2,1); }
@@ -96,8 +100,8 @@
   .push path { fill: none; stroke: #F5F0E8; stroke-width: 1.6; stroke-linecap: round; transition: transform .2s; transform-origin: center; }
   .push.up path { transform: rotate(180deg); }
   @media (max-width: 760px), (orientation: portrait) and (max-width: 1100px) {
-    .ch .in { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto; align-items: end; padding: 64px 20px 78px 44px; }
-    .ch .words { max-width: none; gap: 10px; } .ch .dome { font-size: 1rem; } .ch h2 { font-size: 1.6rem; }
+    .ch .in { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto; align-items: end; padding: 64px 20px 70px 44px; }
+    .ch .words { max-width: none; gap: 10px; align-content: start; max-height: 52svh; overflow: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-right: 4px; mask-image: linear-gradient(to bottom, transparent, #000 14px, #000 calc(100% - 14px), transparent); } .ch .dome { font-size: 1rem; } .ch h2 { font-size: 1.6rem; }
     .ch .slot { padding: 10px 12px; } .ch .slot .draft { font-size: .92rem; }
     .stages { left: 16px; }
   }
@@ -132,18 +136,24 @@
 
 <script src="../assets/js/reviews.js"></script>
 <script src="../assets/js/dome-data.js"></script>
+<script src="../assets/js/timeline-art/kit.js"></script>
+<script src="../assets/js/timeline-art/three.js"></script>
 <script src="../assets/js/story-art/kit.js"></script>
 <script src="../assets/js/story-art/ch1.js"></script>
 <script src="../assets/js/story-art/ch2.js"></script>
 <script src="../assets/js/story-art/ch3.js"></script>
 <script src="../assets/js/story-art/ch4.js"></script>
 <script src="../assets/js/story-art/ch5.js"></script>
+<script src="../assets/js/story-art/ch6.js"></script>
+<script src="../assets/js/story-art/ch7.js"></script>
+<script src="../assets/js/story-art/ch8.js"></script>
+<script src="../assets/js/story-art/ch9.js"></script>
 <script>
 window.page = function (Dome) {
   const { D, esc, slotHTML } = Dome;
   const SD = window.SD;
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  Dome.markWalked("story");
+  Dome.markWalked("story"); window.DOME_API = Dome;
 
   /* ---------- The canvas and the camera ---------- */
   const svg = document.getElementById("canvas"), cam = document.getElementById("cam"), point = document.getElementById("point");
@@ -156,11 +166,13 @@ window.page = function (Dome) {
   function frame() {
     VW = innerWidth; VH = innerHeight; svg.setAttribute("viewBox", `0 0 ${VW} ${VH}`);
     const p = phone();
-    const fx = p ? .5 : .6, fy = p ? .36 : .5;          // where the subject's centre lands on the screen
-    const avail = p ? Math.min(VW * 1.1, VH * .62) : Math.min(VW * .82, VH * 1.15);
+    const fx = p ? .5 : .6, fy = p ? .27 : .5;          // where the subject's centre lands on the screen
+    const avail = p ? Math.min(VW * 1.0, VH * .44) : Math.min(VW * .82, VH * 1.15);
     const s = avail / view.w;
     cam.setAttribute("transform", `translate(${(fx * VW).toFixed(1)} ${(fy * VH).toFixed(1)}) scale(${s.toFixed(5)}) translate(${(-view.cx).toFixed(1)} ${(-view.cy).toFixed(1)})`);
+    if (SD.chapters) SD.chapters.forEach((c) => { if (c.placeFilm && c.state && c.state !== "new") c.placeFilm(); });
   }
+  SD.engine = { layers };
   frame(); addEventListener("resize", frame);
   const ease = (f) => (f < .5 ? 2 * f * f : 1 - Math.pow(-2 * f + 2, 2) / 2);
   function tween(run, ms, fn, e = ease) {
@@ -283,8 +295,8 @@ window.page = function (Dome) {
     const ctx = makeCtx(run, c); c.ctx = ctx;
     document.body.style.setProperty("--bg", c.bg);
     ctx.bed(c.bed);
-    if (c.state === "done") { ctx.allWords(); await moveCamera(c.cam, 1500); return; }
-    if (reduce) { c.state = "done"; c.settle(ctx, c.built); ctx.allWords(); await moveCamera(c.cam, 0); return; }
+    if (c.state === "done") { ctx.allWords(); await moveCamera(c.camEnd || c.cam, 1500); return; }
+    if (reduce) { c.state = "done"; c.settle(ctx, c.built); ctx.allWords(); await moveCamera(c.camEnd || c.cam, 0); return; }
     c.state = "playing";
     try {
       if (!(await moveCamera(c.cam, c.n === 1 ? 0 : 1500))) throw STOP;
@@ -333,7 +345,7 @@ window.page = function (Dome) {
   const NEED_WHEEL = 190;
   let acc = 0, lastWheel = 0, spent = false, fadeT = 0;
   addEventListener("wheel", (e) => {
-    if (blocked(e)) return;
+    if (blocked(e) || inWords(e)) return;
     e.preventDefault();
     const now = performance.now();
     if (now - lastWheel > 240) { acc = 0; spent = false; }
@@ -345,7 +357,9 @@ window.page = function (Dome) {
     clearTimeout(fadeT); fadeT = setTimeout(() => { if (!busy) showPush(0, 1); }, 300);
   }, { passive: false });
   let ty = null, tt = 0, inner = null;
-  addEventListener("touchstart", (e) => { if (blocked(e) || e.touches.length > 1) { ty = null; return; } ty = e.touches[0].clientY; tt = performance.now(); inner = pages[pageIndex()].querySelector(".in"); }, { passive: true });
+  // a touch that starts in a words column that scrolls on its own is left to it (the long chapters, on a phone)
+  const inWords = (e) => { const w = e.target.closest && e.target.closest(".words"); return w && w.scrollHeight > w.clientHeight + 4; };
+  addEventListener("touchstart", (e) => { if (blocked(e) || e.touches.length > 1 || inWords(e)) { ty = null; return; } ty = e.touches[0].clientY; tt = performance.now(); inner = pages[pageIndex()].querySelector(".in"); }, { passive: true });
   addEventListener("touchmove", (e) => {
     if (ty === null || blocked(e)) return;
     e.preventDefault();
@@ -374,7 +388,7 @@ window.page = function (Dome) {
   const h = location.hash.match(/^#c(\d)$/);
   if (h) { const k = +h[1]; CH.filter((c) => c.n < k).forEach((c) => { c.state = "done"; c.settle(c.ctx, c.built); }); goTo(pages.indexOf(document.getElementById("c" + k))); }
   else arrive(secs[0]);
-  SD.engine = { moveCamera, place, point, layers };
+  Object.assign(SD.engine, { moveCamera, place, point });
 };
 </script>
 <script src="../assets/js/dome.js"></script>
