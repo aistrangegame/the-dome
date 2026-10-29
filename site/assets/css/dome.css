@@ -214,9 +214,15 @@ a.card:hover { transform: translateY(-3px); box-shadow: 0 14px 40px rgba(0,0,0,.
 .slot .prompts li::before { content: "?"; position: absolute; left: 0; color: var(--accent); font-weight: 600; }
 .band.deep .slot { background: rgba(255,255,255,.04); }
 .band.deep .slot .prompts { color: color-mix(in srgb, var(--on-deep) 70%, transparent); }
-/* With markers hidden, a slot leaves the page: a stand-in is never shown as if it were their own words */
+/* The site is open to everyone now: a stand-in for someone's own words is never shown as if it were finished
+   copy, and a visitor who isn't Eric has no reason to see "their words go here" at all. The marker and its
+   toggle stay in the page for when he's signed in (where his own-words recording still hooks onto them) and
+   disappear from the DOM's rendering for everyone else, rather than being left for him to manually hide. */
+.slot { display: none; }
+body.k-on .slot { display: block; }
 html.clean .slot { display: none; }
-.marker-toggle { position: static; font: 500 .75rem/1 "DM Sans"; background: var(--deep); color: var(--on-deep); border: 0; border-radius: 99px; padding: 10px 14px; cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+.marker-toggle { display: none; position: static; font: 500 .75rem/1 "DM Sans"; background: var(--deep); color: var(--on-deep); border: 0; border-radius: 99px; padding: 10px 14px; cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+body.k-on .marker-toggle { display: inline-flex; align-items: center; }
 .marker-toggle .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); margin-right: 8px; vertical-align: 1px; }
 
 /* ---------- Buttons, forms ---------- */
