@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en" data-season="summer" class="sd-lock">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Dome's Own Story, drawn · Catskill Mountain Domes</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<meta name="description" content="Behind the point, the dome tells its own life in nine chapters, drawn by its own point onto one canvas that is never erased.">
+<link rel="stylesheet" href="../assets/css/dome.css">
+<style>
+  /* The dome's own story, drawn. One canvas, never erased: the point draws chapter I onto it and chapter IX is still
+     looking at that same drawing. The camera moves (transform only); nothing folds back. One chapter per screen,
+     a hard lock between, one push to move on. Each chapter: assets/js/story-art/ch{n}.js. Plan: docs/story-drawn-storyboard.md */
+  html.sd-lock, html.sd-lock body { overflow: hidden; overscroll-behavior: none; }
+  body { background: var(--bg, #0B1020); transition: background-color 2.2s ease; color: #F5F0E8; }
+  body.storyroom .top.solid { background: transparent; color: #F5F0E8; box-shadow: none; transition: color 1.5s ease; }
+  body.storyroom.light .top.solid { color: #1A2218; }
+  /* the canvas: fixed, behind everything, the world the point draws into */
+  .canvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
+  .canvas .ln { fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; }
+  .canvas .glow { filter: drop-shadow(0 0 3px var(--glow, rgba(226,196,138,.55))); }
+  .canvas .fill { opacity: 0; transition: opacity 1.6s ease; }
+  .canvas .fill.on { opacity: 1; }
+  .canvas .star { opacity: 0; }
+  .canvas .star.on { animation: twinkle 5s ease-in-out infinite; }
+  @keyframes twinkle { 0%, 100% { opacity: .1; } 50% { opacity: .9; } }
+  .canvas .breathe { animation: glow 5s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+  @keyframes glow { 0%, 100% { opacity: .85; transform: scale(1); } 50% { opacity: 1; transform: scale(1.06); } }
+  .canvas .sway { animation: sway 6s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
+  @keyframes sway { 0%, 100% { transform: rotate(-1.6deg); } 50% { transform: rotate(1.6deg); } }
+  .canvas .flame { animation: flame 1.3s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
+  .canvas .flame.b { animation-duration: 1.7s; animation-delay: -.4s; }
+  @keyframes flame { 0%, 100% { transform: scale(1, 1); } 30% { transform: scale(.92, 1.08) skewX(2deg); } 60% { transform: scale(1.05, .94) skewX(-2deg); } }
+  .canvas .flick { animation: flick 2.6s ease-in-out infinite; }
+  @keyframes flick { 0%, 100% { opacity: 1; } 35% { opacity: .78; } 55% { opacity: .95; } 72% { opacity: .7; } }
+  .canvas .mote { animation: mote 6s linear infinite; }
+  @keyframes mote { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: .9; } 100% { transform: translateY(-120px); opacity: 0; } }
+  .canvas .fall { animation: fall 5s linear infinite; }
+  @keyframes fall { 0% { transform: translateY(-40px); opacity: 0; } 12% { opacity: .9; } 100% { transform: translateY(160px); opacity: 0; } }
+  .canvas .blink { animation: blink 1.1s steps(2, start) infinite; }
+  @keyframes blink { to { visibility: hidden; } }
+  .canvas .glint { opacity: 0; transform-box: fill-box; transform-origin: center; }
+  .canvas .glint.on { animation: glint 3.8s ease-in-out infinite 1s; }
+  @keyframes glint { 0%, 78%, 100% { opacity: 0; transform: scale(.2) rotate(0); } 86% { opacity: 1; transform: scale(1.2) rotate(45deg); } }
+  .canvas .still * { animation: none !important; }
+  .canvas .strut, .canvas .hubs circle { transition: stroke 1.8s ease, fill 1.8s ease; }
+  .canvas #L-lattice.grey .strut { stroke: #9AA4B2; } .canvas #L-lattice.grey .hubs circle { fill: #9AA4B2; }
+  body.light #point .pt-core { fill: #3B82F6; } body.light #point .pt-halo { fill: url(#ptGlowBlue); }
+  body { --trail: rgba(245,240,232,.7); } body.light { --trail: rgba(59,130,246,.55); }
+  /* the real footage, in a circle over the drawn dome (IX) */
+  .film9 { position: fixed; z-index: 1; border-radius: 50%; overflow: hidden; transform: scale(0); transition: transform 1.8s cubic-bezier(.3,.8,.3,1); box-shadow: 0 0 0 1.5px rgba(245,240,232,.7), 0 0 60px rgba(245,240,232,.25); pointer-events: none; }
+  .film9.on { transform: scale(1); }
+  .film9 video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  /* the words: one chapter per screen */
+  .ch { position: relative; height: 100svh; z-index: 2; display: grid; pointer-events: none; }
+  .ch .in { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.25fr); align-items: center; gap: 24px; padding: 80px clamp(20px, 5vw, 80px) 40px clamp(64px, 8vw, 120px); max-width: 1500px; margin: 0 auto; width: 100%; height: 100%; transition: transform .35s cubic-bezier(.2,.8,.2,1); }
+  .ch .words { display: grid; gap: 14px; align-content: center; pointer-events: auto; max-width: 520px; text-shadow: 0 0 14px var(--bg, #0B1020), 0 0 28px var(--bg, #0B1020); }
+  .ch .k { font: 500 .74rem/1 "DM Sans"; letter-spacing: .22em; text-transform: uppercase; color: var(--k, #E2C48A); }
+  .ch h2 { font: 500 clamp(1.7rem, 3.8vw, 2.9rem)/1.12 Lora, serif; margin: 0; color: #F5F0E8; }
+  .ch .dome { margin: 4px 0 0; font: italic 400 clamp(1.06rem, 1.7vw, 1.3rem)/1.55 Lora, serif; color: rgba(245,240,232,.92); }
+  .ch .ph { opacity: 0; filter: blur(4px); transition: opacity 1.1s ease, filter 1.1s ease; }
+  .ch .ph.on { opacity: 1; filter: none; }
+  .ch .voice-card { border-left: 2px solid var(--k, #E2C48A); margin: 6px 0 0; padding-left: 14px; opacity: 0; transition: opacity 1.4s ease; }
+  .ch .voice-card.on { opacity: 1; }
+  .ch .voice { margin: 0; font: italic 400 1rem/1.5 Lora, serif; color: #F5F0E8; }
+  .ch .voice-by { font: 500 .78rem/1 "DM Sans"; color: rgba(245,240,232,.62); margin-top: 6px; }
+  .ch .slot { margin: 2px 0 0; background: rgba(226,196,138,.07); border-color: rgba(226,196,138,.55); color: #F5F0E8; opacity: 0; transition: opacity 1.4s ease .9s; }
+  .ch.here .slot { opacity: 1; }
+  .ch .slot .slot-tag { color: var(--k, #E2C48A); } .ch .slot .slot-tag::before { background: var(--k, #E2C48A); }
+  .ch .slot .draft { color: rgba(245,240,232,.88); margin: 0; } .ch .slot .prompts { display: none; }
+  .ch .words > .k, .ch .words > h2, .ch .words > .count, .ch .words > .btns { opacity: 0; transform: translateY(14px); transition: opacity 1.1s ease, transform 1.1s cubic-bezier(.2,.8,.2,1); }
+  .ch.here .words > .k, .ch.here .words > h2, .ch.here .words > .count, .ch.here .words > .btns { opacity: 1; transform: none; }
+  .ch.here .words > h2 { transition-delay: .25s; }
+  .ch .count { font: 500 clamp(2.6rem, 8vw, 5rem)/1 Lora, serif; color: var(--k, #E2C48A); font-variant-numeric: tabular-nums; }
+  .ch .btns { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+  .ch .btn { border-color: rgba(245,240,232,.55); color: #F5F0E8; }
+  .ch .btn.act { background: #E2C48A; border-color: #E2C48A; color: #1A2218; }
+  .ch.light { color: #1A2218; } .ch.light h2, .ch.light .dome, .ch.light .voice { color: #1A2218; } .ch.light .dome { color: rgba(26,34,24,.85); }
+  .ch.light .ph { filter: none; }
+  .intro .in, .close .in { grid-template-columns: 1fr; text-align: center; justify-items: center; padding-left: clamp(20px, 5vw, 80px); }
+  .intro .words, .close .words { max-width: 560px; justify-items: center; }
+  .intro h1 { font: italic 400 clamp(2.4rem, 7vw, 4.4rem)/1.08 Lora, serif; margin: 0 0 10px; color: #F5F0E8; }
+  .intro p, .close p { color: rgba(245,240,232,.78); margin: 0; }
+  .intro .words > *, .close .words > * { opacity: 0; transform: translateY(14px); transition: opacity 1.1s ease, transform 1.1s cubic-bezier(.2,.8,.2,1); }
+  .intro.here .words > *, .close.here .words > * { opacity: 1; transform: none; }
+  .hint { position: absolute; left: 50%; bottom: 74px; transform: translateX(-50%); font: 500 .7rem/1 "DM Sans"; letter-spacing: .2em; text-transform: uppercase; color: rgba(245,240,232,.5); animation: nudge 3.4s ease-in-out infinite; white-space: nowrap; }
+  @keyframes nudge { 50% { transform: translate(-50%, 6px); opacity: .4; } }
+  /* the nine chapters, as nine points on the left */
+  .stages { position: fixed; left: clamp(16px, 2.8vw, 40px); top: 50%; transform: translateY(-50%); z-index: 20; display: grid; gap: 12px; }
+  .stages a { width: 22px; height: 22px; display: grid; place-items: center; }
+  .stages a::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: transparent; border: 1px solid rgba(245,240,232,.45); transition: transform .4s, background .4s; }
+  .stages a.past::before { background: rgba(245,240,232,.55); }
+  .stages a.on::before { background: #fff; border-color: #fff; box-shadow: 0 0 12px 3px rgba(255,255,255,.55); transform: scale(1.4); }
+  .stages a:focus-visible { outline: 1px solid #E2C48A; border-radius: 50%; }
+  .light .stages a::before { border-color: rgba(26,34,24,.45); } .light .stages a.past::before { background: rgba(26,34,24,.5); }
+  /* the push: a thin arc fills as you press on */
+  .push { position: fixed; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); width: 44px; height: 44px; margin-left: -22px; z-index: 25; pointer-events: none; opacity: 0; transition: opacity .3s; }
+  .push.show { opacity: 1; }
+  .push circle { fill: none; stroke-width: 1.6; }
+  .push .bg { stroke: rgba(245,240,232,.15); } .push .fg { stroke: #E2C48A; stroke-dasharray: 1; stroke-dashoffset: 1; transform: rotate(-90deg); transform-origin: center; }
+  .push path { fill: none; stroke: #F5F0E8; stroke-width: 1.6; stroke-linecap: round; transition: transform .2s; transform-origin: center; }
+  .push.up path { transform: rotate(180deg); }
+  @media (max-width: 760px), (orientation: portrait) and (max-width: 1100px) {
+    .ch .in { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto; align-items: end; padding: 64px 20px 70px 44px; }
+    .ch .words { max-width: none; gap: 10px; align-content: start; max-height: 52svh; overflow: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-right: 4px; mask-image: linear-gradient(to bottom, transparent, #000 14px, #000 calc(100% - 14px), transparent); } .ch .dome { font-size: 1rem; } .ch h2 { font-size: 1.6rem; }
+    .ch .slot { padding: 10px 12px; } .ch .slot .draft { font-size: .92rem; }
+    .stages { left: 16px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ch .in { transition: none; } .hint { animation: none; }
+    .canvas .star.on, .canvas .breathe, .canvas .sway, .canvas .flame, .canvas .flick, .canvas .mote, .canvas .fall, .canvas .blink, .canvas .glint.on { animation: none; }
+  }
+</style>
+</head>
+<body class="storyroom" data-root="../" data-page="play/story-drawn.html" data-noclose="1" data-solid="1" data-element="light" data-bed="wind">
+
+<svg class="canvas" id="canvas" aria-hidden="true"><defs id="defs"></defs><g id="cam">
+  <g id="L-sky"></g><g id="L-far"></g><g id="L-lattice"></g><g id="L-fills"></g><g id="L-scene"></g><g id="L-hero"></g><g id="L-top"></g>
+  <g id="L-trail"></g>
+  <g id="point" opacity="0"><circle class="pt-halo" r="26" fill="url(#ptGlow)"/><circle class="pt-core" r="5" fill="#fff"/></g>
+</g></svg>
+
+<nav class="stages" aria-label="Chapters" id="stages"></nav>
+<svg class="push" id="push" viewBox="0 0 44 44" aria-hidden="true"><circle class="bg" cx="22" cy="22" r="20"/><circle class="fg" cx="22" cy="22" r="20" pathLength="1"/><path d="M16 19 L22 25 L28 19"/></svg>
+
+<main id="sd">
+  <section class="ch intro" id="c-intro">
+    <div class="in"><div class="words">
+      <span class="eyebrow" style="color:#E2C48A">Behind the point</span>
+      <h1>My own story, drawn.</h1>
+      <p>Everywhere else on this site, other people speak for me. Here I draw it myself, in nine chapters, onto one page I never wipe clean. Push gently; I’m a slow building.</p>
+      <p style="margin-top:1rem"><a href="story.html" style="color:#E2C48A">The same story, to read</a></p>
+    </div></div>
+    <span class="hint" aria-hidden="true">Scroll or swipe, with a little push</span>
+  </section>
+</main>
+
+<script src="../assets/js/reviews.js"></script>
+<script src="../assets/js/dome-data.js"></script>
+<script src="../assets/js/timeline-art/kit.js"></script>
+<script src="../assets/js/timeline-art/three.js"></script>
+<script src="../assets/js/story-art/kit.js"></script>
+<script src="../assets/js/story-art/ch1.js"></script>
+<script src="../assets/js/story-art/ch2.js"></script>
+<script src="../assets/js/story-art/ch3.js"></script>
+<script src="../assets/js/story-art/ch4.js"></script>
+<script src="../assets/js/story-art/ch5.js"></script>
+<script src="../assets/js/story-art/ch6.js"></script>
+<script src="../assets/js/story-art/ch7.js"></script>
+<script src="../assets/js/story-art/ch8.js"></script>
+<script src="../assets/js/story-art/ch9.js"></script>
+<script>
+window.page = function (Dome) {
+  const { D, esc, slotHTML } = Dome;
+  const SD = window.SD;
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  Dome.markWalked("story"); window.DOME_API = Dome;
+
+  /* ---------- The canvas and the camera ---------- */
+  const svg = document.getElementById("canvas"), cam = document.getElementById("cam"), point = document.getElementById("point");
+  const defs = document.getElementById("defs");
+  defs.innerHTML = `<radialGradient id="ptGlowBlue"><stop offset="0" stop-color="rgba(59,130,246,.6)"/><stop offset=".35" stop-color="rgba(59,130,246,.25)"/><stop offset="1" stop-color="rgba(59,130,246,0)"/></radialGradient><radialGradient id="ptGlow"><stop offset="0" stop-color="rgba(255,255,255,.75)"/><stop offset=".35" stop-color="rgba(255,240,210,.35)"/><stop offset="1" stop-color="rgba(255,240,210,0)"/></radialGradient>`;
+  const layers = {}; ["sky", "far", "lattice", "fills", "scene", "hero", "top", "trail"].forEach((k) => (layers[k] = document.getElementById("L-" + k)));
+  let VW = innerWidth, VH = innerHeight;
+  const phone = () => matchMedia("(max-width: 760px), (orientation: portrait) and (max-width: 1100px)").matches;
+  const view = { cx: 0, cy: -200, w: 1800 };          // what the camera looks at, in world units: centre and width
+  function frame() {
+    VW = innerWidth; VH = innerHeight; svg.setAttribute("viewBox", `0 0 ${VW} ${VH}`);
+    const p = phone();
+    const fx = p ? .5 : .6, fy = p ? .27 : .5;          // where the subject's centre lands on the screen
+    const avail = p ? Math.min(VW * 1.0, VH * .44) : Math.min(VW * .82, VH * 1.15);
+    const s = avail / view.w;
+    cam.setAttribute("transform", `translate(${(fx * VW).toFixed(1)} ${(fy * VH).toFixed(1)}) scale(${s.toFixed(5)}) translate(${(-view.cx).toFixed(1)} ${(-view.cy).toFixed(1)})`);
+    if (SD.chapters) SD.chapters.forEach((c) => { if (c.placeFilm && c.state && c.state !== "new") c.placeFilm(); });
+  }
+  SD.engine = { layers };
+  frame(); addEventListener("resize", frame);
+  const ease = (f) => (f < .5 ? 2 * f * f : 1 - Math.pow(-2 * f + 2, 2) / 2);
+  function tween(run, ms, fn, e = ease) {
+    return new Promise((res) => { const t0 = performance.now();
+      (function step(t) { if (run && run.stop) return res(false); const f = Math.max(0, Math.min(1, (t - t0) / ms)); fn(e(f), f); if (f < 1) requestAnimationFrame(step); else res(true); })(t0); });
+  }
+  const camRun = {};
+  function moveCamera(to, ms) {
+    camRun.stop = true; const run = (camRun.cur = { stop: false });
+    const from = { ...view };
+    if (reduce || !ms) { Object.assign(view, to); frame(); return Promise.resolve(true); }
+    return tween(run, ms, (e) => { view.cx = from.cx + (to.cx - from.cx) * e; view.cy = from.cy + (to.cy - from.cy) * e; view.w = Math.exp(Math.log(from.w) + (Math.log(to.w) - Math.log(from.w)) * e); frame(); }, (f) => (f < .5 ? 4 * f * f * f : 1 - Math.pow(-2 * f + 2, 3) / 2));
+  }
+
+  /* ---------- Sound ---------- */
+  const out = () => (window.Flow && window.Flow.Sound.out ? window.Flow.Sound.out() : null);
+  function tick() {
+    const o = out(); if (!o) return; const ac = o.ac, t = ac.currentTime, n = ac.createBufferSource(), len = Math.floor(ac.sampleRate * .04), buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
+    for (let j = 0; j < len; j++) d[j] = (Math.random() * 2 - 1) * (1 - j / len);
+    const f = ac.createBiquadFilter(), g = ac.createGain(); f.type = "bandpass"; f.frequency.value = 3400; g.gain.value = .008; n.buffer = buf; n.connect(f); f.connect(g); g.connect(o.master); n.start(t);
+  }
+  function chord(fs, len = 4.2) {
+    const o = out(); if (!o) return; const ac = o.ac;
+    fs.forEach((fq, j) => { const t = ac.currentTime + j * .14, osc = ac.createOscillator(), g = ac.createGain(); osc.frequency.value = fq; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.05, t + .05); g.gain.exponentialRampToValueAtTime(.0001, t + len); osc.connect(g); g.connect(o.master); osc.start(t); osc.stop(t + len + .1); });
+  }
+
+  /* ---------- The point, and what it can do (the ctx every chapter draws with) ---------- */
+  const STOP = Symbol("stop");
+  const pt = { x: 0, y: 0, on: false };
+  const place = (x, y) => { pt.x = x; pt.y = y; point.setAttribute("transform", `translate(${x.toFixed(1)} ${y.toFixed(1)})`); };
+  const PACE = 0.52;   // the timeline's pace: about ten seconds a chapter
+  function makeCtx(run, ch) {
+    const check = () => { if (run.stop) throw STOP; };
+    const ctx = {
+      layers, svg, reduce, D, STOP,
+      el(layer, html) { const t = document.createElementNS("http://www.w3.org/2000/svg", "g"); t.innerHTML = html; const out = [...t.childNodes]; out.forEach((n) => layers[layer].append(n)); return out.length === 1 ? out[0] : out; },
+      async wait(ms) { check(); await new Promise((r) => setTimeout(r, ms)); check(); },
+      async tween(ms, fn, e) { check(); const ok = await tween(run, ms, fn, e); if (!ok) throw STOP; },
+      show(on) { pt.on = on; point.setAttribute("opacity", on ? 1 : 0); },
+      size(r, ms) { const c = point.querySelector(".pt-core"), h = point.querySelector(".pt-halo"); const r0 = +c.getAttribute("r"); const set = (v) => { c.setAttribute("r", v.toFixed(2)); h.setAttribute("r", (v * 5.2).toFixed(1)); }; if (!ms) { set(r); return Promise.resolve(); } return ctx.tween(ms, (e) => set(r0 + (r - r0) * e)); },
+      at(x, y) { place(x, y); },
+      get pt() { return pt; },
+      async glide(x, y, ms, trail) {
+        check();
+        const from = { x: pt.x, y: pt.y }, mx = (from.x + x) / 2 + (y - from.y) * .18, my = (from.y + y) / 2 - Math.abs(x - from.x) * .12;
+        let path = null;
+        if (trail) { path = ctx.el("trail", `<path d="M${from.x} ${from.y} Q${mx} ${my} ${x} ${y}" pathLength="1" fill="none" stroke="var(--trail)" stroke-width="1.2" stroke-dasharray="1" stroke-dashoffset="1"/>`); }
+        await ctx.tween(ms, (e) => { place((1 - e) * (1 - e) * from.x + 2 * (1 - e) * e * mx + e * e * x, (1 - e) * (1 - e) * from.y + 2 * (1 - e) * e * my + e * e * y); if (path) path.setAttribute("stroke-dashoffset", String(1 - e)); });
+        if (path) path.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 1600, fill: "forwards" }).onfinish = () => path.remove();
+      },
+      // draw a path the point travels: the path must already exist (built), with pathLength=1 and dashoffset 1
+      async draw(p, secs, opts = {}) {
+        check();
+        const L = p.getTotalLength(), s0 = p.getPointAtLength(0), m = p.getCTM(), cm = cam.getCTM();
+        const toWorld = (q) => { const r = new DOMPoint(q.x, q.y).matrixTransform(m).matrixTransform(cm.inverse()); return r; };
+        const w0 = toWorld(s0);
+        if (!opts.noGlide) await ctx.glide(w0.x, w0.y, opts.glide || 170);
+        await ctx.tween(secs * 1000 * PACE, (e) => { p.style.strokeDashoffset = String(1 - e); const q = toWorld(p.getPointAtLength(L * e)); place(q.x, q.y); if (Math.random() < .12) tick(); }, opts.ease);
+      },
+      // let many paths draw themselves while the point goes elsewhere (a cascade, delayed by each path's data-d)
+      cascade(paths, ms, per = 3) { paths.forEach((p) => p.animate([{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: ms, delay: +(p.dataset.d || 0) * per, easing: "ease-out", fill: "forwards" })); },
+      fade(el, to, ms) { (Array.isArray(el) ? el : [el]).forEach((x) => x.animate([{ opacity: getComputedStyle(x).opacity }, { opacity: to }], { duration: ms, fill: "forwards", easing: "ease-in-out" })); },
+      sparks(x, y, n, color, up) {
+        for (let j = 0; j < n; j++) {
+          const s = ctx.el("top", `<circle cx="${x}" cy="${y}" r="2.2" fill="${color || "#FFF4D6"}" style="filter:drop-shadow(0 0 4px ${color || "#FFF4D6"})"/>`);
+          const ang = (j / n) * Math.PI * 2 + Math.random() * .4, d = 30 + Math.random() * 70;
+          s.animate([{ transform: "translate(0,0) scale(1)", opacity: 1 }, { transform: `translate(${Math.cos(ang) * d}px, ${Math.sin(ang) * d - (up ? 40 : 0)}px) scale(.3)`, opacity: 0 }], { duration: 1600 + Math.random() * 700, easing: "cubic-bezier(.2,.7,.3,1)" }).onfinish = () => s.remove();
+        }
+      },
+      ripple(x, y, r, color, ms = 1800) {
+        const c = ctx.el("top", `<circle cx="${x}" cy="${y}" r="1" fill="none" stroke="${color || "rgba(245,240,232,.6)"}" stroke-width="1.2"/>`);
+        const t0 = performance.now();
+        (function s(t) { const f = Math.min(1, (t - t0) / ms), e = 1 - Math.pow(1 - f, 3); c.setAttribute("r", (1 + (r - 1) * e).toFixed(1)); c.setAttribute("opacity", (1 - f).toFixed(2)); if (f < 1) requestAnimationFrame(s); else c.remove(); })(t0);
+      },
+      bed(name) { if (window.Flow) window.Flow.passageSound(name || null); },
+      chord, tick,
+      words: ch.sec,
+      phrases(delay = 1200, span = 6400) { const ph = [...ch.sec.querySelectorAll(".ph")]; ph.forEach((x, i) => setTimeout(() => { if (!run.stop) x.classList.add("on"); }, delay + i * (span / Math.max(1, ph.length)))); return ph; },
+      voices(delay = 8200) { [...ch.sec.querySelectorAll(".voice-card")].forEach((v, i) => setTimeout(() => { if (!run.stop) v.classList.add("on"); }, delay + i * 900)); },
+      allWords() { ch.sec.querySelectorAll(".ph, .voice-card").forEach((x) => x.classList.add("on")); },
+    };
+    // a helper left un-awaited (a fire-and-forget size or glide) must not surface STOP as an unhandled rejection
+    ["wait", "tween", "glide", "draw", "size"].forEach((k) => { const f = ctx[k]; ctx[k] = (...a) => { const p = f.apply(ctx, a); if (p && p.catch) p.catch(() => {}); return p; }; });
+    return ctx;
+  }
+
+  /* ---------- The chapters ---------- */
+  const CH = SD.chapters;   // [{n, cam, bg, k, bed, tone, light, build, play, settle, words}]
+  const main = document.getElementById("sd");
+  const phrases = (t) => { const o = []; let cur = []; t.split(/\s+/).forEach((w) => { cur.push(w); if (/[,.;:!?]$/.test(w) || cur.length >= 5) { o.push(cur.join(" ")); cur = []; } }); if (cur.length) o.push(cur.join(" ")); return o; };
+  const para = (t) => `<p class="dome">${phrases(t).map((p) => `<span class="ph">${esc(p)} </span>`).join("")}</p>`;
+  const voice = ([n, name, text]) => `<figure class="voice-card"><blockquote class="voice">${esc(text)}</blockquote><figcaption class="voice-by">${esc(name)} · guest #${n}</figcaption></figure>`;
+  CH.forEach((c) => {
+    const sec = document.createElement("section"); sec.className = `ch ch-${c.n}${c.light ? " light" : ""}`; sec.id = "c" + c.n; sec.style.setProperty("--k", c.k || "#E2C48A");
+    const w = c.words;
+    sec.innerHTML = `<div class="in"><div class="words"><span class="k">${esc(w.k)}</span><h2>${esc(w.h)}</h2>${w.count ? `<div class="count" id="count${c.n}" aria-label="252 guests who wrote">0</div>` : ""}${(w.p || []).map((x) => typeof x === "string" ? para(x) : voice(x)).join("")}${w.slot ? slotHTML(w.slot) : ""}${w.btns ? `<p class="btns">${w.btns}</p>` : ""}</div></div>`;
+    main.append(sec); c.sec = sec; c.state = "new";
+  });
+  const close = document.createElement("section"); close.className = "ch close"; close.id = "c-close";
+  close.innerHTML = `<div class="in"><div class="words"><span class="k" style="color:#E2C48A">The end, for now</span><h2>Every line I drew is still on this page.</h2>
+    <p>Nothing here was wiped to make room for the next thing. That is the only way I know how to be.</p>
+    <p class="btns" style="justify-content:center"><a class="btn act" href="../stay.html">Come and add yours</a> <a class="btn" href="story.html">The same story, to read</a> <a class="btn" href="find.html">Find my point from the sky</a></p>
+    <p class="note" style="font-size:.85rem;color:rgba(245,240,232,.55);margin-top:1.6rem">The dome’s voice is written for this page. Every guest’s words are quoted exactly as they wrote them, with their first name.</p></div></div>`;
+  main.append(close);
+  const secs = [...main.querySelectorAll(".ch")];
+  const pages = secs;
+  // build every chapter's elements up front, undrawn, so a chapter settled early still has everything
+  SD.built = {}; CH.forEach((c) => { c.ctx = makeCtx({ stop: false }, c); c.built = c.build(c.ctx) || {}; SD.built[c.n] = c.built; });
+  // the nine points on the left
+  const stages = document.getElementById("stages");
+  stages.innerHTML = CH.map((c) => `<a href="#c${c.n}" data-n="${c.n}" aria-label="Chapter ${c.n}: ${esc(c.words.h)}"></a>`).join("");
+  const dots = [...stages.children];
+  stages.addEventListener("click", (e) => { const a = e.target.closest("a"); if (!a) return; e.preventDefault(); goTo(pages.indexOf(document.getElementById("c" + a.dataset.n))); });
+
+  /* ---------- Playing a chapter (once; nothing is ever erased) ---------- */
+  let current = null;
+  async function play(c) {
+    if (current) current.stop = true;
+    const run = { stop: false }; current = run;
+    const ctx = makeCtx(run, c); c.ctx = ctx;
+    document.body.style.setProperty("--bg", c.bg);
+    ctx.bed(c.bed);
+    if (c.state === "done") { ctx.allWords(); await moveCamera(c.camEnd || c.cam, 1500); return; }
+    if (reduce) { c.state = "done"; c.settle(ctx, c.built); ctx.allWords(); await moveCamera(c.camEnd || c.cam, 0); return; }
+    c.state = "playing";
+    try {
+      if (!(await moveCamera(c.cam, c.n === 1 ? 0 : 1500))) throw STOP;
+      await c.play(ctx, c.built);
+      c.state = "done";
+    } catch (e) {
+      if (e !== STOP) { console.error(e); c.state = "done"; }
+    }
+  }
+  function settle(c) { if (c.state === "playing") { c.state = "done"; try { c.settle(c.ctx, c.built); } catch (e) { console.error(e); } c.ctx.allWords(); } }
+
+  let here = null;
+  function arrive(sec) {
+    if (sec === here) return;
+    const from = here;
+    if (from) { from.classList.remove("here"); const fc = CH.find((c) => c.sec === from); if (fc) { if (current) current.stop = true; settle(fc); } }
+    here = sec; sec.classList.add("here");
+    const c = CH.find((x) => x.sec === sec);
+    const n = c ? c.n : sec.id === "c-close" ? 99 : 0;
+    dots.forEach((d) => { const k = +d.dataset.n; d.classList.toggle("on", k === n); d.classList.toggle("past", k < n); });
+    document.body.classList.toggle("light", !!(c && c.light));
+    if (c) play(c);
+    else if (sec.id === "c-close") { document.body.style.setProperty("--bg", "#06080F"); if (SD.closing) SD.closing(makeCtx({ stop: false }, { sec }), moveCamera); }
+    else { document.body.style.setProperty("--bg", "#0B1020"); moveCamera({ cx: 0, cy: -200, w: 1800 }, 0); }
+  }
+  const io = new IntersectionObserver((es) => es.forEach((e) => { if (!busy && e.isIntersecting && e.intersectionRatio > .6) arrive(e.target); }), { threshold: [.6, .9] });
+  secs.forEach((s) => io.observe(s));
+
+  /* ---------- The lock: one chapter per screen; moving on takes a deliberate push ---------- */
+  const push = document.getElementById("push"), pushFg = push.querySelector(".fg");
+  var busy = false;
+  const pageIndex = () => { const y = scrollY + innerHeight / 2; let k = 0; pages.forEach((p, i) => { if (p.offsetTop <= y) k = i; }); return k; };
+  function showPush(f, dir) { push.classList.toggle("show", f > 0.04); push.classList.toggle("up", dir < 0); pushFg.style.strokeDashoffset = String(1 - Math.min(1, f)); }
+  async function goTo(k) {
+    k = Math.max(0, Math.min(pages.length - 1, k));
+    const cur = pageIndex(); if (k === cur || busy) return;
+    busy = true; showPush(0, 1);
+    const target = pages[k], y0 = scrollY, y1 = Math.min(target.offsetTop, document.documentElement.scrollHeight - innerHeight);
+    if (reduce) scrollTo(0, y1);
+    else await tween(null, 950, (e) => scrollTo(0, y0 + (y1 - y0) * e), (f) => (f < .5 ? 4 * f * f * f : 1 - Math.pow(-2 * f + 2, 3) / 2));
+    arrive(target);
+    setTimeout(() => { busy = false; }, 120);
+  }
+  const step = (dir) => goTo(pageIndex() + dir);
+  const blocked = (e) => document.documentElement.classList.contains("menu-open") || (e.target.closest && e.target.closest(".site-menu, .k-sheet, .k-panel, .guide, .portal"));
+  const NEED_WHEEL = 190;
+  let acc = 0, lastWheel = 0, spent = false, fadeT = 0;
+  addEventListener("wheel", (e) => {
+    if (blocked(e) || inWords(e)) return;
+    e.preventDefault();
+    const now = performance.now();
+    if (now - lastWheel > 240) { acc = 0; spent = false; }
+    lastWheel = now;
+    if (busy || spent) return;
+    acc += e.deltaY * (e.deltaMode === 1 ? 18 : e.deltaMode === 2 ? innerHeight : 1);
+    const f = Math.abs(acc) / NEED_WHEEL; showPush(f, Math.sign(acc));
+    if (f >= 1) { spent = true; step(Math.sign(acc)); }
+    clearTimeout(fadeT); fadeT = setTimeout(() => { if (!busy) showPush(0, 1); }, 300);
+  }, { passive: false });
+  let ty = null, tt = 0, inner = null;
+  // a touch that starts in a words column that scrolls on its own is left to it (the long chapters, on a phone)
+  const inWords = (e) => { const w = e.target.closest && e.target.closest(".words"); return w && w.scrollHeight > w.clientHeight + 4; };
+  addEventListener("touchstart", (e) => { if (blocked(e) || e.touches.length > 1 || inWords(e)) { ty = null; return; } ty = e.touches[0].clientY; tt = performance.now(); inner = pages[pageIndex()].querySelector(".in"); }, { passive: true });
+  addEventListener("touchmove", (e) => {
+    if (ty === null || blocked(e)) return;
+    e.preventDefault();
+    const dy = ty - e.touches[0].clientY;
+    if (inner && !reduce) { inner.style.transition = "none"; inner.style.transform = `translateY(${(-dy * 0.16).toFixed(1)}px)`; }
+    showPush(Math.abs(dy) / 120, Math.sign(dy));
+  }, { passive: false });
+  addEventListener("touchend", (e) => {
+    if (ty === null) return;
+    const dy = ty - (e.changedTouches[0] || {}).clientY, v = Math.abs(dy) / Math.max(1, performance.now() - tt);
+    if (inner) { inner.style.transition = ""; inner.style.transform = ""; }
+    showPush(0, 1); ty = null;
+    if (busy) return;
+    if (Math.abs(dy) > 120 || (Math.abs(dy) > 60 && v > 0.6)) step(Math.sign(dy));
+  });
+  addEventListener("keydown", (e) => {
+    if (blocked(e) || /input|textarea|select/i.test(e.target.tagName) || e.target.isContentEditable) return;
+    const dir = { ArrowDown: 1, PageDown: 1, " ": 1, ArrowUp: -1, PageUp: -1 }[e.key];
+    if (e.key === "Home") { e.preventDefault(); goTo(0); return; }
+    if (e.key === "End") { e.preventDefault(); goTo(pages.length - 1); return; }
+    if (!dir) return; e.preventDefault(); step(e.shiftKey && e.key === " " ? -1 : dir);
+  });
+  addEventListener("resize", () => { if (busy) return; const k = pageIndex(); scrollTo(0, pages[k].offsetTop); });
+  document.addEventListener("focusin", (e) => { const s = e.target.closest && e.target.closest(".ch"); if (s && pages.includes(s) && pages.indexOf(s) !== pageIndex()) { scrollTo(0, s.offsetTop); arrive(s); } });
+  // a jump straight to a chapter by hash plays every chapter before it, settled, so nothing is missing from the canvas
+  const h = location.hash.match(/^#c(\d)$/);
+  if (h) { const k = +h[1]; CH.filter((c) => c.n < k).forEach((c) => { c.state = "done"; c.settle(c.ctx, c.built); }); goTo(pages.indexOf(document.getElementById("c" + k))); }
+  else arrive(secs[0]);
+  Object.assign(SD.engine, { moveCamera, place, point });
+};
+</script>
+<script src="../assets/js/dome.js"></script>
+</body>
+</html>
